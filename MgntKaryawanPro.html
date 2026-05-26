@@ -1,0 +1,2309 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LuxeHR Premium - Manajemen SDM Berkelas</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <!-- HTML5 QRCode Scanner -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        gold: {
+                            100: '#FDF7E6',
+                            200: '#FBE8B3',
+                            300: '#F8D880',
+                            400: '#F4C45A',
+                            500: '#D4AF37', // Classic Luxury Gold
+                            600: '#AA8825',
+                            700: '#806415',
+                            800: '#5A460E',
+                            900: '#362908',
+                        },
+                        surface: {
+                            50: '#2A2A2A',
+                            100: '#222222',
+                            200: '#1A1A1A', 
+                            300: '#121212', 
+                            400: '#0A0A0A',
+                        }
+                    },
+                    boxShadow: {
+                        'gold-glow': '0 0 20px rgba(212, 175, 55, 0.15)',
+                        'gold-glow-lg': '0 0 30px rgba(212, 175, 55, 0.25)',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background-color: #121212;
+            color: #E5E5E5;
+            background-image: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #121212 100%);
+        }
+        
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #121212; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #D4AF37; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        
+        .glass-dark {
+            background: rgba(26, 26, 26, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-card { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(212, 175, 55, 0.4);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5), 0 0 20px rgba(212, 175, 55, 0.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        
+        .modal-transition { transition: opacity 0.4s ease; }
+        .modal-transition.hidden { opacity: 0; pointer-events: none; }
+        .modal-transition:not(.hidden) { opacity: 1; pointer-events: auto; }
+
+        .text-glow { text-shadow: 0 0 10px rgba(212, 175, 55, 0.3); }
+
+        /* Print Media Styles for Slip Gaji */
+        @media print {
+            body { background: white !important; color: black !important; }
+            body * { visibility: hidden; }
+            #slipGajiPrintArea, #slipGajiPrintArea * { visibility: visible; }
+            #slipGajiPrintArea { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; background: white !important; }
+            .no-print { display: none !important; }
+            .print-text-dark { color: #111 !important; }
+            .print-border-dark { border-color: #ddd !important; }
+        }
+    </style>
+</head>
+<body class="h-screen overflow-hidden flex antialiased selection:bg-gold-500 selection:text-surface-400 text-xs">
+
+    <!-- Sidebar Backdrop -->
+    <div id="sidebarBackdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden transition-opacity opacity-0 duration-300 cursor-pointer"></div>
+
+    <!-- Floating Sidebar -->
+    <aside id="leftSidebar" class="w-[240px] bg-surface-200 border-r border-white/5 flex flex-col justify-between fixed inset-y-0 left-0 z-50 transform -translate-x-full transition-transform duration-300 shadow-[20px_0_40px_rgba(0,0,0,0.5)]">
+        <div>
+            <!-- Logo -->
+            <div class="h-16 flex items-center justify-between px-5 border-b border-white/5">
+                <div class="flex items-center">
+                    <div class="text-gold-500 flex items-center justify-center">
+                        <i class="fa-solid fa-gem text-xl drop-shadow-[0_0_8px_rgba(212,175,55,0.5)]"></i>
+                    </div>
+                    <h1 class="ml-3 font-serif font-bold text-base text-white tracking-widest uppercase">Luxe<span class="text-gold-500">HR</span></h1>
+                </div>
+                <button id="closeSidebarBtn" class="text-gray-500 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/5">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="mt-6 px-3 flex flex-col gap-1.5" id="sidebarNav">
+                <a href="#" onclick="switchView('dashboard')" id="nav-dashboard" class="flex items-center px-4 py-2.5 bg-gradient-to-r from-gold-500/10 to-transparent border-l-2 border-gold-500 text-gold-500 rounded-r-lg group transition-all">
+                    <i class="fa-solid fa-chart-pie w-5 text-center text-sm"></i>
+                    <span class="ml-3 text-xs font-medium tracking-wide">Ringkasan Eksekutif</span>
+                </a>
+                <a href="#" onclick="switchView('employees')" id="nav-employees" class="flex items-center px-4 py-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg group transition-all border-l-2 border-transparent hover:border-white/20">
+                    <i class="fa-solid fa-users-viewfinder w-5 text-center text-sm"></i>
+                    <span class="ml-3 text-xs font-medium tracking-wide">Data Karyawan</span>
+                </a>
+                <a href="#" onclick="switchView('attendance')" id="nav-attendance" class="flex items-center px-4 py-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg group transition-all border-l-2 border-transparent hover:border-white/20">
+                    <i class="fa-solid fa-calendar-check w-5 text-center text-sm"></i>
+                    <span class="ml-3 text-xs font-medium tracking-wide">Kehadiran (Absensi)</span>
+                </a>
+                <a href="#" onclick="switchView('shifts')" id="nav-shifts" class="flex items-center px-4 py-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg group transition-all border-l-2 border-transparent hover:border-white/20">
+                    <i class="fa-solid fa-clock w-5 text-center text-sm"></i>
+                    <span class="ml-3 text-xs font-medium tracking-wide">Jadwal & Shift</span>
+                </a>
+                <a href="#" onclick="switchView('payroll')" id="nav-payroll" class="flex items-center px-4 py-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg group transition-all border-l-2 border-transparent hover:border-white/20">
+                    <i class="fa-solid fa-file-invoice-dollar w-5 text-center text-sm"></i>
+                    <span class="ml-3 text-xs font-medium tracking-wide">Slip Gaji (Payroll)</span>
+                </a>
+                <a href="#" onclick="switchView('reports')" id="nav-reports" class="flex items-center px-4 py-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg group transition-all border-l-2 border-transparent hover:border-white/20">
+                    <i class="fa-solid fa-file-contract w-5 text-center text-sm"></i>
+                    <span class="ml-3 text-xs font-medium tracking-wide">Laporan Bulanan</span>
+                </a>
+            </nav>
+        </div>
+        
+        <!-- User Profile -->
+        <div class="p-4 border-t border-white/5 bg-gradient-to-t from-surface-100 to-transparent">
+            <div class="flex items-center p-2 rounded-xl border border-white/5 bg-surface-100/50 cursor-pointer hover:border-gold-500/30 transition-all">
+                <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?fit=crop&w=100&h=100&q=80" alt="HR Manager" class="w-9 h-9 rounded-full border border-gold-500/50 object-cover">
+                <div class="ml-3 flex-1 min-w-0">
+                    <p class="text-xs font-serif text-white truncate">Bpk. Richard</p>
+                    <p class="text-[9px] text-gold-500 truncate tracking-wider uppercase">HR Director</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full relative overflow-hidden w-full">
+        
+        <!-- Top Bar -->
+        <header class="h-16 glass-dark border-b border-white/5 flex items-center justify-between px-4 sm:px-6 z-10 sticky top-0 flex-shrink-0">
+            <div class="flex items-center gap-4">
+                <button id="toggleSidebarBtn" class="text-gray-400 hover:text-gold-500 focus:outline-none transition-colors flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/5">
+                    <i class="fa-solid fa-bars-staggered text-sm"></i>
+                </button>
+                <h2 class="hidden sm:block font-serif text-lg text-white tracking-wide" id="pageTitle">Ringkasan Eksekutif</h2>
+            </div>
+            
+            <div class="flex-1 max-w-md mx-4 relative group">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i class="fa-solid fa-search text-gray-500 text-xs group-focus-within:text-gold-500 transition-colors"></i>
+                </div>
+                <input type="text" id="searchInput" placeholder="Cari karyawan, NIK, atau divisi..." 
+                       class="w-full pl-9 pr-4 py-2 bg-surface-100 border border-white/10 rounded-full text-xs text-white focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500 transition-all shadow-inner placeholder-gray-600 font-light tracking-wide">
+            </div>
+            
+            <div class="flex items-center gap-4 border-l border-white/10 pl-4">
+                <div class="text-right hidden sm:block">
+                    <p class="text-[10px] font-medium text-gray-300 tracking-wide" id="currentDate">Senin, 24 Mei</p>
+                    <p class="text-[9px] text-gold-500 font-serif italic" id="currentTime">10:30 AM</p>
+                </div>
+                <button class="relative text-gray-400 hover:text-gold-500 transition-colors w-8 h-8 rounded-full hover:bg-white/5 flex items-center justify-center">
+                    <i class="fa-regular fa-bell text-sm"></i>
+                    <span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-gold-500 rounded-full shadow-gold-glow"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Container for Scrollable Content -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-surface-300 relative scroll-smooth">
+            <!-- Decorative light -->
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-gold-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+            <!-- DASHBOARD VIEW -->
+            <div id="dashboardView" class="animate-fade-in relative z-10 max-w-6xl mx-auto">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <!-- Stat 1 -->
+                    <div class="stat-card bg-surface-200 border border-white/5 rounded-xl p-5 flex flex-col justify-between">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-gold-500/10 border border-gold-500/20 flex items-center justify-center text-gold-500">
+                                <i class="fa-solid fa-users text-lg"></i>
+                            </div>
+                            <span class="bg-surface-100 text-gray-400 px-2 py-0.5 rounded text-[9px] font-mono border border-white/5">TOTAL</span>
+                        </div>
+                        <div>
+                            <h3 class="text-3xl font-serif font-bold text-white mb-1" id="statTotalEmp">0</h3>
+                            <p class="text-[10px] text-gray-400 uppercase tracking-widest">Total Karyawan</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Stat 2 -->
+                    <div class="stat-card bg-surface-200 border border-white/5 rounded-xl p-5 flex flex-col justify-between">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-[#25D366]/10 border border-[#25D366]/20 flex items-center justify-center text-[#25D366]">
+                                <i class="fa-solid fa-user-check text-lg"></i>
+                            </div>
+                            <span class="bg-surface-100 text-gray-400 px-2 py-0.5 rounded text-[9px] font-mono border border-white/5">HARI INI</span>
+                        </div>
+                        <div>
+                            <h3 class="text-3xl font-serif font-bold text-white mb-1" id="statPresent">0</h3>
+                            <p class="text-[10px] text-gray-400 uppercase tracking-widest">Hadir</p>
+                        </div>
+                    </div>
+
+                    <!-- Stat 3 -->
+                    <div class="stat-card bg-surface-200 border border-white/5 rounded-xl p-5 flex flex-col justify-between">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
+                                <i class="fa-solid fa-user-clock text-lg"></i>
+                            </div>
+                            <span class="bg-surface-100 text-gray-400 px-2 py-0.5 rounded text-[9px] font-mono border border-white/5">HARI INI</span>
+                        </div>
+                        <div>
+                            <h3 class="text-3xl font-serif font-bold text-white mb-1" id="statLeave">0</h3>
+                            <p class="text-[10px] text-gray-400 uppercase tracking-widest">Cuti / Izin / Alpa</p>
+                        </div>
+                    </div>
+
+                    <!-- Stat 4 -->
+                    <div class="stat-card bg-surface-200 border border-white/5 rounded-xl p-5 flex flex-col justify-between">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
+                                <i class="fa-solid fa-building-user text-lg"></i>
+                            </div>
+                            <span class="bg-surface-100 text-gray-400 px-2 py-0.5 rounded text-[9px] font-mono border border-white/5">AKTIF</span>
+                        </div>
+                        <div>
+                            <h3 class="text-3xl font-serif font-bold text-white mb-1">5</h3>
+                            <p class="text-[10px] text-gray-400 uppercase tracking-widest">Divisi Utama</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-surface-200 border border-white/5 rounded-xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                        <h3 class="text-xs font-bold text-white mb-4 uppercase tracking-widest border-b border-white/5 pb-3">Karyawan Berprestasi (Bulan Ini)</h3>
+                        <div class="space-y-4" id="topEmployeesList">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+                    <div class="bg-surface-200 border border-white/5 rounded-xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                        <h3 class="text-xs font-bold text-white mb-4 uppercase tracking-widest border-b border-white/5 pb-3">Aktivitas Kehadiran Terbaru</h3>
+                        <ul class="space-y-4" id="recentAttendanceActivity">
+                            <!-- Injected via JS -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EMPLOYEES VIEW -->
+            <div id="employeesView" class="hidden animate-fade-in relative z-10 max-w-7xl mx-auto">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <div class="flex gap-2 flex-wrap" id="deptFilterContainer">
+                        <!-- Filters -->
+                    </div>
+                    <button onclick="openAddEmployeeModal()" class="bg-gold-500 text-surface-400 font-bold uppercase tracking-widest py-2.5 px-5 text-xs rounded-lg shadow-gold-glow hover:bg-gold-400 transition-all transform active:scale-95 flex items-center gap-2 whitespace-nowrap">
+                        <i class="fa-solid fa-plus"></i> Tambah Karyawan
+                    </button>
+                </div>
+
+                <div class="bg-surface-200 border border-white/5 rounded-xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-surface-100/50">
+                                    <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">Profil</th>
+                                    <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">NIK & Cabang</th>
+                                    <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">Divisi & Jabatan</th>
+                                    <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">Kontak</th>
+                                    <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">Status</th>
+                                    <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="employeeTableBody" class="divide-y divide-white/5">
+                                <!-- Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ATTENDANCE VIEW -->
+            <div id="attendanceView" class="hidden animate-fade-in relative z-10 max-w-7xl mx-auto">
+                <!-- Absensi Stats Row -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-surface-200 border border-white/5 rounded-xl p-4 flex items-center gap-4">
+                        <div class="w-8 h-8 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400">
+                            <i class="fa-solid fa-user-check text-xs"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider">Hadir Tepat Waktu</p>
+                            <h4 class="text-base font-serif font-bold text-white mt-0.5" id="attendancePresentCount">0</h4>
+                        </div>
+                    </div>
+                    <div class="bg-surface-200 border border-white/5 rounded-xl p-4 flex items-center gap-4">
+                        <div class="w-8 h-8 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400">
+                            <i class="fa-solid fa-business-time text-xs"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider">Terlambat</p>
+                            <h4 class="text-base font-serif font-bold text-white mt-0.5" id="attendanceLateCount">0</h4>
+                        </div>
+                    </div>
+                    <div class="bg-surface-200 border border-white/5 rounded-xl p-4 flex items-center gap-4">
+                        <div class="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                            <i class="fa-solid fa-plane-departure text-xs"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider">Izin / Cuti</p>
+                            <h4 class="text-base font-serif font-bold text-white mt-0.5" id="attendanceLeaveCount">0</h4>
+                        </div>
+                    </div>
+                    <div class="bg-surface-200 border border-white/5 rounded-xl p-4 flex items-center gap-4">
+                        <div class="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                            <i class="fa-solid fa-user-slash text-xs"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-gray-500 uppercase tracking-wider">Mangkir / Alpa</p>
+                            <h4 class="text-base font-serif font-bold text-white mt-0.5" id="attendanceAbsentCount">0</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column: Clock Simulator -->
+                    <div class="bg-surface-200 border border-white/5 rounded-xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.3)] h-fit">
+                        <h3 class="text-xs font-bold text-white mb-4 uppercase tracking-widest border-b border-white/5 pb-3">Simulator Presensi</h3>
+                        
+                        <div class="text-center py-4 mb-4 border border-white/5 rounded-xl bg-surface-100/30">
+                            <p class="text-[9px] text-gold-500 uppercase tracking-widest mb-1 font-mono">Waktu Sistem Server</p>
+                            <h2 class="text-xl font-serif text-white tracking-widest font-semibold" id="presensiTime">10:30:00 AM</h2>
+                            <p class="text-[9px] text-gray-500 mt-0.5" id="presensiDate">Senin, 24 Mei 2026</p>
+                        </div>
+
+                        <form id="attendanceSimForm" class="space-y-4">
+                            <div>
+                                <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Pilih Karyawan VIP</label>
+                                <select id="simEmployeeId" required class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors">
+                                    <!-- Injected via JS -->
+                                </select>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <button type="button" onclick="actionPresensi('Masuk')" class="py-2.5 bg-gradient-to-r from-[#25D366]/20 to-[#25D366]/5 text-[#25D366] border border-[#25D366]/30 hover:border-[#25D366]/70 rounded-lg text-xs uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 transform active:scale-95">
+                                    <i class="fa-solid fa-right-to-bracket"></i> Clock In
+                                </button>
+                                <button type="button" onclick="actionPresensi('Pulang')" class="py-2.5 bg-gradient-to-r from-orange-500/20 to-orange-500/5 text-orange-400 border border-orange-500/30 hover:border-orange-500/70 rounded-lg text-xs uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 transform active:scale-95">
+                                    <i class="fa-solid fa-right-from-bracket"></i> Clock Out
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Right Column: Live Attendance Sheet -->
+                    <div class="lg:col-span-2 bg-surface-200 border border-white/5 rounded-xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 border-b border-white/5 pb-3">
+                            <div class="flex items-center gap-3">
+                                <h3 class="text-xs font-bold text-white uppercase tracking-widest">Lembar Kehadiran</h3>
+                                <input type="date" id="attendanceDateFilter" class="bg-surface-100 border border-white/10 rounded px-2 py-1 text-[10px] text-white focus:border-gold-500 focus:outline-none transition-colors filter invert hue-rotate-180 cursor-pointer">
+                            </div>
+                            <div class="flex gap-2 flex-wrap">
+                                <button onclick="openScannerModal()" class="px-3 py-1.5 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-purple-500 hover:text-white transition-all flex items-center gap-1.5">
+                                    <i class="fa-solid fa-camera text-[10px]"></i> Scan QR Kamera
+                                </button>
+                                <button onclick="openManualAbsenModal()" class="px-3 py-1.5 bg-gold-500 text-surface-400 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-gold-glow hover:bg-gold-400 transition-colors flex items-center gap-1.5">
+                                    <i class="fa-solid fa-user-pen text-[8px]"></i> Catat Manual
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse whitespace-nowrap">
+                                <thead>
+                                    <tr class="bg-surface-100/50">
+                                        <th class="py-2.5 px-4 text-[8px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">Karyawan</th>
+                                        <th class="py-2.5 px-4 text-[8px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">Shift</th>
+                                        <th class="py-2.5 px-4 text-[8px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">Jam Masuk</th>
+                                        <th class="py-2.5 px-4 text-[8px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">Jam Pulang</th>
+                                        <th class="py-2.5 px-4 text-[8px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">Status</th>
+                                        <th class="py-2.5 px-4 text-[8px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5 text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendanceTableBody" class="divide-y divide-white/5">
+                                    <!-- Injected via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SHIFTS VIEW -->
+            <div id="shiftsView" class="hidden animate-fade-in relative z-10 max-w-7xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-sm font-serif font-bold text-white tracking-wide uppercase">Manajemen Jadwal Shift</h3>
+                    <button onclick="openAddShiftModal()" class="bg-gold-500 text-surface-400 font-bold uppercase tracking-widest py-2 px-4 text-[10px] rounded-lg shadow-gold-glow hover:bg-gold-400 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Tambah Shift
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="shiftCardsContainer">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+            <!-- REPORTS VIEW -->
+            <div id="reportsView" class="hidden animate-fade-in relative z-10 max-w-7xl mx-auto">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <h3 class="text-sm font-serif font-bold text-white tracking-wide uppercase">Riwayat & Laporan Absensi</h3>
+                    <div class="flex items-center gap-3 bg-surface-200 p-2 rounded-lg border border-white/5">
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest">Pilih Bulan:</label>
+                        <input type="month" id="reportMonthFilter" class="bg-surface-100 border border-white/10 rounded px-2 py-1 text-xs text-white focus:border-gold-500 focus:outline-none transition-colors filter invert hue-rotate-180 cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="bg-surface-200 border border-white/5 rounded-xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse whitespace-nowrap">
+                            <thead>
+                                <tr class="bg-surface-100/50">
+                                    <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">Karyawan</th>
+                                    <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5 text-center">Hari Kerja</th>
+                                    <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5 text-center">Total Jam & Menit</th>
+                                    <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-yellow-500 font-medium border-b border-white/5 text-center">Terlambat</th>
+                                    <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-red-400 font-medium border-b border-white/5 text-center">Izin / Alpa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportsTableBody" class="divide-y divide-white/5">
+                                <!-- Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PAYROLL (SLIP GAJI) VIEW -->
+            <div id="payrollView" class="hidden animate-fade-in relative z-10 max-w-4xl mx-auto">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 no-print">
+                    <h3 class="text-sm font-serif font-bold text-white tracking-wide uppercase">Sistem Slip Gaji</h3>
+                    <div class="flex items-center gap-3 bg-surface-200 p-2 rounded-lg border border-white/5">
+                        <label class="text-[10px] text-gray-400 uppercase tracking-widest">Periode:</label>
+                        <input type="month" id="payrollMonthFilter" class="bg-surface-100 border border-white/10 rounded px-2 py-1 text-xs text-white focus:border-gold-500 focus:outline-none transition-colors filter invert hue-rotate-180 cursor-pointer">
+                        <select id="payrollEmpSelect" class="bg-surface-100 border border-white/10 rounded px-2 py-1 text-xs text-white focus:border-gold-500 focus:outline-none transition-colors ml-2 max-w-[150px]">
+                            <!-- Injected JS -->
+                        </select>
+                        <button onclick="generateSlipGaji()" class="px-3 py-1 bg-gold-500 text-surface-400 rounded text-[10px] font-bold uppercase hover:bg-gold-400 transition-colors ml-2">Generate</button>
+                    </div>
+                </div>
+
+                <!-- SLIP GAJI PRINTABLE AREA -->
+                <div id="slipGajiPrintArea" class="bg-white rounded-xl shadow-2xl overflow-hidden hidden relative">
+                    <!-- Decor pattern for premium look -->
+                    <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-gold-600 via-gold-300 to-gold-600 print-bg"></div>
+                    
+                    <div class="p-8 md:p-12">
+                        <!-- Header Slip -->
+                        <div class="flex justify-between items-start border-b-2 border-gray-200 pb-6 mb-6 print-border-dark">
+                            <div class="flex items-center">
+                                <div class="text-gold-600 text-3xl mr-3 print-text-dark">
+                                    <i class="fa-solid fa-gem"></i>
+                                </div>
+                                <div>
+                                    <h1 class="font-serif font-bold text-2xl text-gray-900 tracking-widest uppercase print-text-dark">Luxe<span class="text-gold-600">HR</span></h1>
+                                    <p class="text-xs text-gray-500 uppercase tracking-widest print-text-dark">Official Payslip Document</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <h2 class="text-xl font-bold text-gray-800 uppercase tracking-widest print-text-dark">SLIP GAJI</h2>
+                                <p class="text-sm text-gray-500 font-mono mt-1 print-text-dark" id="slipPeriodeText">Periode: Mei 2026</p>
+                            </div>
+                        </div>
+
+                        <!-- Info Karyawan -->
+                        <div class="grid grid-cols-2 gap-6 mb-8">
+                            <div>
+                                <p class="text-[10px] uppercase tracking-widest text-gray-400 mb-1 print-text-dark">Nama Karyawan</p>
+                                <p class="text-sm font-bold text-gray-800 print-text-dark" id="slipEmpName">-</p>
+                                
+                                <p class="text-[10px] uppercase tracking-widest text-gray-400 mt-3 mb-1 print-text-dark">Nomor Induk Karyawan</p>
+                                <p class="text-sm font-mono text-gray-800 print-text-dark" id="slipEmpNik">-</p>
+
+                                <p class="text-[10px] uppercase tracking-widest text-gray-400 mt-3 mb-1 print-text-dark">Cabang / Divisi</p>
+                                <p class="text-sm text-gray-800 print-text-dark" id="slipEmpCabang">-</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[10px] uppercase tracking-widest text-gray-400 mb-1 print-text-dark">Jabatan</p>
+                                <p class="text-sm font-bold text-gray-800 print-text-dark" id="slipEmpPos">-</p>
+
+                                <p class="text-[10px] uppercase tracking-widest text-gray-400 mt-3 mb-1 print-text-dark">Nomor Rekening</p>
+                                <p class="text-sm font-mono text-gray-800 print-text-dark" id="slipEmpBank">-</p>
+                            </div>
+                        </div>
+
+                        <!-- Rincian Finansial -->
+                        <div class="mb-8">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b-2 border-gray-800 print-border-dark">
+                                        <th class="py-2 text-xs uppercase tracking-widest text-gray-800 print-text-dark">Deskripsi Pendapatan & Potongan</th>
+                                        <th class="py-2 text-xs uppercase tracking-widest text-gray-800 text-right print-text-dark">Jumlah (IDR)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200 text-gray-700 print-border-dark print-text-dark">
+                                    <tr>
+                                        <td class="py-3 text-sm font-semibold">Gaji Pokok</td>
+                                        <td class="py-3 text-sm font-mono text-right" id="slipBaseSalary">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-3 text-sm">
+                                            Tunjangan Kehadiran <br>
+                                            <span class="text-[10px] text-gray-500 italic print-text-dark" id="slipHadirKet">(0 Hari Hadir x Rp 50.000)</span>
+                                        </td>
+                                        <td class="py-3 text-sm font-mono text-right text-green-600 print-text-dark" id="slipTunjanganHadir">0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-3 text-sm">
+                                            Potongan Keterlambatan <br>
+                                            <span class="text-[10px] text-gray-500 italic print-text-dark" id="slipTelatKet">(0 Hari Terlambat x Rp 25.000)</span>
+                                        </td>
+                                        <td class="py-3 text-sm font-mono text-right text-red-500 print-text-dark" id="slipPotonganTelat">-0</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-3 text-sm">
+                                            Potongan Mangkir / Alpa <br>
+                                            <span class="text-[10px] text-gray-500 italic print-text-dark" id="slipAlpaKet">(0 Hari Alpa x Rp 100.000)</span>
+                                        </td>
+                                        <td class="py-3 text-sm font-mono text-right text-red-500 print-text-dark" id="slipPotonganAlpa">-0</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="border-t-2 border-gray-800 print-border-dark">
+                                        <td class="py-4 text-base font-bold text-gray-900 uppercase tracking-widest print-text-dark">Total Take Home Pay</td>
+                                        <td class="py-4 text-xl font-mono font-bold text-gray-900 text-right print-text-dark" id="slipTotalPay">Rp 0</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <!-- Footer / Signatures -->
+                        <div class="grid grid-cols-2 gap-6 mt-12 pt-8 border-t border-gray-200 print-border-dark">
+                            <div class="text-center">
+                                <p class="text-xs text-gray-500 mb-16 print-text-dark">Diterima Oleh,</p>
+                                <p class="text-sm font-bold text-gray-800 print-text-dark border-b border-gray-400 inline-block px-4 pb-1" id="slipSignEmp">Nama Karyawan</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-xs text-gray-500 mb-16 print-text-dark">Disetujui Oleh (HR/Finance),</p>
+                                <p class="text-sm font-bold text-gray-800 print-text-dark border-b border-gray-400 inline-block px-4 pb-1">Bpk. Richard</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end no-print hidden" id="slipActionBtns">
+                    <button onclick="window.print()" class="px-6 py-2.5 bg-surface-100 text-white border border-white/20 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-print"></i> Cetak / Simpan PDF
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Add/Edit Employee Modal -->
+    <div id="employeeModal" class="modal-transition fixed inset-0 z-[60] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md cursor-pointer" id="modalBackdrop"></div>
+        <div class="bg-surface-200 border border-white/10 rounded-xl shadow-2xl w-full max-w-2xl mx-4 relative z-10 transform scale-95 opacity-0 transition-all duration-300 flex flex-col max-h-[90vh]" id="modalContent">
+            
+            <div class="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-surface-100/50 rounded-t-xl">
+                <h3 class="text-sm font-serif font-bold text-gold-500 tracking-wider uppercase" id="modalTitle">Tambah Karyawan VIP</h3>
+                <button id="closeEmployeeModal" class="text-gray-500 hover:text-white transition-colors w-7 h-7 rounded-full hover:bg-white/5 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto hide-scrollbar">
+                <form id="employeeForm" class="space-y-5">
+                    <div class="flex flex-col sm:flex-row gap-5">
+                        <div class="w-24 h-24 rounded-xl bg-surface-100 border border-white/10 border-dashed flex flex-col items-center justify-center text-gray-500 flex-shrink-0 cursor-pointer hover:border-gold-500/50 hover:text-gold-400 transition-colors mx-auto sm:mx-0">
+                            <i class="fa-solid fa-camera mb-1 text-lg"></i>
+                            <span class="text-[9px] uppercase tracking-widest">Foto</span>
+                        </div>
+                        <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Nama Lengkap</label>
+                                <input type="text" id="empName" required class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Nomor Induk Karyawan (NIK)</label>
+                                <input type="text" id="empNik" required class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs font-mono text-white focus:border-gold-500 focus:outline-none transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Email Pribadi</label>
+                                <input type="email" id="empEmail" required class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">No. Handphone / WA</label>
+                                <input type="text" id="empPhone" required placeholder="Contoh: 08123456789" class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs font-mono text-white focus:border-gold-500 focus:outline-none transition-colors">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-white/5">
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Divisi</label>
+                            <select id="empDept" required class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors">
+                                <option value="Front Office">Front Office</option>
+                                <option value="Food & Beverage">Food & Beverage</option>
+                                <option value="Housekeeping">Housekeeping</option>
+                                <option value="Manajemen">Manajemen</option>
+                                <option value="Keamanan">Keamanan</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Jabatan / Posisi</label>
+                            <input type="text" id="empPosition" required placeholder="Contoh: Head Concierge" class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Cabang Penempatan</label>
+                            <select id="empCabang" required class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors">
+                                <option value="LuxeHR Pusat (Jakarta)">LuxeHR Pusat (Jakarta)</option>
+                                <option value="Cabang Bali">Cabang Bali</option>
+                                <option value="Cabang Surabaya">Cabang Surabaya</option>
+                                <option value="Cabang Batam">Cabang Batam</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Jadwal Shift Default</label>
+                            <select id="empShift" required class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors">
+                                <!-- Injected via JS -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Tanggal Bergabung</label>
+                            <input type="date" id="empDate" required class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors filter invert hue-rotate-180">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Gaji Pokok (IDR)</label>
+                            <input type="number" id="empSalary" required placeholder="Misal: 15000000" class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs font-mono text-white focus:border-gold-500 focus:outline-none transition-colors">
+                        </div>
+
+                        <div class="sm:col-span-2 lg:col-span-1">
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Nomor Rekening & Bank</label>
+                            <input type="text" id="empBank" required placeholder="Contoh: BCA 1234567890" class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">URL Scan KTP / Identitas</label>
+                            <input type="text" id="empKtp" placeholder="https://link-foto-ktp-karyawan.com/ktp.jpg" class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs font-mono text-white focus:border-gold-500 focus:outline-none transition-colors text-gray-400">
+                        </div>
+                    </div>
+                    
+                    <div class="pt-5 border-t border-white/5 flex justify-end gap-3 mt-2">
+                        <button type="button" id="cancelFormBtn" class="px-6 py-2.5 border border-white/10 text-gray-400 rounded-lg text-xs uppercase tracking-widest font-medium hover:bg-white/5 transition-colors">Batal</button>
+                        <button type="submit" class="px-6 py-2.5 bg-gold-500 text-surface-400 rounded-lg text-xs uppercase tracking-widest font-bold shadow-gold-glow hover:bg-gold-400 transition-all">Simpan Data</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Generator Modal -->
+    <div id="qrModal" class="modal-transition fixed inset-0 z-[70] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-sm cursor-pointer" onclick="closeQrModal()"></div>
+        <div class="bg-surface-200 border border-purple-500/30 rounded-2xl shadow-[0_0_50px_rgba(168,85,247,0.2)] p-8 max-w-sm w-full mx-4 relative z-10 flex flex-col items-center transform scale-95 opacity-0 transition-all duration-300" id="qrModalContent">
+            <h3 class="text-white font-serif font-bold text-lg text-center tracking-widest uppercase mb-1">ID Card Digital</h3>
+            <p id="qrEmpName" class="text-gold-500 text-xs mb-6 text-center font-medium">Employee Name</p>
+            
+            <div class="bg-white p-4 rounded-xl shadow-inner mb-6 relative">
+                <!-- QR Code image generated via external API -->
+                <img id="qrImage" src="" alt="QR Code" class="w-48 h-48 object-contain">
+                <div class="absolute inset-0 border-2 border-purple-500/50 rounded-xl pointer-events-none mix-blend-overlay"></div>
+            </div>
+            
+            <p id="qrEmpNik" class="text-white font-mono text-lg tracking-[0.2em] mb-6">NIK-XXXX</p>
+            <button onclick="closeQrModal()" class="w-full px-4 py-2.5 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-xs uppercase tracking-widest">Tutup</button>
+        </div>
+    </div>
+
+    <!-- Scanner Camera Modal -->
+    <div id="scannerModal" class="modal-transition fixed inset-0 z-[70] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-xl cursor-pointer" onclick="closeScannerModal()"></div>
+        <div class="w-full max-w-md mx-4 relative z-10 transform scale-95 opacity-0 transition-all duration-300 flex flex-col items-center bg-surface-200 p-8 rounded-2xl border border-white/10 shadow-2xl" id="scannerModalContent">
+            
+            <h3 class="text-lg font-serif font-bold text-white tracking-widest uppercase mb-2">Scanner Absensi</h3>
+            <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-4 text-center" id="scannerSubtitle">Klik tombol aktifkan kamera untuk meminta izin browser.</p>
+
+            <!-- Camera Permission Gate: penting agar browser menerima request kamera dari klik user -->
+            <div id="cameraPermissionPanel" class="w-full max-w-[320px] mb-5 rounded-xl border border-purple-500/30 bg-purple-500/10 p-4 text-center">
+                <div class="w-12 h-12 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 flex items-center justify-center mx-auto mb-3">
+                    <i class="fa-solid fa-camera text-lg"></i>
+                </div>
+                <p class="text-white text-xs font-bold uppercase tracking-widest mb-2">Izin Kamera Diperlukan</p>
+                <p id="cameraPermissionStatus" class="text-[10px] text-gray-400 leading-relaxed mb-4">
+                    Tekan tombol di bawah, lalu pilih <span class="text-purple-300 font-semibold">Allow / Izinkan</span> pada popup browser.
+                </p>
+                <button id="startCameraBtn" type="button" onclick="requestCameraAccessAndStart()" class="w-full py-2.5 rounded-lg bg-purple-500 text-white text-[10px] font-bold uppercase tracking-widest hover:bg-purple-400 transition-all shadow-[0_0_20px_rgba(168,85,247,0.25)] flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-video"></i> Aktifkan Kamera
+                </button>
+                <p class="mt-3 text-[9px] text-gray-500 leading-relaxed">
+                    Catatan: akses kamera paling stabil jika halaman dibuka melalui HTTPS atau localhost.
+                </p>
+            </div>
+            
+            <!-- Camera Container -->
+            <div id="reader" class="hidden w-full max-w-[300px] overflow-hidden rounded-xl mb-6 border-2 border-dashed border-purple-500/50 bg-black min-h-[250px]"></div>
+
+            <!-- Success Data Container -->
+            <div id="scannerSuccess" class="hidden w-full flex-col items-center justify-center mb-6 animate-fade-in">
+                <div class="w-24 h-24 rounded-full border-4 border-[#25D366] p-1 mb-4 shadow-[0_0_30px_rgba(37,211,102,0.3)] transition-colors duration-300" id="scanSuccessBorder">
+                    <img id="scanSuccessImage" src="" class="w-full h-full rounded-full object-cover">
+                </div>
+                <h3 id="scanSuccessName" class="text-xl font-serif font-bold text-white mb-1">Name</h3>
+                <p id="scanSuccessDept" class="text-[10px] text-gray-400 uppercase tracking-widest mb-4">Department</p>
+                <div class="px-6 py-2 bg-surface-100 rounded-full border border-white/10 mb-2">
+                    <p id="scanSuccessAction" class="text-xs font-bold tracking-widest uppercase">CLOCK IN SUCCESS</p>
+                </div>
+                <p id="scanSuccessTime" class="text-sm font-mono font-bold text-white">08:00 AM</p>
+            </div>
+
+            <!-- Hidden input for manual/fallback testing -->
+            <form id="scannerForm" class="w-full relative">
+                <i class="fa-solid fa-keyboard absolute left-4 top-3 text-gray-500 text-xs"></i>
+                <input type="text" id="scannerInput" autocomplete="off" placeholder="Input NIK Manual (Bila Kamera Error)..." class="w-full pl-10 pr-4 py-2.5 bg-surface-100/80 border border-white/10 rounded-xl text-xs font-mono text-center text-white focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all shadow-inner placeholder-gray-600">
+                <button type="submit" class="hidden">Submit</button>
+            </form>
+            <button onclick="closeScannerModal()" class="mt-6 px-6 py-2 text-[10px] uppercase tracking-widest text-gray-400 hover:text-white transition-colors bg-white/5 rounded-lg w-full">Tutup Kamera</button>
+        </div>
+    </div>
+
+    <!-- Manual Attendance Entry Modal -->
+    <div id="manualAbsenModal" class="modal-transition fixed inset-0 z-[60] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md cursor-pointer" id="manualAbsenBackdrop" onclick="closeManualAbsenModal()"></div>
+        <div class="bg-surface-200 border border-white/10 rounded-xl shadow-2xl w-full max-w-sm mx-4 relative z-10 transform scale-95 opacity-0 transition-all duration-300 flex flex-col" id="manualAbsenContent">
+            <div class="px-5 py-4 border-b border-white/5 flex justify-between items-center bg-surface-100/50 rounded-t-xl">
+                <h3 class="text-xs font-serif font-bold text-gold-500 tracking-wider uppercase">Pencatatan Kehadiran Manual</h3>
+                <button onclick="closeManualAbsenModal()" class="text-gray-500 hover:text-white transition-colors w-6 h-6 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            <div class="p-5">
+                <form id="manualAbsenForm" class="space-y-4">
+                    <div>
+                        <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Tanggal</label>
+                        <input type="date" id="manualDate" required class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors filter invert hue-rotate-180">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Karyawan</label>
+                        <select id="manualEmpId" required class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors">
+                            <!-- Injected via JS -->
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Jam Masuk</label>
+                            <input type="time" id="manualClockIn" class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors filter invert hue-rotate-180">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Jam Pulang</label>
+                            <input type="time" id="manualClockOut" class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors filter invert hue-rotate-180">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Status Presensi</label>
+                        <select id="manualStatus" class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors">
+                            <option value="Hadir">Hadir Tepat Waktu</option>
+                            <option value="Terlambat">Terlambat</option>
+                            <option value="Izin">Izin / Cuti</option>
+                            <option value="Alpa">Mangkir / Alpa</option>
+                        </select>
+                    </div>
+                    <div class="pt-4 border-t border-white/5 flex justify-end gap-3">
+                        <button type="button" onclick="closeManualAbsenModal()" class="px-4 py-2 border border-white/10 text-gray-400 rounded-lg text-[10px] uppercase tracking-widest font-medium hover:bg-white/5 transition-colors">Batal</button>
+                        <button type="submit" class="px-4 py-2 bg-gold-500 text-surface-400 rounded-lg text-[10px] uppercase tracking-widest font-bold shadow-gold-glow hover:bg-gold-400 transition-all">Simpan Absen</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Shift Modal -->
+    <div id="shiftModal" class="modal-transition fixed inset-0 z-[60] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md cursor-pointer" onclick="closeAddShiftModal()"></div>
+        <div class="bg-surface-200 border border-white/10 rounded-xl shadow-2xl w-full max-w-sm mx-4 relative z-10 transform scale-95 opacity-0 transition-all duration-300 flex flex-col" id="shiftModalContent">
+            <div class="px-5 py-4 border-b border-white/5 flex justify-between items-center bg-surface-100/50 rounded-t-xl">
+                <h3 class="text-xs font-serif font-bold text-gold-500 tracking-wider uppercase" id="shiftModalTitle">Tambah Jadwal Shift</h3>
+                <button onclick="closeAddShiftModal()" class="text-gray-500 hover:text-white transition-colors w-6 h-6 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            <div class="p-5">
+                <form id="shiftForm" class="space-y-4">
+                    <div>
+                        <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Nama Shift</label>
+                        <input type="text" id="newShiftName" required placeholder="Contoh: Middle Shift" class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Jam Mulai</label>
+                            <input type="time" id="newShiftStart" required class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors filter invert hue-rotate-180">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Jam Selesai</label>
+                            <input type="time" id="newShiftEnd" required class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors filter invert hue-rotate-180">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Tema Warna</label>
+                        <select id="newShiftTheme" class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors">
+                            <option value="bg-blue-500/10 text-blue-400 border-blue-500/30|fa-sun">Biru (Pagi)</option>
+                            <option value="bg-orange-500/10 text-orange-400 border-orange-500/30|fa-cloud-sun">Oranye (Sore)</option>
+                            <option value="bg-indigo-500/10 text-indigo-400 border-indigo-500/30|fa-moon">Indigo (Malam)</option>
+                            <option value="bg-green-500/10 text-green-400 border-green-500/30|fa-leaf">Hijau (Fleksibel)</option>
+                            <option value="bg-purple-500/10 text-purple-400 border-purple-500/30|fa-star">Ungu (Spesial)</option>
+                        </select>
+                    </div>
+                    <div class="pt-4 border-t border-white/5 flex justify-end gap-3">
+                        <button type="button" onclick="closeAddShiftModal()" class="px-4 py-2 border border-white/10 text-gray-400 rounded-lg text-[10px] uppercase tracking-widest font-medium hover:bg-white/5 transition-colors">Batal</button>
+                        <button type="submit" class="px-4 py-2 bg-gold-500 text-surface-400 rounded-lg text-[10px] uppercase tracking-widest font-bold shadow-gold-glow hover:bg-gold-400 transition-all">Simpan Shift</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="modal-transition fixed inset-0 z-[80] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="confirmBackdrop"></div>
+        <div class="bg-surface-200 border border-white/10 rounded-xl shadow-2xl p-6 max-w-xs w-full mx-4 relative z-10 text-center transform scale-95 opacity-0 transition-all duration-300" id="confirmInner">
+            <div class="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/30 text-red-500 flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+            </div>
+            <h3 class="text-white font-serif text-lg mb-2">Hapus Data?</h3>
+            <p id="confirmMessage" class="text-gray-400 text-[11px] mb-6 leading-relaxed">Data ini akan dihapus secara permanen dari sistem.</p>
+            <div class="flex gap-3 justify-center">
+                <button id="btnCancelConfirm" class="flex-1 px-4 py-2.5 rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 transition-colors text-xs uppercase tracking-widest font-medium">Batal</button>
+                <button id="btnProceedConfirm" class="flex-1 px-4 py-2.5 rounded-lg bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white transition-colors text-xs uppercase tracking-widest font-bold">Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-surface-100 border border-gold-500/30 text-white px-5 py-2.5 rounded-full shadow-2xl z-[90] transition-all duration-500 opacity-0 -translate-y-full flex items-center gap-3">
+        <i class="fa-solid fa-check text-gold-500 text-sm border border-gold-500 rounded-full p-0.5"></i>
+        <span id="toastMessage" class="font-medium tracking-wide text-xs">Berhasil.</span>
+    </div>
+
+    <script>
+        // --- DATA & STATE ---
+        const initialShifts = [
+            { id: 'SH-1', name: 'Morning Shift', start: '08:00', end: '17:00', badge: 'bg-blue-500/10 text-blue-400 border-blue-500/30', icon: 'fa-sun' },
+            { id: 'SH-2', name: 'Evening Shift', start: '14:00', end: '23:00', badge: 'bg-orange-500/10 text-orange-400 border-orange-500/30', icon: 'fa-cloud-sun' },
+            { id: 'SH-3', name: 'Night Shift', start: '22:00', end: '07:00', badge: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30', icon: 'fa-moon' }
+        ];
+
+        // Added extended fields for enterprise features
+        const initialEmployees = [
+            { id: 1, name: 'Alexander Sterling', nik: 'LX-1001', dept: 'Front Office', shiftId: 'SH-1', position: 'Head Concierge', email: 'alex@luxe.com', phone: '081234567890', cabang: 'LuxeHR Pusat (Jakarta)', salary: 12500000, bank: 'BCA 1234567890', ktp: '', date: '2020-03-15', status: 'Aktif', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150&h=150&q=80', perf: 98 },
+            { id: 2, name: 'Isabella Rossi', nik: 'LX-1042', dept: 'Food & Beverage', shiftId: 'SH-2', position: 'Executive Chef', email: 'isabella@luxe.com', phone: '081198765432', cabang: 'Cabang Bali', salary: 18000000, bank: 'Mandiri 0987654321', ktp: '', date: '2021-06-10', status: 'Aktif', image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?fit=crop&w=150&h=150&q=80', perf: 95 },
+            { id: 3, name: 'Marcus Chen', nik: 'LX-1088', dept: 'Manajemen', shiftId: 'SH-1', position: 'General Manager', email: 'marcus@luxe.com', phone: '081345678901', cabang: 'LuxeHR Pusat (Jakarta)', salary: 25000000, bank: 'BNI 1122334455', ktp: '', date: '2019-01-20', status: 'Aktif', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fit=crop&w=150&h=150&q=80', perf: 99 },
+            { id: 4, name: 'Elena Rodriguez', nik: 'LX-1102', dept: 'Front Office', shiftId: 'SH-1', position: 'Guest Relations', email: 'elena@luxe.com', phone: '081299887766', cabang: 'Cabang Batam', salary: 8500000, bank: 'BCA 5544332211', ktp: '', date: '2022-02-14', status: 'Cuti', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?fit=crop&w=150&h=150&q=80', perf: 88 },
+            { id: 5, name: 'Jean-Paul', nik: 'LX-1120', dept: 'Food & Beverage', shiftId: 'SH-2', position: 'Sommelier', email: 'jp@luxe.com', phone: '085611223344', cabang: 'Cabang Bali', salary: 11000000, bank: 'CIMB 9988776655', ktp: '', date: '2023-08-01', status: 'Aktif', image: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?fit=crop&w=150&h=150&q=80', perf: 92 },
+            { id: 6, name: 'Sarah Jenkins', nik: 'LX-1155', dept: 'Housekeeping', shiftId: 'SH-3', position: 'Housekeeping Dir.', email: 'sarah@luxe.com', phone: '081555666777', cabang: 'Cabang Surabaya', salary: 10000000, bank: 'BSI 3344556677', ktp: '', date: '2021-11-30', status: 'Aktif', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?fit=crop&w=150&h=150&q=80', perf: 94 },
+        ];
+
+        // Seed default attendance (includes Snapshot concept)
+        const initialAttendance = [
+            { id: 1, empId: 1, clockIn: '08:45 AM', clockOut: '05:00 PM', status: 'Hadir', date: '2026-05-24', shiftName: 'Morning Shift', shiftBadge: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
+            { id: 2, empId: 2, clockIn: '09:12 AM', clockOut: '05:05 PM', status: 'Terlambat', date: '2026-05-24', shiftName: 'Evening Shift', shiftBadge: 'bg-orange-500/10 text-orange-400 border-orange-500/30' },
+            { id: 3, empId: 3, clockIn: '08:50 AM', clockOut: '06:00 PM', status: 'Hadir', date: '2026-05-24', shiftName: 'Morning Shift', shiftBadge: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
+            { id: 4, empId: 4, clockIn: '--:--', clockOut: '--:--', status: 'Izin', date: '2026-05-24', shiftName: 'Morning Shift', shiftBadge: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
+            { id: 5, empId: 5, clockIn: '08:30 AM', clockOut: '05:15 PM', status: 'Hadir', date: '2026-05-24', shiftName: 'Evening Shift', shiftBadge: 'bg-orange-500/10 text-orange-400 border-orange-500/30' }
+        ];
+
+        const DEFAULT_AVATAR = 'https://ui-avatars.com/api/?name=Employee&background=1A1A1A&color=D4AF37&size=150';
+        const APP_STORAGE = {
+            employees: 'luxehr_employees',
+            attendance: 'luxehr_attendance',
+            shifts: 'luxehr_shifts'
+        };
+
+        const deepClone = (value) => JSON.parse(JSON.stringify(value));
+
+        const safeReadStorage = (key, fallback) => {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) {
+                    const cloned = deepClone(fallback);
+                    localStorage.setItem(key, JSON.stringify(cloned));
+                    return cloned;
+                }
+                const parsed = JSON.parse(raw);
+                if (!Array.isArray(parsed)) throw new Error('Stored data is not an array');
+                return parsed;
+            } catch (error) {
+                console.warn(`Storage ${key} rusak. Data direset ke default.`, error);
+                const cloned = deepClone(fallback);
+                localStorage.setItem(key, JSON.stringify(cloned));
+                return cloned;
+            }
+        };
+
+        const saveStorage = (key, value) => {
+            localStorage.setItem(key, JSON.stringify(value));
+        };
+
+        let employees = safeReadStorage(APP_STORAGE.employees, initialEmployees);
+        let attendance = safeReadStorage(APP_STORAGE.attendance, initialAttendance);
+        let shifts = safeReadStorage(APP_STORAGE.shifts, initialShifts);
+
+        const departments = ['Semua Divisi', 'Front Office', 'Food & Beverage', 'Housekeeping', 'Manajemen', 'Keamanan'];
+        let currentFilter = 'Semua Divisi';
+        let currentSearch = '';
+        let confirmDeleteCallback = null;
+        let isSidebarOpen = false;
+
+        // --- STREAMING_CHUNK:Mapping DOM Elements... ---
+        const sidebar = document.getElementById('leftSidebar');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+        const views = {
+            'dashboard': document.getElementById('dashboardView'),
+            'employees': document.getElementById('employeesView'),
+            'attendance': document.getElementById('attendanceView'),
+            'shifts': document.getElementById('shiftsView'),
+            'reports': document.getElementById('reportsView'),
+            'payroll': document.getElementById('payrollView')
+        };
+        const navs = {
+            'dashboard': document.getElementById('nav-dashboard'),
+            'employees': document.getElementById('nav-employees'),
+            'attendance': document.getElementById('nav-attendance'),
+            'shifts': document.getElementById('nav-shifts'),
+            'reports': document.getElementById('nav-reports'),
+            'payroll': document.getElementById('nav-payroll')
+        };
+        const pageTitle = document.getElementById('pageTitle');
+        const empTable = document.getElementById('employeeTableBody');
+        const searchInput = document.getElementById('searchInput');
+        const deptContainer = document.getElementById('deptFilterContainer');
+        
+        // Modals
+        const empModal = document.getElementById('employeeModal');
+        const empForm = document.getElementById('employeeForm');
+        const confirmModal = document.getElementById('confirmModal');
+        const manualAbsenModal = document.getElementById('manualAbsenModal');
+        const manualAbsenForm = document.getElementById('manualAbsenForm');
+        
+        // Form & Filters
+        const shiftModal = document.getElementById('shiftModal');
+        const shiftForm = document.getElementById('shiftForm');
+        const attendanceDateFilter = document.getElementById('attendanceDateFilter');
+        const reportMonthFilter = document.getElementById('reportMonthFilter');
+
+        // Number Formatter
+        const formatRupiah = (number) => {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(number) || 0);
+        };
+
+        const asLowerText = (value) => String(value ?? '').toLowerCase();
+        const safeImage = (url) => url || DEFAULT_AVATAR;
+
+        const getActiveDepartments = () => {
+            const uniqueDepartments = [...new Set(employees.map(e => e.dept).filter(Boolean))].sort();
+            return ['Semua Divisi', ...uniqueDepartments];
+        };
+
+        const getShiftById = (shiftId) => shifts.find(s => s.id === shiftId) || shifts[0] || initialShifts[0];
+
+        // --- STREAMING_CHUNK:Defining core navigation and clock functionality... ---
+        const getFormattedTodayDate = () => {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        const updateDateTime = () => {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: true });
+            
+            document.getElementById('currentDate').textContent = dateStr;
+            document.getElementById('currentTime').textContent = timeStr;
+
+            const simTimeEl = document.getElementById('presensiTime');
+            const simDateEl = document.getElementById('presensiDate');
+            if (simTimeEl) simTimeEl.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+            if (simDateEl) simDateEl.textContent = dateStr;
+        };
+
+        const showToast = (message, type = 'success') => {
+            const toast = document.getElementById('toast');
+            const icon = toast.querySelector('i');
+            document.getElementById('toastMessage').textContent = message;
+            
+            if(type === 'error') {
+                icon.className = 'fa-solid fa-exclamation text-red-400 border border-red-400 rounded-full p-1 w-6 h-6 flex items-center justify-center';
+                toast.classList.replace('border-gold-500/30', 'border-red-500/30');
+            } else {
+                icon.className = 'fa-solid fa-check text-gold-500 border border-gold-500 rounded-full p-1 w-6 h-6 flex items-center justify-center';
+                toast.classList.replace('border-red-500/30', 'border-gold-500/30');
+            }
+
+            toast.classList.remove('opacity-0', '-translate-y-full');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', '-translate-y-full');
+            }, 3000);
+        };
+
+        const switchView = (viewName) => {
+            if (!views[viewName] || !navs[viewName]) return;
+            Object.values(views).forEach(v => v.classList.add('hidden'));
+            Object.values(navs).forEach(n => {
+                n.classList.remove('bg-gradient-to-r', 'from-gold-500/10', 'to-transparent', 'border-gold-500', 'text-gold-500');
+                n.classList.add('border-transparent', 'text-gray-400');
+            });
+
+            views[viewName].classList.remove('hidden');
+            navs[viewName].classList.add('bg-gradient-to-r', 'from-gold-500/10', 'to-transparent', 'border-gold-500', 'text-gold-500');
+            navs[viewName].classList.remove('border-transparent', 'text-gray-400');
+
+            if (viewName === 'dashboard') {
+                pageTitle.textContent = 'Ringkasan Eksekutif';
+                updateDashboard();
+            } else if (viewName === 'employees') {
+                pageTitle.textContent = 'Data Karyawan';
+                renderEmployees();
+            } else if (viewName === 'attendance') {
+                pageTitle.textContent = 'Kehadiran Karyawan';
+                renderAttendanceView();
+            } else if (viewName === 'shifts') {
+                pageTitle.textContent = 'Manajemen Jadwal Shift';
+                renderShifts();
+            } else if (viewName === 'reports') {
+                pageTitle.textContent = 'Laporan Bulanan';
+                renderReports();
+            } else if (viewName === 'payroll') {
+                pageTitle.textContent = 'Slip Gaji (Payroll)';
+                setupPayrollView();
+            }
+
+            if(isSidebarOpen) toggleSidebar(); 
+        };
+
+        const toggleSidebar = () => {
+            isSidebarOpen = !isSidebarOpen;
+            if (isSidebarOpen) {
+                sidebarBackdrop.classList.remove('hidden');
+                setTimeout(() => sidebarBackdrop.classList.replace('opacity-0', 'opacity-100'), 10);
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+            } else {
+                sidebarBackdrop.classList.replace('opacity-100', 'opacity-0');
+                sidebar.classList.remove('translate-x-0');
+                sidebar.classList.add('-translate-x-full');
+                setTimeout(() => sidebarBackdrop.classList.add('hidden'), 300);
+            }
+        };
+
+        // --- STREAMING_CHUNK:Populating dashboard logic... ---
+        const updateDashboard = () => {
+            const today = getFormattedTodayDate();
+            const todayAttendance = attendance.filter(a => a.date === today);
+
+            document.getElementById('statTotalEmp').textContent = employees.length;
+            
+            const countPresent = todayAttendance.filter(a => a.status === 'Hadir' || a.status === 'Terlambat').length;
+            const countLeaveOrAbsent = employees.length - countPresent;
+
+            document.getElementById('statPresent').textContent = countPresent;
+            document.getElementById('statLeave').textContent = countLeaveOrAbsent;
+
+            const topEmployeesList = document.getElementById('topEmployeesList');
+            topEmployeesList.innerHTML = '';
+            
+            const topEmps = [...employees].sort((a, b) => b.perf - a.perf).slice(0, 3);
+            topEmps.forEach((emp, i) => {
+                const colors = ['text-yellow-400', 'text-gray-300', 'text-amber-600'];
+                topEmployeesList.innerHTML += `
+                    <div class="flex items-center gap-4 bg-surface-100/50 p-3 rounded-lg border border-white/5 hover:border-gold-500/30 transition-colors">
+                        <div class="text-lg font-bold w-6 text-center ${colors[i]}"><i class="fa-solid fa-trophy"></i></div>
+                        <img src="${safeImage(emp.image)}" class="w-10 h-10 rounded-full border border-white/10 object-cover">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-xs font-serif text-white truncate">${emp.name}</h4>
+                            <p class="text-[9px] text-gray-500 truncate">${emp.position}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-gold-500 font-bold text-xs">${emp.perf} pts</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const recentActivityList = document.getElementById('recentAttendanceActivity');
+            recentActivityList.innerHTML = '';
+            
+            const latestLogs = [...attendance].slice(-3).reverse();
+            if(latestLogs.length === 0) {
+                recentActivityList.innerHTML = `<li class="text-gray-500 italic text-[10px] text-center py-6">Belum ada aktivitas presensi terbaru.</li>`;
+            } else {
+                latestLogs.forEach(log => {
+                    const emp = employees.find(e => e.id == log.empId);
+                    if(emp) {
+                        let activityText = '';
+                        let colorClass = 'bg-gold-500 shadow-gold-glow';
+                        if(log.status === 'Hadir') {
+                            activityText = `${emp.name} Clock In tepat waktu pukul ${log.clockIn}.`;
+                            colorClass = 'bg-[#25D366]';
+                        } else if(log.status === 'Terlambat') {
+                            activityText = `${emp.name} Clock In TERLAMBAT pukul ${log.clockIn}.`;
+                            colorClass = 'bg-yellow-500';
+                        } else if(log.status === 'Izin') {
+                            activityText = `${emp.name} mengajukan Cuti / Izin dispensasi.`;
+                            colorClass = 'bg-blue-400';
+                        } else {
+                            activityText = `${emp.name} Clock Out pukul ${log.clockOut}.`;
+                            colorClass = 'bg-orange-500';
+                        }
+
+                        recentActivityList.innerHTML += `
+                            <li class="flex items-start gap-3">
+                                <div class="w-2 h-2 mt-1.5 rounded-full ${colorClass}"></div>
+                                <div>
+                                    <p class="text-xs text-white">${activityText}</p>
+                                    <p class="text-[9px] text-gray-500 mt-1 font-mono">${log.date}</p>
+                                </div>
+                            </li>
+                        `;
+                    }
+                });
+            }
+        };
+
+        const renderFilters = () => {
+            deptContainer.innerHTML = '';
+            getActiveDepartments().forEach(dept => {
+                const isActive = currentFilter === dept;
+                const btn = document.createElement('button');
+                btn.className = `px-3 py-1.5 rounded-full text-[9px] font-medium border ${isActive ? 'border-gold-500 bg-gold-500/10 text-gold-500 shadow-gold-glow' : 'border-white/10 bg-surface-100 text-gray-400 hover:border-gold-500/50 hover:text-gold-400'} transition-all tracking-wide whitespace-nowrap`;
+                btn.textContent = dept;
+                btn.onclick = () => {
+                    currentFilter = dept;
+                    renderFilters();
+                    renderEmployees();
+                };
+                deptContainer.appendChild(btn);
+            });
+        };
+
+        // --- STREAMING_CHUNK:Rendering advanced Employee Data table... ---
+        const renderEmployees = () => {
+            let filtered = employees;
+            
+            if (currentFilter !== 'Semua Divisi') {
+                filtered = filtered.filter(e => e.dept === currentFilter);
+            }
+            if (currentSearch) {
+                const q = asLowerText(currentSearch);
+                filtered = filtered.filter(e => 
+                    asLowerText(e.name).includes(q) || 
+                    asLowerText(e.nik).includes(q) ||
+                    asLowerText(e.dept).includes(q) ||
+                    asLowerText(e.cabang).includes(q) ||
+                    asLowerText(e.position).includes(q)
+                );
+            }
+
+            empTable.innerHTML = '';
+            if (filtered.length === 0) {
+                empTable.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-gray-500"><i class="fa-solid fa-inbox text-2xl mb-3 opacity-30"></i><br>Tidak ada data karyawan ditemukan.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(emp => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-white/5 transition-colors group';
+                
+                const statusColor = emp.status === 'Aktif' ? 'text-[#25D366] bg-[#25D366]/10 border-[#25D366]/30' : 'text-orange-400 bg-orange-400/10 border-orange-400/30';
+                const empShift = getShiftById(emp.shiftId);
+
+                tr.innerHTML = `
+                    <td class="py-3 px-5">
+                        <div class="flex items-center gap-3">
+                            <img src="${safeImage(emp.image)}" class="w-9 h-9 rounded-full object-cover border border-white/10" alt="${emp.name}">
+                            <div>
+                                <p class="text-xs font-serif text-white group-hover:text-gold-400 transition-colors">${emp.name}</p>
+                                <p class="text-[9px] text-gray-500 truncate max-w-[120px]">${emp.email}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3 px-5">
+                        <p class="text-[10px] font-mono text-gray-300">${emp.nik}</p>
+                        <p class="text-[8px] text-gray-500 mt-1"><i class="fa-solid fa-location-dot text-gold-600 mr-1"></i>${emp.cabang || 'Pusat'}</p>
+                    </td>
+                    <td class="py-3 px-5">
+                        <p class="text-[10px] text-white">${emp.position}</p>
+                        <p class="text-[9px] text-gold-500 uppercase tracking-wider">${emp.dept}</p>
+                    </td>
+                    <td class="py-3 px-5">
+                        <p class="text-[10px] text-gray-300 font-mono"><i class="fa-solid fa-phone text-[8px] mr-1 text-gray-500"></i>${emp.phone || '-'}</p>
+                        <p class="text-[8px] text-gray-500 mt-1 uppercase tracking-wider">${emp.bank ? '<i class="fa-solid fa-building-columns mr-1"></i>'+emp.bank.split(' ')[0] : 'Belum Setup'}</p>
+                    </td>
+                    <td class="py-3 px-5">
+                        <span class="px-2.5 py-1 text-[8px] uppercase tracking-widest border rounded-full ${statusColor}">${emp.status}</span>
+                    </td>
+                    <td class="py-3 px-5 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="openQrModalById(${emp.id})" class="w-7 h-7 rounded border border-white/10 text-purple-400 hover:text-purple-300 hover:border-purple-500/50 hover:bg-purple-500/10 transition-colors flex items-center justify-center" title="Lihat ID Card Digital">
+                                <i class="fa-solid fa-qrcode text-[10px]"></i>
+                            </button>
+                            <button onclick="openEditEmployeeModal(${emp.id})" class="w-7 h-7 rounded border border-white/10 text-gray-400 hover:text-gold-400 hover:border-gold-500/30 hover:bg-gold-500/10 transition-colors flex items-center justify-center" title="Edit Data">
+                                <i class="fa-solid fa-pen text-[10px]"></i>
+                            </button>
+                            <button onclick="confirmDelete(${emp.id}, 'employee')" class="w-7 h-7 rounded border border-white/10 text-gray-500 hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10 transition-colors flex items-center justify-center" title="Hapus Data">
+                                <i class="fa-solid fa-trash-can text-[10px]"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                empTable.appendChild(tr);
+            });
+        };
+
+        const openQrModalById = (id) => {
+            const emp = employees.find(e => e.id === id);
+            if (!emp) {
+                showToast('Data karyawan tidak ditemukan.', 'error');
+                return;
+            }
+            openQrModal(emp.nik, emp.name);
+        };
+
+        const openQrModal = (nik, name) => {
+            document.getElementById('qrEmpName').textContent = name;
+            document.getElementById('qrEmpNik').textContent = nik;
+            
+            // Using API to generate QR Code
+            document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(nik)}`;
+            
+            const modal = document.getElementById('qrModal');
+            const inner = document.getElementById('qrModalContent');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                inner.classList.remove('scale-95', 'opacity-0');
+                inner.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        };
+
+        const closeQrModal = () => {
+            const modal = document.getElementById('qrModal');
+            const inner = document.getElementById('qrModalContent');
+            inner.classList.remove('scale-100', 'opacity-100');
+            inner.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        };
+
+        // --- STREAMING_CHUNK:Processing Real-Time Attendance UI... ---
+        const renderAttendanceView = () => {
+            const selectedDate = attendanceDateFilter.value || getFormattedTodayDate();
+            attendanceDateFilter.value = selectedDate;
+            
+            const todayLogs = attendance.filter(log => log.date === selectedDate);
+
+            const simSelect = document.getElementById('simEmployeeId');
+            const manualSelect = document.getElementById('manualEmpId');
+            
+            const optionsHtml = employees.map(emp => `<option value="${emp.id}">${emp.name} (${emp.dept})</option>`).join('');
+            simSelect.innerHTML = optionsHtml;
+            manualSelect.innerHTML = optionsHtml;
+
+            let presentCount = 0;
+            let lateCount = 0;
+            let leaveCount = 0;
+            let absentCount = 0;
+
+            const tableBody = document.getElementById('attendanceTableBody');
+            tableBody.innerHTML = '';
+
+            employees.forEach(emp => {
+                const log = todayLogs.find(l => l.empId == emp.id);
+                // Snapshot implementation to preserve history
+                let empShift = { ...(shifts.find(s => s.id === emp.shiftId) || shifts[0]) };
+                
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-white/5 transition-colors group';
+
+                let clockInStr = '--:--';
+                let clockOutStr = '--:--';
+                let statusStr = 'Alpa';
+                let statusBadgeClass = 'text-red-400 bg-red-500/10 border-red-500/30';
+
+                if (log) {
+                    clockInStr = log.clockIn || '--:--';
+                    clockOutStr = log.clockOut || '--:--';
+                    statusStr = log.status;
+
+                    if (log.shiftName) {
+                        empShift.name = log.shiftName;
+                        empShift.badge = log.shiftBadge || empShift.badge;
+                        empShift.icon = log.shiftIcon || empShift.icon;
+                    }
+
+                    if (log.status === 'Hadir') {
+                        statusBadgeClass = 'text-[#25D366] bg-[#25D366]/10 border-[#25D366]/30';
+                        presentCount++;
+                    } else if (log.status === 'Terlambat') {
+                        statusBadgeClass = 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30';
+                        lateCount++;
+                    } else if (log.status === 'Izin' || log.status === 'Cuti') {
+                        statusBadgeClass = 'text-blue-400 bg-blue-500/10 border-blue-500/30';
+                        leaveCount++;
+                    }
+                } else {
+                    absentCount++;
+                }
+
+                tr.innerHTML = `
+                    <td class="py-2.5 px-4">
+                        <div class="flex items-center gap-3">
+                            <img src="${safeImage(emp.image)}" class="w-8 h-8 rounded-full object-cover border border-white/10" alt="${emp.name}">
+                            <div>
+                                <p class="text-xs font-serif text-white group-hover:text-gold-400 transition-colors">${emp.name}</p>
+                                <p class="text-[9px] text-gray-500">${emp.position}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-2.5 px-4">
+                        <span class="px-2 py-0.5 text-[8px] uppercase tracking-wider border rounded-md ${empShift.badge}"><i class="fa-solid ${empShift.icon} mr-1"></i>${empShift.name}</span>
+                    </td>
+                    <td class="py-2.5 px-4 text-[10px] font-mono text-gray-300">${clockInStr}</td>
+                    <td class="py-2.5 px-4 text-[10px] font-mono text-gray-300">${clockOutStr}</td>
+                    <td class="py-2.5 px-4">
+                        <span class="px-2 py-0.5 text-[8px] uppercase tracking-wider border rounded-full ${statusBadgeClass}">${statusStr}</span>
+                    </td>
+                    <td class="py-2.5 px-4 text-right">
+                        ${log ? '<span class="text-[9px] text-gray-500 italic flex items-center justify-end gap-1"><i class="fa-solid fa-lock text-[8px]"></i> Terkunci</span>' : '-'}
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+            
+            document.getElementById('attendancePresentCount').textContent = presentCount;
+            document.getElementById('attendanceLateCount').textContent = lateCount;
+            document.getElementById('attendanceLeaveCount').textContent = leaveCount;
+            document.getElementById('attendanceAbsentCount').textContent = absentCount;
+        };
+
+        // --- STREAMING_CHUNK:Activating Camera and Hard Scanning features... ---
+        let html5QrcodeScanner = null;
+        let scannerRunning = false;
+        let cameraPermissionGranted = false;
+        let pendingCameraStart = false;
+        let lastScanTime = 0;
+        let scanTimeout = null;
+
+        const getCameraErrorMessage = (error) => {
+            const errorName = error?.name || error?.message || 'UnknownError';
+            if (errorName === 'NotAllowedError' || errorName === 'PermissionDeniedError') {
+                return 'Izin kamera ditolak. Klik ikon gembok di address bar browser, ubah Camera menjadi Allow/Izinkan, lalu coba lagi.';
+            }
+            if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
+                return 'Kamera tidak ditemukan pada perangkat ini. Gunakan input manual NIK.';
+            }
+            if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
+                return 'Kamera sedang dipakai aplikasi lain. Tutup aplikasi kamera/meeting, lalu coba lagi.';
+            }
+            if (errorName === 'OverconstrainedError' || errorName === 'ConstraintNotSatisfiedError') {
+                return 'Kamera belakang tidak tersedia. Sistem akan mencoba kamera yang tersedia.';
+            }
+            if (errorName === 'MEDIA_UNSUPPORTED') {
+                return 'Browser ini belum mendukung akses kamera. Gunakan Chrome/Safari terbaru atau input manual NIK.';
+            }
+            if (errorName === 'INSECURE_CONTEXT') {
+                return 'Akses kamera diblokir karena halaman tidak dibuka dari HTTPS/localhost. Jalankan file melalui localhost atau hosting HTTPS.';
+            }
+            return 'Kamera belum bisa diaktifkan. Cek izin browser, koneksi HTTPS/localhost, lalu coba lagi.';
+        };
+
+        const setCameraPermissionPanel = (visible, message = '') => {
+            const panel = document.getElementById('cameraPermissionPanel');
+            const status = document.getElementById('cameraPermissionStatus');
+            const button = document.getElementById('startCameraBtn');
+            if (panel) panel.classList.toggle('hidden', !visible);
+            if (message && status) status.innerHTML = message;
+            if (button) {
+                button.disabled = false;
+                button.classList.remove('opacity-60', 'cursor-not-allowed');
+                button.innerHTML = '<i class="fa-solid fa-video"></i> Aktifkan Kamera';
+            }
+        };
+
+        const setCameraButtonLoading = (isLoading) => {
+            const button = document.getElementById('startCameraBtn');
+            if (!button) return;
+            button.disabled = isLoading;
+            button.classList.toggle('opacity-60', isLoading);
+            button.classList.toggle('cursor-not-allowed', isLoading);
+            button.innerHTML = isLoading
+                ? '<i class="fa-solid fa-spinner fa-spin"></i> Meminta Izin...'
+                : '<i class="fa-solid fa-video"></i> Aktifkan Kamera';
+        };
+
+        const isCameraSecureContext = () => {
+            const host = window.location.hostname;
+            const protocol = window.location.protocol;
+            const isLocalhost = host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host === '';
+            return window.isSecureContext || protocol === 'file:' || isLocalhost;
+        };
+
+        const ensureScannerStopped = async () => {
+            if (html5QrcodeScanner && scannerRunning) {
+                try {
+                    await html5QrcodeScanner.stop();
+                } catch (error) {
+                    console.warn('Scanner stop warning:', error);
+                } finally {
+                    scannerRunning = false;
+                }
+            }
+        };
+
+        const requestCameraAccessAndStart = async () => {
+            if (pendingCameraStart) return;
+            const subtitle = document.getElementById('scannerSubtitle');
+            pendingCameraStart = true;
+            setCameraButtonLoading(true);
+
+            try {
+                if (typeof Html5Qrcode === 'undefined') {
+                    throw new Error('QR_LIBRARY_NOT_READY');
+                }
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('MEDIA_UNSUPPORTED');
+                }
+                if (!isCameraSecureContext()) {
+                    throw new Error('INSECURE_CONTEXT');
+                }
+
+                if (subtitle) subtitle.textContent = 'Browser sedang meminta izin kamera...';
+
+                // Dipanggil langsung dari klik user agar popup izin kamera benar-benar muncul.
+                const permissionStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: { ideal: 'environment' },
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                });
+                permissionStream.getTracks().forEach(track => track.stop());
+
+                cameraPermissionGranted = true;
+                setCameraPermissionPanel(false);
+                await startCameraScanner();
+            } catch (error) {
+                console.error('Camera permission error:', error);
+                cameraPermissionGranted = false;
+                const errorMessage = error?.message === 'QR_LIBRARY_NOT_READY'
+                    ? 'Library QR scanner belum termuat. Pastikan koneksi internet aktif, lalu refresh halaman.'
+                    : getCameraErrorMessage(error);
+                if (subtitle) subtitle.textContent = 'Kamera belum aktif. Gunakan tombol izin kamera atau input manual NIK.';
+                setCameraPermissionPanel(true, errorMessage);
+                showToast(errorMessage, 'error');
+            } finally {
+                pendingCameraStart = false;
+                setCameraButtonLoading(false);
+            }
+        };
+
+        const startCameraScanner = async () => {
+            const reader = document.getElementById('reader');
+            const subtitle = document.getElementById('scannerSubtitle');
+
+            if (typeof Html5Qrcode === 'undefined') {
+                if (subtitle) subtitle.textContent = 'Library scanner belum termuat. Gunakan input manual NIK.';
+                showToast('QR scanner belum termuat. Gunakan input manual.', 'error');
+                return;
+            }
+
+            try {
+                if (!html5QrcodeScanner) {
+                    html5QrcodeScanner = new Html5Qrcode('reader');
+                }
+
+                await ensureScannerStopped();
+                setCameraPermissionPanel(false);
+                reader.classList.remove('hidden');
+                document.getElementById('scannerSuccess').classList.add('hidden');
+                document.getElementById('scannerForm').classList.remove('hidden');
+
+                let cameraConfig = { facingMode: 'environment' };
+                try {
+                    const devices = await Html5Qrcode.getCameras();
+                    if (devices && devices.length > 0) {
+                        const preferredCamera = devices.find(device => {
+                            const label = asLowerText(device.label);
+                            return label.includes('back') || label.includes('rear') || label.includes('environment') || label.includes('belakang');
+                        }) || devices[0];
+                        cameraConfig = preferredCamera.id;
+                    }
+                } catch (deviceError) {
+                    console.warn('Camera list warning, using facingMode fallback:', deviceError);
+                }
+
+                if (subtitle) subtitle.textContent = 'Kamera aktif. Arahkan QR Code ke kamera.';
+                await html5QrcodeScanner.start(
+                    cameraConfig,
+                    { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
+                    onScanSuccess,
+                    () => {}
+                );
+                scannerRunning = true;
+            } catch (error) {
+                console.error('Scanner error:', error);
+                scannerRunning = false;
+                const errorMessage = getCameraErrorMessage(error);
+                if (subtitle) subtitle.textContent = 'Kamera error / izin ditolak. Gunakan input manual NIK.';
+                setCameraPermissionPanel(true, errorMessage);
+                showToast('Kamera belum bisa dipakai. Cek izin browser.', 'error');
+            }
+        };
+
+        const resetScannerModalState = () => {
+            const input = document.getElementById('scannerInput');
+            document.getElementById('reader').classList.add('hidden');
+            document.getElementById('scannerSuccess').classList.add('hidden');
+            document.getElementById('scannerForm').classList.remove('hidden');
+            document.getElementById('scannerSubtitle').textContent = 'Klik Aktifkan Kamera, lalu izinkan akses kamera pada popup browser.';
+            setCameraPermissionPanel(true, 'Tekan tombol di bawah, lalu pilih <span class="text-purple-300 font-semibold">Allow / Izinkan</span> pada popup browser.');
+            if (input) {
+                input.value = '';
+                setTimeout(() => input.focus(), 100);
+            }
+        };
+
+        const openScannerModal = () => {
+            const modal = document.getElementById('scannerModal');
+            const inner = document.getElementById('scannerModalContent');
+            clearTimeout(scanTimeout);
+            resetScannerModalState();
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                inner.classList.remove('scale-95', 'opacity-0');
+                inner.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        };
+
+        const closeScannerModal = () => {
+            const modal = document.getElementById('scannerModal');
+            const inner = document.getElementById('scannerModalContent');
+            inner.classList.remove('scale-100', 'opacity-100');
+            inner.classList.add('scale-95', 'opacity-0');
+            
+            clearTimeout(scanTimeout); 
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                ensureScannerStopped();
+                document.getElementById('reader').classList.add('hidden');
+            }, 300);
+        };
+
+        const onScanSuccess = (decodedText) => {
+            const nowTime = Date.now();
+            if (nowTime - lastScanTime < 3500) return; // Debounce 3.5s per scan
+            lastScanTime = nowTime;
+            processAttendanceScan(decodedText);
+        };
+
+        const processAttendanceScan = (nik) => {
+            if (!nik) return;
+            const emp = employees.find(e => asLowerText(e.nik) === asLowerText(nik));
+            if (!emp) {
+                showToast('Data NIK tidak ditemukan!', 'error');
+                return;
+            }
+
+            const today = getFormattedTodayDate();
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+            let empLogIndex = attendance.findIndex(log => log.empId === emp.id && log.date === today);
+            const empShift = getShiftById(emp.shiftId);
+            
+            let actionText = "";
+            let actionColor = "";
+            let borderColor = "";
+
+            if (empLogIndex === -1) {
+                // CLOCK IN
+                const [shiftHour, shiftMin] = empShift.start.split(':');
+                const limitTime = new Date();
+                limitTime.setHours(parseInt(shiftHour), parseInt(shiftMin), 0, 0);
+                
+                const status = now > limitTime ? 'Terlambat' : 'Hadir';
+                attendance.push({
+                    id: Date.now(),
+                    empId: emp.id,
+                    clockIn: timeStr,
+                    clockOut: '--:--',
+                    status: status,
+                    date: today,
+                    // Snapshot shift
+                    shiftName: empShift.name,
+                    shiftBadge: empShift.badge,
+                    shiftIcon: empShift.icon
+                });
+                
+                actionText = `CLOCK IN: ${status.toUpperCase()}`;
+                actionColor = status === 'Terlambat' ? 'text-yellow-500' : 'text-[#25D366]';
+                borderColor = status === 'Terlambat' ? 'border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.4)]' : 'border-[#25D366] shadow-[0_0_30px_rgba(37,211,102,0.4)]';
+                showToast(`Scanner: ${emp.name} berhasil Clock In`, 'success');
+            } else {
+                let existingLog = attendance[empLogIndex];
+                if (existingLog.clockOut !== '--:--') {
+                    showToast(`Scanner: ${emp.name} sudah selesai absen hari ini.`, 'error');
+                    return;
+                } else {
+                    // CLOCK OUT
+                    existingLog.clockOut = timeStr;
+                    actionText = `CLOCK OUT BERHASIL`;
+                    actionColor = 'text-orange-400';
+                    borderColor = 'border-orange-400 shadow-[0_0_30px_rgba(251,146,60,0.4)]';
+                    showToast(`Scanner: ${emp.name} berhasil Clock Out.`, 'success');
+                }
+            }
+
+            saveStorage(APP_STORAGE.attendance, attendance);
+            renderAttendanceView();
+            updateDashboard();
+
+            // Success UI Flow Handling (Stop camera temporarily)
+            ensureScannerStopped();
+
+            document.getElementById('reader').classList.add('hidden');
+            document.getElementById('scannerForm').classList.add('hidden');
+            document.getElementById('scannerSubtitle').textContent = "Pencatatan Berhasil";
+            
+            const successUI = document.getElementById('scannerSuccess');
+            successUI.classList.remove('hidden');
+            
+            document.getElementById('scanSuccessBorder').className = `w-24 h-24 rounded-full border-4 p-1 mb-4 transition-all duration-300 ${borderColor}`;
+            document.getElementById('scanSuccessImage').src = safeImage(emp.image);
+            document.getElementById('scanSuccessName').textContent = emp.name;
+            document.getElementById('scanSuccessDept').textContent = `${emp.dept} • ${emp.position}`;
+            document.getElementById('scanSuccessAction').textContent = actionText;
+            document.getElementById('scanSuccessAction').className = `text-xs font-bold tracking-widest uppercase ${actionColor}`;
+            document.getElementById('scanSuccessTime').textContent = timeStr;
+
+            clearTimeout(scanTimeout);
+            scanTimeout = setTimeout(() => {
+                if (!document.getElementById('scannerModal').classList.contains('hidden')) {
+                    document.getElementById('scannerSuccess').classList.add('hidden');
+                    document.getElementById('scannerForm').classList.remove('hidden');
+                    document.getElementById('scannerInput').value = '';
+                    if (cameraPermissionGranted) {
+                        startCameraScanner();
+                    } else {
+                        resetScannerModalState();
+                    }
+                }
+            }, 3500);
+        };
+
+        document.getElementById('scannerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('scannerInput');
+            const nik = input.value.trim();
+            if (nik) {
+                processAttendanceScan(nik);
+                input.value = '';
+            }
+        });
+
+        const actionPresensi = (tipe) => {
+            const empId = document.getElementById('simEmployeeId').value;
+            const today = getFormattedTodayDate();
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+            let empLogIndex = attendance.findIndex(log => log.empId == empId && log.date === today);
+            
+            const empData = employees.find(e => e.id == empId);
+            if (!empData) {
+                showToast('Pilih karyawan terlebih dahulu.', 'error');
+                return;
+            }
+            const empShift = getShiftById(empData.shiftId);
+
+            if (tipe === 'Masuk') {
+                if (empLogIndex > -1) {
+                    showToast('Karyawan sudah melakukan Clock In hari ini.', 'error');
+                    return;
+                }
+
+                const [shiftHour, shiftMin] = empShift.start.split(':');
+                const limitTime = new Date();
+                limitTime.setHours(parseInt(shiftHour), parseInt(shiftMin), 0, 0);
+                
+                const status = now > limitTime ? 'Terlambat' : 'Hadir';
+                const newLog = {
+                    id: Date.now(),
+                    empId: parseInt(empId),
+                    clockIn: timeStr,
+                    clockOut: '--:--',
+                    status: status,
+                    date: today,
+                    shiftName: empShift.name,
+                    shiftBadge: empShift.badge,
+                    shiftIcon: empShift.icon
+                };
+
+                attendance.push(newLog);
+                showToast(`Berhasil Clock In: ${status} (${empShift.name})`, 'success');
+            } else if (tipe === 'Pulang') {
+                if (empLogIndex === -1) {
+                    showToast('Karyawan belum melakukan Clock In hari ini.', 'error');
+                    return;
+                }
+                if (attendance[empLogIndex].clockOut !== '--:--') {
+                    showToast('Karyawan sudah melakukan Clock Out hari ini.', 'error');
+                    return;
+                }
+
+                attendance[empLogIndex].clockOut = timeStr;
+                showToast('Berhasil Clock Out! Selamat Beristirahat.', 'success');
+            }
+
+            saveStorage(APP_STORAGE.attendance, attendance);
+            renderAttendanceView();
+            updateDashboard();
+        };
+
+        const openManualAbsenModal = () => {
+            manualAbsenForm.reset();
+            document.getElementById('manualDate').value = attendanceDateFilter.value || getFormattedTodayDate();
+            manualAbsenModal.classList.remove('hidden');
+            const inner = document.getElementById('manualAbsenContent');
+            setTimeout(() => {
+                inner.classList.remove('scale-95', 'opacity-0');
+                inner.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        };
+
+        const closeManualAbsenModal = () => {
+            const inner = document.getElementById('manualAbsenContent');
+            inner.classList.remove('scale-100', 'opacity-100');
+            inner.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => manualAbsenModal.classList.add('hidden'), 300);
+        };
+
+        manualAbsenForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const empId = parseInt(document.getElementById('manualEmpId').value);
+            const inTimeRaw = document.getElementById('manualClockIn').value;
+            const outTimeRaw = document.getElementById('manualClockOut').value;
+            const status = document.getElementById('manualStatus').value;
+            const selectedDate = document.getElementById('manualDate').value;
+
+            const formatTime = (time) => {
+                if(!time) return '--:--';
+                const [h, m] = time.split(':');
+                const hrs = parseInt(h);
+                const suffix = hrs >= 12 ? 'PM' : 'AM';
+                const displayHrs = hrs % 12 || 12;
+                return `${String(displayHrs).padStart(2, '0')}:${m} ${suffix}`;
+            };
+
+            let existingLogIndex = attendance.findIndex(log => log.empId === empId && log.date === selectedDate);
+            
+            if (existingLogIndex > -1) {
+                let existingLog = attendance[existingLogIndex];
+                if (existingLog.clockIn !== '--:--' && existingLog.clockOut !== '--:--') {
+                    showToast('Data kehadiran sudah final dan tidak dapat diedit.', 'error');
+                    return;
+                }
+                
+                if (existingLog.clockOut === '--:--' && outTimeRaw) {
+                    existingLog.clockOut = formatTime(outTimeRaw);
+                    existingLog.status = status; 
+                    showToast('Jam pulang manual berhasil ditambahkan.', 'success');
+                } else {
+                    showToast('Data absensi awal sudah ada dan tidak dapat dimodifikasi.', 'error');
+                    return;
+                }
+            } else {
+                const empData = employees.find(e => e.id === empId);
+                if (!empData) {
+                    showToast('Data karyawan tidak ditemukan.', 'error');
+                    return;
+                }
+                const empShift = getShiftById(empData.shiftId);
+                
+                const manualLog = {
+                    id: Date.now(),
+                    empId: empId,
+                    clockIn: formatTime(inTimeRaw),
+                    clockOut: formatTime(outTimeRaw),
+                    status: status,
+                    date: selectedDate,
+                    shiftName: empShift.name,
+                    shiftBadge: empShift.badge,
+                    shiftIcon: empShift.icon
+                };
+                attendance.push(manualLog);
+                showToast('Kehadiran manual berhasil disimpan.', 'success');
+            }
+
+            saveStorage(APP_STORAGE.attendance, attendance);
+            closeManualAbsenModal();
+            renderAttendanceView();
+            updateDashboard();
+        });
+
+        // --- STREAMING_CHUNK:Providing Shift Management... ---
+        let editingShiftId = null;
+
+        const renderShifts = () => {
+            const container = document.getElementById('shiftCardsContainer');
+            if(!container) return;
+            container.innerHTML = '';
+            
+            shifts.forEach(shift => {
+                const empCount = employees.filter(e => e.shiftId === shift.id || (!e.shiftId && shift.id === 'SH-1')).length;
+                container.innerHTML += `
+                    <div class="bg-surface-200 border border-white/5 rounded-xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.3)] hover:border-gold-500/30 transition-all group">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-10 h-10 rounded-lg ${shift.badge} border flex items-center justify-center text-lg">
+                                <i class="fa-solid ${shift.icon}"></i>
+                            </div>
+                            <span class="bg-surface-100 text-gray-400 px-2 py-0.5 rounded text-[9px] font-mono border border-white/5">${shift.id}</span>
+                        </div>
+                        <h4 class="text-sm font-serif font-bold text-white mb-1">${shift.name}</h4>
+                        <p class="text-[11px] font-mono text-gold-500 mb-4">${shift.start} <span class="text-gray-500 text-[9px] px-1">s/d</span> ${shift.end}</p>
+                        
+                        <div class="pt-4 border-t border-white/5 flex items-center justify-between text-[10px] text-gray-400">
+                            <span><i class="fa-solid fa-users mr-1.5"></i> ${empCount} Karyawan</span>
+                            <div class="flex gap-3">
+                                <button onclick="openEditShiftModal('${shift.id}')" class="hover:text-gold-400 transition-colors" title="Edit Shift"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="confirmDelete('${shift.id}', 'shift')" class="hover:text-red-400 transition-colors" title="Hapus Shift"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        };
+
+        const openAddShiftModal = () => {
+            editingShiftId = null;
+            document.getElementById('shiftModalTitle').textContent = "Tambah Jadwal Shift";
+            shiftForm.reset();
+            
+            shiftModal.classList.remove('hidden');
+            const inner = document.getElementById('shiftModalContent');
+            setTimeout(() => {
+                inner.classList.remove('scale-95', 'opacity-0');
+                inner.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        };
+
+        const openEditShiftModal = (id) => {
+            editingShiftId = id;
+            const shift = shifts.find(s => s.id === id);
+            if(!shift) return;
+
+            document.getElementById('shiftModalTitle').textContent = "Edit Jadwal Shift";
+            document.getElementById('newShiftName').value = shift.name;
+            document.getElementById('newShiftStart').value = shift.start;
+            document.getElementById('newShiftEnd').value = shift.end;
+            
+            const themeValue = `${shift.badge}|${shift.icon}`;
+            document.getElementById('newShiftTheme').value = themeValue;
+            
+            shiftModal.classList.remove('hidden');
+            const inner = document.getElementById('shiftModalContent');
+            setTimeout(() => {
+                inner.classList.remove('scale-95', 'opacity-0');
+                inner.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        };
+
+        const closeAddShiftModal = () => {
+            const inner = document.getElementById('shiftModalContent');
+            inner.classList.remove('scale-100', 'opacity-100');
+            inner.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => shiftModal.classList.add('hidden'), 300);
+        };
+
+        shiftForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('newShiftName').value;
+            const start = document.getElementById('newShiftStart').value;
+            const end = document.getElementById('newShiftEnd').value;
+            const themeValue = document.getElementById('newShiftTheme').value.split('|');
+            
+            if(editingShiftId) {
+                const sIdx = shifts.findIndex(s => s.id === editingShiftId);
+                if(sIdx > -1) {
+                    shifts[sIdx].name = name;
+                    shifts[sIdx].start = start;
+                    shifts[sIdx].end = end;
+                    shifts[sIdx].badge = themeValue[0];
+                    shifts[sIdx].icon = themeValue[1];
+                }
+                showToast('Jadwal Shift berhasil diperbarui.', 'success');
+            } else {
+                const newShift = {
+                    id: `SH-${Date.now().toString().slice(-4)}`,
+                    name: name, start: start, end: end,
+                    badge: themeValue[0], icon: themeValue[1]
+                };
+                shifts.push(newShift);
+                showToast('Jadwal Shift baru berhasil ditambahkan.', 'success');
+            }
+
+            saveStorage(APP_STORAGE.shifts, shifts);
+            closeAddShiftModal();
+            renderShifts();
+            renderAttendanceView();
+        });
+
+        const calculateDurationMins = (inTime, outTime) => {
+            if (!inTime || !outTime || inTime === '--:--' || outTime === '--:--') return 0;
+            const parseToMins = (t) => {
+                const [timePart, modifier] = t.split(' ');
+                let [hours, minutes] = timePart.split(':').map(Number);
+                if (hours === 12) hours = 0;
+                if (modifier === 'PM') hours += 12;
+                return hours * 60 + minutes;
+            };
+            const inMins = parseToMins(inTime);
+            const outMins = parseToMins(outTime);
+            let diff = outMins - inMins;
+            if (diff < 0) diff += (24 * 60); 
+            return diff;
+        };
+
+        const renderReports = () => {
+            const today = new Date();
+            let selectedMonth = reportMonthFilter.value;
+            
+            if(!selectedMonth) {
+                const monthStr = String(today.getMonth() + 1).padStart(2, '0');
+                selectedMonth = `${today.getFullYear()}-${monthStr}`;
+                reportMonthFilter.value = selectedMonth;
+            }
+
+            const tbody = document.getElementById('reportsTableBody');
+            tbody.innerHTML = '';
+
+            employees.forEach(emp => {
+                const empLogs = attendance.filter(log => log.empId === emp.id && log.date.startsWith(selectedMonth));
+
+                let daysWorked = 0;
+                let lateCount = 0;
+                let absentCount = 0;
+                let totalWorkingMins = 0;
+
+                empLogs.forEach(log => {
+                    if (log.status === 'Hadir' || log.status === 'Terlambat') {
+                        daysWorked++;
+                        if (log.status === 'Terlambat') lateCount++;
+                        totalWorkingMins += calculateDurationMins(log.clockIn, log.clockOut);
+                    } else if (log.status === 'Izin' || log.status === 'Alpa' || log.status === 'Cuti') {
+                        absentCount++;
+                    }
+                });
+
+                const totalHrs = Math.floor(totalWorkingMins / 60);
+                const remainingMins = totalWorkingMins % 60;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-white/5 transition-colors';
+                tr.innerHTML = `
+                    <td class="py-3 px-5">
+                        <div class="flex items-center gap-3">
+                            <img src="${safeImage(emp.image)}" class="w-8 h-8 rounded-full object-cover border border-white/10" alt="${emp.name}">
+                            <div>
+                                <p class="text-xs font-serif text-white">${emp.name}</p>
+                                <p class="text-[9px] text-gray-500 uppercase tracking-widest">${emp.dept}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-3 px-5 text-center text-xs font-bold text-white">${daysWorked} <span class="text-[9px] text-gray-400 font-normal">Hari</span></td>
+                    <td class="py-3 px-5 text-center text-xs font-mono text-gold-500">${totalHrs}h ${remainingMins}m</td>
+                    <td class="py-3 px-5 text-center text-xs text-yellow-500">${lateCount}</td>
+                    <td class="py-3 px-5 text-center text-xs text-red-400">${absentCount}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        // --- STREAMING_CHUNK:Implementing Payroll features... ---
+        const setupPayrollView = () => {
+            const today = new Date();
+            const monthStr = String(today.getMonth() + 1).padStart(2, '0');
+            const payrollMonth = document.getElementById('payrollMonthFilter');
+            if (!payrollMonth.value) payrollMonth.value = `${today.getFullYear()}-${monthStr}`;
+            
+            const empSelect = document.getElementById('payrollEmpSelect');
+            empSelect.innerHTML = employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            
+            document.getElementById('slipGajiPrintArea').classList.add('hidden');
+            document.getElementById('slipActionBtns').classList.add('hidden');
+        };
+
+        const generateSlipGaji = () => {
+            const empId = document.getElementById('payrollEmpSelect').value;
+            const monthVal = document.getElementById('payrollMonthFilter').value;
+            
+            if(!empId || !monthVal) {
+                showToast("Pilih Karyawan dan Bulan terlebih dahulu", "error");
+                return;
+            }
+
+            const emp = employees.find(e => e.id == empId);
+            if (!emp) {
+                showToast('Data karyawan tidak ditemukan.', 'error');
+                return;
+            }
+            const empLogs = attendance.filter(log => log.empId == emp.id && log.date.startsWith(monthVal));
+
+            let daysHadir = 0;
+            let daysLate = 0;
+            let daysAlpa = 0;
+
+            empLogs.forEach(log => {
+                if (log.status === 'Hadir') daysHadir++;
+                else if (log.status === 'Terlambat') { daysHadir++; daysLate++; }
+                else if (log.status === 'Alpa') daysAlpa++;
+                // Cuti / Izin not penalized usually, so skipping calculation here for simplicity
+            });
+
+            // Rules Gaji
+            const baseSalary = emp.salary || 0;
+            const tunjanganHarian = 50000;
+            const dendaTelat = 25000;
+            const dendaAlpa = 100000;
+
+            const totalTunjangan = daysHadir * tunjanganHarian;
+            const totalPotTelat = daysLate * dendaTelat;
+            const totalPotAlpa = daysAlpa * dendaAlpa;
+            const netSalary = baseSalary + totalTunjangan - totalPotTelat - totalPotAlpa;
+
+            // Fill DOM
+            const [periodYear, periodMonth] = monthVal.split('-').map(Number);
+            const dateObj = new Date(periodYear, periodMonth - 1, 1);
+            const monthName = dateObj.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+            document.getElementById('slipPeriodeText').textContent = `Periode: ${monthName}`;
+            
+            document.getElementById('slipEmpName').textContent = emp.name;
+            document.getElementById('slipEmpNik').textContent = emp.nik;
+            document.getElementById('slipEmpCabang').textContent = emp.cabang || 'LuxeHR Pusat';
+            document.getElementById('slipEmpPos').textContent = emp.position;
+            document.getElementById('slipEmpBank').textContent = emp.bank || '-';
+            
+            document.getElementById('slipBaseSalary').textContent = formatRupiah(baseSalary);
+            document.getElementById('slipHadirKet').textContent = `(${daysHadir} Hari Hadir x Rp 50.000)`;
+            document.getElementById('slipTunjanganHadir').textContent = formatRupiah(totalTunjangan);
+            
+            document.getElementById('slipTelatKet').textContent = `(${daysLate} Hari Terlambat x Rp 25.000)`;
+            document.getElementById('slipPotonganTelat').textContent = "-" + formatRupiah(totalPotTelat);
+            
+            document.getElementById('slipAlpaKet').textContent = `(${daysAlpa} Hari Alpa x Rp 100.000)`;
+            document.getElementById('slipPotonganAlpa').textContent = "-" + formatRupiah(totalPotAlpa);
+            
+            document.getElementById('slipTotalPay').textContent = formatRupiah(netSalary);
+            document.getElementById('slipSignEmp').textContent = emp.name;
+
+            // Display UI
+            document.getElementById('slipGajiPrintArea').classList.remove('hidden');
+            document.getElementById('slipActionBtns').classList.remove('hidden');
+            showToast("Slip Gaji berhasil dikalkulasi", "success");
+        };
+
+        // --- STREAMING_CHUNK:Finalizing forms and actions logic... ---
+        let editingEmployeeId = null;
+
+        const openAddEmployeeModal = () => {
+            editingEmployeeId = null;
+            document.getElementById('modalTitle').textContent = "Tambah Karyawan VIP";
+            empForm.reset();
+            
+            const shiftSelect = document.getElementById('empShift');
+            shiftSelect.innerHTML = shifts.map(s => `<option value="${s.id}">${s.name} (${s.start} - ${s.end})</option>`).join('');
+
+            const modalContent = document.getElementById('modalContent');
+            empModal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        };
+
+        const openEditEmployeeModal = (id) => {
+            editingEmployeeId = id;
+            const emp = employees.find(e => e.id === id);
+            if(!emp) return;
+
+            document.getElementById('modalTitle').textContent = "Edit Karyawan VIP";
+            
+            const shiftSelect = document.getElementById('empShift');
+            shiftSelect.innerHTML = shifts.map(s => `<option value="${s.id}">${s.name} (${s.start} - ${s.end})</option>`).join('');
+
+            document.getElementById('empName').value = emp.name;
+            document.getElementById('empNik').value = emp.nik;
+            document.getElementById('empDept').value = emp.dept;
+            document.getElementById('empShift').value = emp.shiftId || shifts[0].id;
+            document.getElementById('empPosition').value = emp.position;
+            document.getElementById('empEmail').value = emp.email;
+            document.getElementById('empPhone').value = emp.phone || '';
+            document.getElementById('empCabang').value = emp.cabang || 'LuxeHR Pusat (Jakarta)';
+            document.getElementById('empSalary').value = emp.salary || '';
+            document.getElementById('empBank').value = emp.bank || '';
+            document.getElementById('empKtp').value = emp.ktp || '';
+            document.getElementById('empDate').value = emp.date;
+
+            const modalContent = document.getElementById('modalContent');
+            empModal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        };
+
+        const closeAddEmployeeModal = () => {
+            const modalContent = document.getElementById('modalContent');
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => empModal.classList.add('hidden'), 300);
+        };
+
+        empForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const nikInput = document.getElementById('empNik').value.trim();
+            const duplicateNik = employees.some(e => asLowerText(e.nik) === asLowerText(nikInput) && e.id !== editingEmployeeId);
+            if (duplicateNik) {
+                showToast('NIK sudah digunakan karyawan lain.', 'error');
+                return;
+            }
+
+            if (editingEmployeeId) {
+                const index = employees.findIndex(e => e.id === editingEmployeeId);
+                if (index > -1) {
+                    employees[index].name = document.getElementById('empName').value;
+                    employees[index].nik = nikInput;
+                    employees[index].dept = document.getElementById('empDept').value;
+                    employees[index].shiftId = document.getElementById('empShift').value;
+                    employees[index].position = document.getElementById('empPosition').value;
+                    employees[index].email = document.getElementById('empEmail').value;
+                    employees[index].phone = document.getElementById('empPhone').value;
+                    employees[index].cabang = document.getElementById('empCabang').value;
+                    employees[index].salary = parseInt(document.getElementById('empSalary').value, 10) || 0;
+                    employees[index].bank = document.getElementById('empBank').value;
+                    employees[index].ktp = document.getElementById('empKtp').value;
+                    employees[index].date = document.getElementById('empDate').value;
+                }
+                showToast('Data Karyawan berhasil diperbarui.', 'success');
+            } else {
+                const newEmp = {
+                    id: Date.now(),
+                    name: document.getElementById('empName').value,
+                    nik: nikInput,
+                    dept: document.getElementById('empDept').value,
+                    shiftId: document.getElementById('empShift').value,
+                    position: document.getElementById('empPosition').value,
+                    email: document.getElementById('empEmail').value,
+                    phone: document.getElementById('empPhone').value,
+                    cabang: document.getElementById('empCabang').value,
+                    salary: parseInt(document.getElementById('empSalary').value, 10) || 0,
+                    bank: document.getElementById('empBank').value,
+                    ktp: document.getElementById('empKtp').value,
+                    date: document.getElementById('empDate').value,
+                    status: 'Aktif',
+                    image: DEFAULT_AVATAR, 
+                    perf: Math.floor(Math.random() * (99 - 75 + 1) + 75) 
+                };
+                employees.push(newEmp);
+                showToast('Karyawan VIP berhasil ditambahkan.', 'success');
+            }
+
+            saveStorage(APP_STORAGE.employees, employees);
+            
+            closeAddEmployeeModal();
+            renderFilters();
+            renderEmployees();
+            updateDashboard();
+        });
+
+        // Universal Delete Confirm Logic
+        const confirmDelete = (id, type) => {
+            const inner = document.getElementById('confirmInner');
+            const msgEl = document.getElementById('confirmMessage');
+
+            if (type === 'shift') {
+                const inUse = employees.some(e => e.shiftId === id);
+                if(inUse) {
+                    showToast('Gagal: Shift ini sedang digunakan oleh karyawan!', 'error');
+                    return;
+                }
+                msgEl.textContent = "Anda yakin ingin menghapus Jadwal Shift ini?";
+                confirmDeleteCallback = () => {
+                    shifts = shifts.filter(s => s.id !== id);
+                    saveStorage(APP_STORAGE.shifts, shifts);
+                    renderShifts();
+                    showToast('Jadwal Shift berhasil dihapus.', 'success');
+                };
+            } else if (type === 'employee') {
+                msgEl.textContent = "Data karyawan ini akan dihapus secara permanen dari sistem.";
+                confirmDeleteCallback = () => {
+                    employees = employees.filter(e => e.id !== id);
+                    attendance = attendance.filter(log => log.empId !== id);
+                    saveStorage(APP_STORAGE.employees, employees);
+                    saveStorage(APP_STORAGE.attendance, attendance);
+                    renderEmployees();
+                    renderFilters();
+                    updateDashboard();
+                    showToast('Data karyawan dan riwayat absensi terkait berhasil dihapus.', 'success');
+                };
+            }
+            
+            confirmModal.classList.remove('hidden');
+            setTimeout(() => {
+                inner.classList.remove('scale-95', 'opacity-0');
+                inner.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        };
+
+        const closeConfirmModal = () => {
+            const inner = document.getElementById('confirmInner');
+            inner.classList.remove('scale-100', 'opacity-100');
+            inner.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                confirmModal.classList.add('hidden');
+                confirmDeleteCallback = null;
+            }, 300);
+        };
+
+        // Event Listeners Setup
+        document.getElementById('toggleSidebarBtn').addEventListener('click', toggleSidebar);
+        document.getElementById('closeSidebarBtn').addEventListener('click', toggleSidebar);
+        sidebarBackdrop.addEventListener('click', toggleSidebar);
+        
+        document.getElementById('closeEmployeeModal').addEventListener('click', closeAddEmployeeModal);
+        document.getElementById('cancelFormBtn').addEventListener('click', closeAddEmployeeModal);
+        document.getElementById('modalBackdrop').addEventListener('click', closeAddEmployeeModal);
+
+        document.getElementById('btnCancelConfirm').addEventListener('click', closeConfirmModal);
+        document.getElementById('confirmBackdrop').addEventListener('click', closeConfirmModal);
+        document.getElementById('btnProceedConfirm').addEventListener('click', () => {
+            if(confirmDeleteCallback) confirmDeleteCallback();
+            closeConfirmModal();
+        });
+
+        searchInput.addEventListener('input', (e) => {
+            currentSearch = e.target.value;
+            renderEmployees();
+        });
+
+        attendanceDateFilter.addEventListener('change', renderAttendanceView);
+        reportMonthFilter.addEventListener('change', renderReports);
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            updateDateTime();
+            setInterval(updateDateTime, 1000); 
+            if (attendanceDateFilter && !attendanceDateFilter.value) attendanceDateFilter.value = getFormattedTodayDate();
+            renderFilters();
+            switchView('dashboard');
+        });
+
+    </script>
+</body>
+</html>
