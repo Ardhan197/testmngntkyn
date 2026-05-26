@@ -12,6 +12,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <!-- HTML5 QRCode Scanner -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- Local QR Code Generator fallback: QR image dibuat dari payload internal, tidak hanya API eksternal -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
     
     <script>
         tailwind.config = {
@@ -148,6 +150,10 @@
                     <i class="fa-solid fa-file-contract w-5 text-center text-sm"></i>
                     <span class="ml-3 text-xs font-medium tracking-wide">Laporan Bulanan</span>
                 </a>
+                <a href="#" onclick="switchView('settings')" id="nav-settings" class="flex items-center px-4 py-2.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg group transition-all border-l-2 border-transparent hover:border-white/20">
+                    <i class="fa-solid fa-gear w-5 text-center text-sm"></i>
+                    <span class="ml-3 text-xs font-medium tracking-wide">Pengaturan</span>
+                </a>
             </nav>
         </div>
         
@@ -183,7 +189,11 @@
                        class="w-full pl-9 pr-4 py-2 bg-surface-100 border border-white/10 rounded-full text-xs text-white focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500 transition-all shadow-inner placeholder-gray-600 font-light tracking-wide">
             </div>
             
-            <div class="flex items-center gap-4 border-l border-white/10 pl-4">
+            <div class="flex items-center gap-3 sm:gap-4 border-l border-white/10 pl-4">
+                <button id="manualSyncBtn" onclick="manualSyncToGoogle()" title="Sinkronkan ke Google Sheet" class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-white/10 text-[9px] uppercase tracking-widest text-gray-400 hover:text-gold-500 hover:border-gold-500/40 transition-all">
+                    <i class="fa-solid fa-rotate text-[9px]"></i>
+                    <span id="syncStatusBadge">Local</span>
+                </button>
                 <div class="text-right hidden sm:block">
                     <p class="text-[10px] font-medium text-gray-300 tracking-wide" id="currentDate">Senin, 24 Mei</p>
                     <p class="text-[9px] text-gold-500 font-serif italic" id="currentTime">10:30 AM</p>
@@ -283,6 +293,12 @@
                         <p class="text-[9px] text-gray-500 uppercase tracking-widest">Filter Cabang</p>
                         <div class="flex gap-2 flex-wrap" id="deptFilterContainer">
                             <!-- Branch filters injected by JS -->
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <p class="text-[9px] text-gray-500 uppercase tracking-widest">Filter Status</p>
+                        <div class="flex gap-2 flex-wrap" id="statusFilterContainer">
+                            <!-- Status filters injected by JS -->
                         </div>
                     </div>
                     <div class="flex gap-2 flex-wrap">
@@ -609,6 +625,757 @@
 
             </div>
 
+            <!-- SETTINGS VIEW -->
+            <div id="settingsView" class="hidden animate-fade-in relative z-10 max-w-6xl mx-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="lg:col-span-2 bg-surface-200 border border-white/5 rounded-xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/5 pb-4 mb-5">
+                            <div>
+                                <h3 class="text-sm font-serif font-bold text-white tracking-wide uppercase">Pengaturan Integrasi Google</h3>
+                                <p class="text-[10px] text-gray-500 mt-1 leading-relaxed">Salin kode Apps Script smart di bawah ini ke file <span class="font-mono text-gold-500">Code.gs</span>. Script ini otomatis membuat Spreadsheet, tab, header, folder Drive, dan tetap membaca data walau urutan header berubah.</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button" onclick="selectAppsScriptCode()" class="px-3 py-2 bg-surface-100 text-gray-300 border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:border-gold-500/40 hover:text-white transition-all flex items-center gap-2">
+                                    <i class="fa-solid fa-i-cursor"></i> Pilih Semua
+                                </button>
+                                <button type="button" onclick="copyAppsScriptCode()" class="px-3 py-2 bg-gold-500 text-surface-400 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-gold-glow hover:bg-gold-400 transition-all flex items-center gap-2">
+                                    <i class="fa-solid fa-copy"></i> Salin Code.gs
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                            <div class="bg-surface-100/60 border border-white/5 rounded-xl p-4">
+                                <p class="text-[9px] uppercase tracking-widest text-gray-500 mb-1">Status Koneksi</p>
+                                <p id="settingsConnectionStatus" class="text-xs font-bold text-gold-500">Local</p>
+                            </div>
+                            <div class="bg-surface-100/60 border border-white/5 rounded-xl p-4">
+                                <p class="text-[9px] uppercase tracking-widest text-gray-500 mb-1">Jumlah Baris Kode</p>
+                                <p id="settingsAppScriptLineCount" class="text-xs font-bold text-white">582 baris</p>
+                            </div>
+                            <div class="bg-surface-100/60 border border-white/5 rounded-xl p-4">
+                                <p class="text-[9px] uppercase tracking-widest text-gray-500 mb-1">Target Database</p>
+                                <p class="text-xs font-bold text-white">Google Sheet + Drive</p>
+                            </div>
+                        </div>
+
+                        <div class="relative">
+                            <textarea id="appsScriptCodeBlock" readonly spellcheck="false" class="w-full min-h-[520px] resize-y bg-[#080808] border border-white/10 rounded-xl p-4 pr-12 text-[11px] leading-relaxed font-mono text-gray-200 focus:outline-none focus:border-gold-500/60 shadow-inner whitespace-pre overflow-auto">/**
+ * LuxeHR Premium - Smart Google Sheets + Google Drive Web App
+ * Deploy sebagai Google Apps Script Web App. Frontend hanya memakai Web App URL.
+ * Transport dibuat kompatibel untuk HTML lokal/static: POST form + iframe postMessage, tanpa fetch CORS.
+ *
+ * Fitur utama:
+ * 1) Membuat Google Spreadsheet otomatis jika SPREADSHEET_ID dikosongkan.
+ * 2) Membuat tab/sheet otomatis sesuai TABLE_SCHEMAS.
+ * 3) Membuat header otomatis tanpa menghapus data existing.
+ * 4) Tetap membaca/menulis data walaupun urutan header di Google Sheet berubah.
+ * 5) Mengenali beberapa alias header umum dan menormalisasi header ke nama canonical.
+ * 6) Membuat folder Google Drive otomatis jika DRIVE_FOLDER_ID dikosongkan.
+ * 7) Membuat subfolder Drive otomatis untuk foto karyawan, identitas, attendance, dan file umum.
+ * 8) Mencatat metadata upload pada tab uploads.
+ */
+
+// =========================
+// KONFIGURASI UTAMA
+// =========================
+// Bisa diisi ID saja atau URL lengkap Google Sheet. Boleh dikosongkan agar dibuat otomatis.
+const APP_VERSION = '2026.05.27-webapp-url-only-postmessage';
+const SPREADSHEET_ID = 'PASTE_YOUR_SPREADSHEET_ID_HERE';
+const SPREADSHEET_NAME = 'LuxeHR Premium Database';
+const AUTO_CREATE_SPREADSHEET = true;
+
+// Bisa diisi ID saja atau URL folder Drive. Boleh dikosongkan agar dibuat otomatis.
+const DRIVE_FOLDER_ID = 'PASTE_YOUR_DRIVE_FOLDER_ID_HERE';
+const DRIVE_FOLDER_NAME = 'LuxeHR Premium Uploads';
+const AUTO_CREATE_DRIVE_FOLDER = true;
+
+// Akses dikendalikan oleh izin deployment Web App Apps Script.
+// Untuk dipakai dari HTML lokal/static, response POST dapat dikirim melalui iframe postMessage.
+
+// Jika true, file Drive dapat dilihat via link. Jika domain Google Workspace membatasi sharing publik,
+// script tetap jalan, tetapi file mungkin hanya dapat diakses oleh akun yang memiliki permission.
+const MAKE_DRIVE_FILES_PUBLIC = true;
+
+const PROP_SPREADSHEET_ID = 'LUXEHR_SPREADSHEET_ID';
+const PROP_DRIVE_FOLDER_ID = 'LUXEHR_DRIVE_FOLDER_ID';
+
+const TABLE_SCHEMAS = {
+  employees: [
+    'id', 'name', 'nik', 'dept', 'shiftId', 'position', 'email', 'phone', 'cabang',
+    'salary', 'bank', 'ktp', 'date', 'status', 'resignDate', 'blacklistDate',
+    'statusNote', 'image', 'perf'
+  ],
+  attendance: [
+    'id', 'empId', 'clockIn', 'clockOut', 'status', 'date', 'shiftName', 'shiftBadge'
+  ],
+  shifts: [
+    'id', 'name', 'start', 'end', 'badge', 'icon'
+  ],
+  branches: [
+    'id', 'name'
+  ],
+  uploads: [
+    'id', 'fileId', 'name', 'mimeType', 'sizeBytes', 'category', 'relatedTable', 'relatedId',
+    'url', 'viewUrl', 'directUrl', 'downloadUrl', 'createdAt', 'sharingStatus'
+  ]
+};
+
+const HEADER_ALIASES = {
+  employees: {
+    employeeid: 'id', karyawanid: 'id', idkaryawan: 'id',
+    nama: 'name', namakaryawan: 'name', namalengkap: 'name', employee: 'name',
+    nomorindukkaryawan: 'nik', nikpegawai: 'nik', nikaryawan: 'nik', noinduk: 'nik',
+    divisi: 'dept', unitkerja: 'dept', unit: 'dept', departemen: 'dept', department: 'dept',
+    shift: 'shiftId', jadwalshift: 'shiftId', shiftdefault: 'shiftId',
+    jabatan: 'position', posisi: 'position', jobtitle: 'position',
+    emailpribadi: 'email', alamatemail: 'email',
+    nohp: 'phone', nowa: 'phone', whatsapp: 'phone', handphone: 'phone', telepon: 'phone',
+    cabangpenempatan: 'cabang', branch: 'cabang', kantor: 'cabang', outlet: 'cabang',
+    gajipokok: 'salary', gaji: 'salary', salaryidr: 'salary',
+    rekening: 'bank', norekening: 'bank', bankrekening: 'bank',
+    scanidentitas: 'ktp', ktpurl: 'ktp', identitas: 'ktp',
+    tanggalbergabung: 'date', tglbergabung: 'date', joindate: 'date',
+    statuskaryawan: 'status', employmentstatus: 'status',
+    tanggalresign: 'resignDate', tglresign: 'resignDate',
+    tanggalblacklist: 'blacklistDate', tglblacklist: 'blacklistDate',
+    alasan: 'statusNote', catatan: 'statusNote', catatanstatus: 'statusNote', reason: 'statusNote',
+    foto: 'image', photourl: 'image', imageurl: 'image',
+    performance: 'perf', performa: 'perf', skor: 'perf'
+  },
+  attendance: {
+    attendanceid: 'id', absensiid: 'id', idabsensi: 'id',
+    employeeid: 'empId', karyawanid: 'empId', idkaryawan: 'empId',
+    jammasuk: 'clockIn', masuk: 'clockIn', clockin: 'clockIn',
+    jampulang: 'clockOut', pulang: 'clockOut', clockout: 'clockOut',
+    statuspresensi: 'status', statusabsensi: 'status',
+    tanggal: 'date', tgl: 'date',
+    namashift: 'shiftName', shift: 'shiftName',
+    badgeshift: 'shiftBadge', warna: 'shiftBadge'
+  },
+  shifts: {
+    shiftid: 'id', idshift: 'id', namashift: 'name', mulai: 'start', jammulai: 'start',
+    selesai: 'end', jamselesai: 'end', tema: 'badge', warna: 'badge', ikon: 'icon'
+  },
+  branches: {
+    branchid: 'id', cabangid: 'id', idcabang: 'id', namacabang: 'name', cabang: 'name', branch: 'name'
+  },
+  uploads: {
+    uploadid: 'id', idupload: 'id', idfile: 'fileId', driveid: 'fileId', filename: 'name',
+    namafile: 'name', tipefile: 'mimeType', jenisfile: 'mimeType', filesize: 'sizeBytes',
+    ukuranfile: 'sizeBytes', kategori: 'category', table: 'relatedTable', tabelterkait: 'relatedTable',
+    ownerid: 'relatedId', relatedid: 'relatedId', link: 'url', tanggalupload: 'createdAt'
+  }
+};
+
+const DRIVE_SUBFOLDERS = {
+  foto_karyawan: '01 Foto Karyawan',
+  identitas_karyawan: '02 Identitas Karyawan',
+  attendance: '03 Bukti Absensi',
+  general: '99 File Umum'
+};
+
+// =========================
+// HTTP ENTRY POINT
+// =========================
+function doGet(e) {
+  const params = e &amp;&amp; e.parameter ? e.parameter : {};
+  const action = params.action ? String(params.action).trim() : 'health';
+  const callback = params.callback ? String(params.callback).trim() : '';
+
+  let payload;
+  try {
+    if (action === 'health' || action === 'ping') {
+      payload = {
+        ok: true,
+        service: 'LuxeHR Smart Google Sheet + Drive Web App',
+        version: APP_VERSION,
+        time: new Date().toISOString(),
+        transport: 'jsonp-get / iframe-postmessage-post',
+        actions: ['init', 'meta', 'saveTable', 'saveAll', 'uploadFile'],
+        tables: Object.keys(TABLE_SCHEMAS)
+      };
+    } else if (action === 'meta') {
+      ensureEnvironment_();
+      payload = { ok: true, version: APP_VERSION, meta: getEnvironmentMeta_() };
+    } else if (action === 'init') {
+      ensureEnvironment_();
+      payload = { ok: true, version: APP_VERSION, meta: getEnvironmentMeta_(), data: readAllTables_() };
+    } else {
+      payload = { ok: false, error: 'Action GET tidak dikenal: ' + action };
+    }
+  } catch (err) {
+    payload = { ok: false, error: err.message || String(err), version: APP_VERSION };
+  }
+
+  if (callback) return jsonpOutput_(payload, callback);
+  return jsonOutput(payload);
+}
+
+function doPost(e) {
+  const lock = LockService.getScriptLock();
+  let body = {};
+  try {
+    lock.waitLock(30000);
+    body = parseBody_(e);
+    const action = String(body.action || '').trim();
+
+    let payload;
+    if (action === 'init') {
+      ensureEnvironment_();
+      payload = { ok: true, version: APP_VERSION, meta: getEnvironmentMeta_(), data: readAllTables_() };
+    } else if (action === 'meta') {
+      ensureEnvironment_();
+      payload = { ok: true, version: APP_VERSION, meta: getEnvironmentMeta_() };
+    } else if (action === 'saveTable') {
+      ensureEnvironment_();
+      saveTable_(body.table, body.rows || []);
+      payload = { ok: true, version: APP_VERSION, table: body.table, count: (body.rows || []).length, meta: getEnvironmentMeta_() };
+    } else if (action === 'saveAll') {
+      ensureEnvironment_();
+      const data = body.data || {};
+      Object.keys(TABLE_SCHEMAS).forEach(function(table) {
+        if (table !== 'uploads' &amp;&amp; Array.isArray(data[table])) saveTable_(table, data[table]);
+      });
+      payload = { ok: true, version: APP_VERSION, meta: getEnvironmentMeta_(), data: readAllTables_() };
+    } else if (action === 'uploadFile') {
+      ensureEnvironment_();
+      const file = uploadFile_(body.file || {});
+      payload = { ok: true, version: APP_VERSION, file: file, meta: getEnvironmentMeta_() };
+    } else {
+      throw new Error('Action tidak dikenal: ' + action);
+    }
+
+    return responseOutput_(payload, e, body);
+  } catch (err) {
+    return responseOutput_({ ok: false, error: err.message || String(err), version: APP_VERSION }, e, body);
+  } finally {
+    try { lock.releaseLock(); } catch (releaseErr) {}
+  }
+}
+
+function parseBody_(e) {
+  if (!e) return {};
+
+  const params = e.parameter || {};
+  if (params.payload) {
+    try {
+      return JSON.parse(params.payload);
+    } catch (err) {
+      throw new Error('Parameter payload bukan JSON valid. Detail: ' + err.message);
+    }
+  }
+
+  if (e.postData &amp;&amp; e.postData.contents) {
+    try {
+      return JSON.parse(e.postData.contents);
+    } catch (err) {
+      throw new Error('Body request bukan JSON valid. Detail: ' + err.message);
+    }
+  }
+
+  return {
+    action: params.action || '',
+    _requestId: params.requestId || '',
+    _responseMode: params.responseMode || ''
+  };
+}
+
+// =========================
+// ENVIRONMENT SETUP
+// =========================
+function ensureEnvironment_() {
+  getSpreadsheet_();
+  ensureAllSheets_();
+  getRootDriveFolder_();
+  ensureDriveSubfolders_();
+}
+
+function getEnvironmentMeta_() {
+  const ss = getSpreadsheet_();
+  const folder = getRootDriveFolder_();
+  return {
+    spreadsheetId: ss.getId(),
+    spreadsheetName: ss.getName(),
+    spreadsheetUrl: ss.getUrl(),
+    driveFolderId: folder.getId(),
+    driveFolderName: folder.getName(),
+    driveFolderUrl: folder.getUrl(),
+    tables: Object.keys(TABLE_SCHEMAS),
+    headersSmartMode: true,
+    driveAutoMode: true
+  };
+}
+
+function getSpreadsheet_() {
+  const props = PropertiesService.getScriptProperties();
+  const configuredId = extractGoogleId_(SPREADSHEET_ID);
+  const storedId = props.getProperty(PROP_SPREADSHEET_ID);
+  const candidates = [configuredId, storedId].filter(Boolean);
+
+  for (let i = 0; i &lt; candidates.length; i++) {
+    try {
+      const ss = SpreadsheetApp.openById(candidates[i]);
+      props.setProperty(PROP_SPREADSHEET_ID, ss.getId());
+      return ss;
+    } catch (err) {
+      // lanjut ke kandidat berikutnya atau create baru
+    }
+  }
+
+  if (!AUTO_CREATE_SPREADSHEET) {
+    throw new Error('SPREADSHEET_ID belum valid dan AUTO_CREATE_SPREADSHEET=false.');
+  }
+
+  const ss = SpreadsheetApp.create(SPREADSHEET_NAME || ('LuxeHR Database ' + new Date().toISOString()));
+  props.setProperty(PROP_SPREADSHEET_ID, ss.getId());
+  return ss;
+}
+
+function getRootDriveFolder_() {
+  const props = PropertiesService.getScriptProperties();
+  const configuredId = extractGoogleId_(DRIVE_FOLDER_ID);
+  const storedId = props.getProperty(PROP_DRIVE_FOLDER_ID);
+  const candidates = [configuredId, storedId].filter(Boolean);
+
+  for (let i = 0; i &lt; candidates.length; i++) {
+    try {
+      const folder = DriveApp.getFolderById(candidates[i]);
+      props.setProperty(PROP_DRIVE_FOLDER_ID, folder.getId());
+      return folder;
+    } catch (err) {
+      // lanjut ke kandidat berikutnya atau create baru
+    }
+  }
+
+  if (!AUTO_CREATE_DRIVE_FOLDER) {
+    throw new Error('DRIVE_FOLDER_ID belum valid dan AUTO_CREATE_DRIVE_FOLDER=false.');
+  }
+
+  const folder = DriveApp.createFolder(DRIVE_FOLDER_NAME || ('LuxeHR Uploads ' + Date.now()));
+  props.setProperty(PROP_DRIVE_FOLDER_ID, folder.getId());
+  return folder;
+}
+
+function ensureDriveSubfolders_() {
+  Object.keys(DRIVE_SUBFOLDERS).forEach(function(category) {
+    getOrCreateSubfolder_(DRIVE_SUBFOLDERS[category]);
+  });
+}
+
+function getOrCreateSubfolder_(name) {
+  const root = getRootDriveFolder_();
+  const folders = root.getFoldersByName(name);
+  if (folders.hasNext()) return folders.next();
+  return root.createFolder(name);
+}
+
+function extractGoogleId_(value) {
+  const text = String(value || '').trim();
+  if (!text || text.indexOf('PASTE_YOUR_') &gt;= 0) return '';
+  const match = text.match(/[-\w]{25,}/);
+  return match ? match[0] : text;
+}
+
+// =========================
+// SHEET + HEADER MANAGEMENT
+// =========================
+function ensureAllSheets_() {
+  Object.keys(TABLE_SCHEMAS).forEach(function(table) {
+    ensureSheetHeaders_(table);
+  });
+}
+
+function ensureSheetHeaders_(table) {
+  const schema = TABLE_SCHEMAS[table];
+  if (!schema) throw new Error('Tabel tidak valid: ' + table);
+
+  const ss = getSpreadsheet_();
+  let sheet = ss.getSheetByName(table);
+  if (!sheet) sheet = ss.insertSheet(table);
+
+  if (sheet.getLastColumn() === 0 || isFirstRowEmpty_(sheet)) {
+    ensureSheetSize_(sheet, 1, schema.length);
+    sheet.getRange(1, 1, 1, schema.length).setValues([schema]);
+    beautifyHeader_(sheet, schema.length);
+    return sheet;
+  }
+
+  const lastCol = Math.max(sheet.getLastColumn(), schema.length);
+  const headerRange = sheet.getRange(1, 1, 1, lastCol);
+  let headers = headerRange.getValues()[0].map(function(value) { return String(value || '').trim(); });
+  const usedCanonical = {};
+
+  headers = headers.map(function(header) {
+    const canonical = resolveHeaderKey_(table, header);
+    if (canonical &amp;&amp; schema.indexOf(canonical) &gt;= 0 &amp;&amp; !usedCanonical[canonical]) {
+      usedCanonical[canonical] = true;
+      return canonical;
+    }
+    return header;
+  });
+
+  schema.forEach(function(key) {
+    if (!usedCanonical[key] &amp;&amp; headers.indexOf(key) === -1) {
+      headers.push(key);
+      usedCanonical[key] = true;
+    }
+  });
+
+  ensureSheetSize_(sheet, 1, headers.length);
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  beautifyHeader_(sheet, headers.length);
+  return sheet;
+}
+
+function isFirstRowEmpty_(sheet) {
+  const lastCol = sheet.getLastColumn();
+  if (lastCol === 0) return true;
+  const row = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  return row.every(function(cell) { return cell === '' || cell === null; });
+}
+
+function beautifyHeader_(sheet, columnCount) {
+  sheet.setFrozenRows(1);
+  const range = sheet.getRange(1, 1, 1, columnCount);
+  range.setFontWeight('bold');
+  range.setBackground('#111827');
+  range.setFontColor('#F9FAFB');
+  try { sheet.autoResizeColumns(1, columnCount); } catch (err) {}
+}
+
+function ensureSheetSize_(sheet, requiredRows, requiredColumns) {
+  if (sheet.getMaxRows() &lt; requiredRows) {
+    sheet.insertRowsAfter(sheet.getMaxRows(), requiredRows - sheet.getMaxRows());
+  }
+  if (sheet.getMaxColumns() &lt; requiredColumns) {
+    sheet.insertColumnsAfter(sheet.getMaxColumns(), requiredColumns - sheet.getMaxColumns());
+  }
+}
+
+function getHeaderInfo_(table, sheet) {
+  const schema = TABLE_SCHEMAS[table];
+  const lastCol = Math.max(sheet.getLastColumn(), schema.length);
+  const headerValues = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  const map = {};
+
+  headerValues.forEach(function(header, index) {
+    const canonical = resolveHeaderKey_(table, header);
+    if (canonical &amp;&amp; schema.indexOf(canonical) &gt;= 0 &amp;&amp; !map[canonical]) {
+      map[canonical] = index + 1;
+    }
+  });
+
+  schema.forEach(function(key) {
+    if (!map[key]) throw new Error('Header wajib tidak ditemukan pada tabel ' + table + ': ' + key);
+  });
+
+  return { headers: headerValues, map: map, lastCol: lastCol };
+}
+
+function resolveHeaderKey_(table, header) {
+  const normalized = normalizeHeader_(header);
+  if (!normalized) return '';
+
+  const schema = TABLE_SCHEMAS[table] || [];
+  for (let i = 0; i &lt; schema.length; i++) {
+    if (normalizeHeader_(schema[i]) === normalized) return schema[i];
+  }
+
+  const aliases = HEADER_ALIASES[table] || {};
+  return aliases[normalized] || '';
+}
+
+function normalizeHeader_(value) {
+  return String(value || '')
+    .toLowerCase()
+    .trim()
+    .replace(/&amp;/g, 'and')
+    .replace(/[^a-z0-9]+/g, '');
+}
+
+// =========================
+// TABLE READ / WRITE
+// =========================
+function readAllTables_() {
+  const output = {};
+  Object.keys(TABLE_SCHEMAS).forEach(function(table) {
+    output[table] = readTable_(table);
+  });
+  return output;
+}
+
+function readTable_(table) {
+  const schema = TABLE_SCHEMAS[table];
+  if (!schema) throw new Error('Tabel tidak valid: ' + table);
+
+  const sheet = ensureSheetHeaders_(table);
+  const lastRow = sheet.getLastRow();
+  if (lastRow &lt; 2) return [];
+
+  const info = getHeaderInfo_(table, sheet);
+  const values = sheet.getRange(2, 1, lastRow - 1, info.lastCol).getValues();
+
+  return values
+    .filter(function(row) {
+      return schema.some(function(key) {
+        const columnIndex = info.map[key] - 1;
+        const cell = row[columnIndex];
+        return cell !== '' &amp;&amp; cell !== null;
+      });
+    })
+    .map(function(row) {
+      const obj = {};
+      schema.forEach(function(key) {
+        obj[key] = normalizeCellValue_(key, row[info.map[key] - 1]);
+      });
+      return obj;
+    });
+}
+
+function saveTable_(table, rows) {
+  const schema = TABLE_SCHEMAS[table];
+  if (!schema) throw new Error('Tabel tidak valid: ' + table);
+  if (!Array.isArray(rows)) throw new Error('Rows untuk tabel ' + table + ' harus berupa array.');
+
+  const sheet = ensureSheetHeaders_(table);
+  const info = getHeaderInfo_(table, sheet);
+  ensureSheetSize_(sheet, Math.max(rows.length + 1, sheet.getLastRow()), info.lastCol);
+  const lastRow = sheet.getLastRow();
+  const rowsToClear = Math.max(lastRow - 1, rows.length);
+
+  if (rowsToClear &gt; 0) {
+    schema.forEach(function(key) {
+      sheet.getRange(2, info.map[key], rowsToClear, 1).clearContent();
+    });
+  }
+
+  if (rows.length === 0) return;
+
+  schema.forEach(function(key) {
+    const values = rows.map(function(row) {
+      return [serializeCellValue_(row &amp;&amp; row[key] !== undefined &amp;&amp; row[key] !== null ? row[key] : '')];
+    });
+    sheet.getRange(2, info.map[key], values.length, 1).setValues(values);
+  });
+}
+
+function appendTableRow_(table, rowObject) {
+  const schema = TABLE_SCHEMAS[table];
+  const sheet = ensureSheetHeaders_(table);
+  const info = getHeaderInfo_(table, sheet);
+  const rowIndex = sheet.getLastRow() + 1;
+  ensureSheetSize_(sheet, rowIndex, info.lastCol);
+  const row = new Array(info.lastCol).fill('');
+
+  schema.forEach(function(key) {
+    row[info.map[key] - 1] = serializeCellValue_(rowObject[key] !== undefined &amp;&amp; rowObject[key] !== null ? rowObject[key] : '');
+  });
+
+  sheet.getRange(rowIndex, 1, 1, info.lastCol).setValues([row]);
+}
+
+function serializeCellValue_(value) {
+  if (value instanceof Date) return value;
+  if (typeof value === 'object' &amp;&amp; value !== null) return JSON.stringify(value);
+  return value;
+}
+
+function normalizeCellValue_(key, value) {
+  if (value instanceof Date) return Utilities.formatDate(value, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  if (['id', 'empId', 'salary', 'perf', 'sizeBytes'].indexOf(key) &gt;= 0 &amp;&amp; value !== '') {
+    const numberValue = Number(value);
+    return isNaN(numberValue) ? value : numberValue;
+  }
+  return value === null || value === undefined ? '' : value;
+}
+
+// =========================
+// DRIVE UPLOAD
+// =========================
+function uploadFile_(filePayload) {
+  if (!filePayload.base64) throw new Error('Payload file kosong.');
+
+  const category = normalizeUploadCategory_(filePayload.category || filePayload.type || 'general');
+  const folderName = DRIVE_SUBFOLDERS[category] || DRIVE_SUBFOLDERS.general;
+  const folder = getOrCreateSubfolder_(folderName);
+
+  const cleanBase64 = stripBase64Prefix_(filePayload.base64);
+  const bytes = Utilities.base64Decode(cleanBase64);
+  const mimeType = filePayload.mimeType || 'application/octet-stream';
+  const safeName = sanitizeFileName_(filePayload.name || (category + '_' + Date.now()));
+  const blob = Utilities.newBlob(bytes, mimeType, safeName);
+  const file = folder.createFile(blob);
+
+  let sharingStatus = 'private';
+  if (MAKE_DRIVE_FILES_PUBLIC) {
+    try {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      sharingStatus = 'anyone_with_link';
+    } catch (err) {
+      sharingStatus = 'sharing_failed: ' + err.message;
+    }
+  }
+
+  const id = file.getId();
+  const result = {
+    id: 'UP-' + Date.now(),
+    fileId: id,
+    name: file.getName(),
+    mimeType: mimeType,
+    sizeBytes: bytes.length,
+    category: category,
+    relatedTable: filePayload.relatedTable || '',
+    relatedId: filePayload.relatedId || filePayload.ownerId || '',
+    url: file.getUrl(),
+    viewUrl: file.getUrl(),
+    directUrl: 'https://drive.google.com/uc?export=view&amp;id=' + id,
+    downloadUrl: 'https://drive.google.com/uc?export=download&amp;id=' + id,
+    createdAt: new Date().toISOString(),
+    sharingStatus: sharingStatus
+  };
+
+  appendTableRow_('uploads', result);
+
+  return {
+    id: result.fileId,
+    uploadId: result.id,
+    name: result.name,
+    mimeType: result.mimeType,
+    sizeBytes: result.sizeBytes,
+    category: result.category,
+    url: result.url,
+    viewUrl: result.viewUrl,
+    directUrl: result.directUrl,
+    downloadUrl: result.downloadUrl,
+    sharingStatus: result.sharingStatus
+  };
+}
+
+function normalizeUploadCategory_(category) {
+  const normalized = String(category || 'general').toLowerCase().trim().replace(/[^a-z0-9_]+/g, '_');
+  if (normalized.indexOf('foto') &gt;= 0 || normalized.indexOf('photo') &gt;= 0 || normalized.indexOf('image') &gt;= 0) return 'foto_karyawan';
+  if (normalized.indexOf('ktp') &gt;= 0 || normalized.indexOf('identitas') &gt;= 0 || normalized.indexOf('identity') &gt;= 0) return 'identitas_karyawan';
+  if (normalized.indexOf('absen') &gt;= 0 || normalized.indexOf('attendance') &gt;= 0) return 'attendance';
+  return DRIVE_SUBFOLDERS[normalized] ? normalized : 'general';
+}
+
+function stripBase64Prefix_(base64) {
+  const text = String(base64 || '');
+  return text.indexOf(',') &gt;= 0 ? text.split(',').pop() : text;
+}
+
+function sanitizeFileName_(name) {
+  const clean = String(name || 'luxehr_upload')
+    .replace(/[\\/:*?"&lt;&gt;|#%{}$!'@+`=]/g, '_')
+    .replace(/\s+/g, '_')
+    .slice(0, 180);
+  return clean || ('luxehr_upload_' + Date.now());
+}
+
+// =========================
+// RESPONSE
+// =========================
+function responseOutput_(payload, e, body) {
+  const params = e &amp;&amp; e.parameter ? e.parameter : {};
+  const responseMode = String((body &amp;&amp; body._responseMode) || params.responseMode || '').trim();
+  const requestId = String((body &amp;&amp; body._requestId) || params.requestId || '').trim();
+
+  if (responseMode === 'postMessage') {
+    return htmlPostMessageOutput_(payload, requestId);
+  }
+
+  const callback = String(params.callback || '').trim();
+  if (callback) return jsonpOutput_(payload, callback);
+
+  return jsonOutput(payload);
+}
+
+function jsonOutput(payload) {
+  return ContentService
+    .createTextOutput(JSON.stringify(payload))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function jsonpOutput_(payload, callback) {
+  const safeCallback = String(callback || '').replace(/[^a-zA-Z0-9_$\.]/g, '');
+  if (!safeCallback) return jsonOutput({ ok: false, error: 'Callback JSONP tidak valid.' });
+  return ContentService
+    .createTextOutput(safeCallback + '(' + JSON.stringify(payload) + ');')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+function htmlPostMessageOutput_(payload, requestId) {
+  const data = Object.assign({}, payload, {
+    luxehr: true,
+    requestId: requestId || ''
+  });
+  const json = JSON.stringify(data)
+    .replace(/&lt;\//g, '&lt;\\/')
+    .replace(/&lt;/g, '\\u003c')
+    .replace(/&gt;/g, '\\u003e')
+    .replace(/&amp;/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+
+  const html = '&lt;!doctype html&gt;&lt;html&gt;&lt;head&gt;&lt;meta charset="utf-8"&gt;&lt;/head&gt;&lt;body&gt;' +
+    '&lt;script&gt;window.parent&amp;&amp;window.parent.postMessage(' + json + ',"*");&lt;/script&gt;' +
+    '&lt;/body&gt;&lt;/html&gt;';
+
+  return HtmlService
+    .createHtmlOutput(html)
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+</textarea>
+                            <button type="button" onclick="copyAppsScriptCode()" title="Salin kode" class="absolute top-3 right-3 w-9 h-9 rounded-lg bg-gold-500 text-surface-400 shadow-gold-glow hover:bg-gold-400 transition-all flex items-center justify-center">
+                                <i class="fa-solid fa-copy text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="bg-surface-200 border border-white/5 rounded-xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                            <h3 class="text-xs font-bold text-white uppercase tracking-widest border-b border-white/5 pb-3 mb-4">Langkah Setup</h3>
+                            <ol class="space-y-3 text-[11px] text-gray-400 leading-relaxed list-decimal list-inside">
+                                <li>Buka <span class="text-gold-500 font-mono">script.google.com</span>, buat project baru.</li>
+                                <li>Paste kode <span class="text-gold-500 font-mono">Code.gs</span> dari halaman ini.</li>
+                                <li><li><span class="text-gold-500 font-mono">SPREADSHEET_ID</span> dan <span class="text-gold-500 font-mono">DRIVE_FOLDER_ID</span> boleh dikosongkan/placeholder karena script bisa membuat otomatis.</li>
+                                <li>Deploy sebagai Web App. Pada akses, pilih sesuai kebutuhan operasional.</li>
+                                <li>URL Web App sudah dipasang pada frontend. Setelah mengganti Code.gs, lakukan Update Deployment / New version.</li>
+                                <li>Jalankan aplikasi. Saat koneksi pertama, tab Sheet, header, folder Drive, dan subfolder upload akan dibuat otomatis.</li>
+                            </ol>
+                        </div>
+
+                        <div class="bg-surface-200 border border-white/5 rounded-xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                            <h3 class="text-xs font-bold text-white uppercase tracking-widest border-b border-white/5 pb-3 mb-4">Konfigurasi Frontend</h3>
+                            <div class="space-y-3 text-[11px]">
+                                <div>
+                                    <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Koneksi Web App</p>
+                                    <p id="settingsConfigEnabled" class="font-mono text-gray-300 break-all">Web App URL Only</p>
+                                </div>
+                                <div>
+                                    <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Web App URL</p>
+                                    <p id="settingsConfigUrl" class="font-mono text-gray-300 break-all">-</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gold-500/10 border border-gold-500/20 rounded-xl p-5">
+                            <div class="flex gap-3 items-start">
+                                <div class="w-8 h-8 rounded-lg bg-gold-500/20 text-gold-500 flex items-center justify-center flex-shrink-0">
+                                    <i class="fa-solid fa-shield-halved text-xs"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-white uppercase tracking-widest mb-2">Catatan Keamanan</h4>
+                                    <p class="text-[11px] text-gray-400 leading-relaxed">Script ini dapat membuat Sheet dan folder Drive otomatis menggunakan akun Google yang melakukan deploy. Kontrol akses utama ada pada pengaturan deployment Web App dan permission akun Google yang digunakan.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
         </div>
     </main>
 
@@ -627,10 +1394,15 @@
             <div class="p-6 overflow-y-auto hide-scrollbar">
                 <form id="employeeForm" class="space-y-5">
                     <div class="flex flex-col sm:flex-row gap-5">
-                        <div class="w-24 h-24 rounded-xl bg-surface-100 border border-white/10 border-dashed flex flex-col items-center justify-center text-gray-500 flex-shrink-0 cursor-pointer hover:border-gold-500/50 hover:text-gold-400 transition-colors mx-auto sm:mx-0">
-                            <i class="fa-solid fa-camera mb-1 text-lg"></i>
-                            <span class="text-[9px] uppercase tracking-widest">Foto</span>
-                        </div>
+                        <label for="empPhotoFile" class="w-24 h-24 rounded-xl bg-surface-100 border border-white/10 border-dashed flex flex-col items-center justify-center text-gray-500 flex-shrink-0 cursor-pointer hover:border-gold-500/50 hover:text-gold-400 transition-colors mx-auto sm:mx-0 overflow-hidden relative group">
+                            <img id="empPhotoPreview" src="" alt="Preview Foto" class="hidden w-full h-full object-cover">
+                            <div id="empPhotoPlaceholder" class="flex flex-col items-center justify-center text-center px-2">
+                                <i class="fa-solid fa-camera mb-1 text-lg"></i>
+                                <span class="text-[9px] uppercase tracking-widest">Upload Foto</span>
+                            </div>
+                            <div class="absolute inset-x-0 bottom-0 py-1 bg-black/60 text-[8px] text-white uppercase tracking-widest text-center opacity-0 group-hover:opacity-100 transition-opacity">Ganti</div>
+                            <input type="file" id="empPhotoFile" accept="image/*" class="hidden">
+                        </label>
                         <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Nama Lengkap</label>
@@ -694,7 +1466,35 @@
                         </div>
                         <div class="sm:col-span-2">
                             <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">URL Scan KTP / Identitas</label>
-                            <input type="text" id="empKtp" placeholder="https://link-foto-ktp-karyawan.com/ktp.jpg" class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs font-mono text-white focus:border-gold-500 focus:outline-none transition-colors text-gray-400">
+                            <input type="text" id="empKtp" placeholder="Terisi otomatis setelah upload ke Google Drive" class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs font-mono text-white focus:border-gold-500 focus:outline-none transition-colors text-gray-400">
+                            <div class="mt-2 flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                                <label for="empKtpFile" class="px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-[10px] uppercase tracking-widest text-gray-400 hover:text-gold-500 hover:border-gold-500/40 cursor-pointer transition-all flex items-center gap-2">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> Upload KTP ke Drive
+                                </label>
+                                <input type="file" id="empKtpFile" accept="image/*,application/pdf" class="hidden">
+                                <span id="empKtpFileName" class="text-[9px] text-gray-500 truncate max-w-[240px]">Belum ada file dipilih</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Status Karyawan</label>
+                            <select id="empStatus" required class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors">
+                                <option value="Aktif">Aktif</option>
+                                <option value="Cuti">Cuti</option>
+                                <option value="Resign">Resign</option>
+                                <option value="Blacklist">Blacklist</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Tanggal Resign</label>
+                            <input type="date" id="empResignDate" class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors filter invert hue-rotate-180">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Tanggal Blacklist</label>
+                            <input type="date" id="empBlacklistDate" class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors filter invert hue-rotate-180">
+                        </div>
+                        <div class="sm:col-span-2 lg:col-span-3">
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Alasan / Catatan Resign & Blacklist</label>
+                            <textarea id="empStatusNote" rows="2" placeholder="Isi alasan resign, alasan blacklist, atau catatan HR." class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors resize-none"></textarea>
                         </div>
                     </div>
                     
@@ -722,6 +1522,26 @@
             
             <p id="qrEmpNik" class="text-white font-mono text-lg tracking-[0.2em] mb-6">NIK-XXXX</p>
             <button onclick="closeQrModal()" class="w-full px-4 py-2.5 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-xs uppercase tracking-widest">Tutup</button>
+        </div>
+    </div>
+
+
+    <!-- Employee View Card Modal -->
+    <div id="employeeCardModal" class="modal-transition fixed inset-0 z-[72] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/90 backdrop-blur-md cursor-pointer" onclick="closeEmployeeCardModal()"></div>
+        <div class="bg-surface-200 border border-gold-500/20 rounded-2xl shadow-[0_0_50px_rgba(212,175,55,0.12)] w-full max-w-3xl mx-4 relative z-10 transform scale-95 opacity-0 transition-all duration-300 overflow-hidden max-h-[90vh] flex flex-col" id="employeeCardModalContent">
+            <div class="px-5 py-4 border-b border-white/5 flex justify-between items-center bg-surface-100/50">
+                <div>
+                    <h3 class="text-sm font-serif font-bold text-gold-500 tracking-wider uppercase">View Card Data Karyawan</h3>
+                    <p class="text-[9px] text-gray-500 uppercase tracking-widest mt-1">Ringkasan profil, status, cabang, dan payroll</p>
+                </div>
+                <button onclick="closeEmployeeCardModal()" class="text-gray-500 hover:text-white transition-colors w-8 h-8 rounded-full hover:bg-white/5 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            <div id="employeeCardContent" class="overflow-y-auto hide-scrollbar">
+                <!-- Employee card detail injected by JS -->
+            </div>
         </div>
     </div>
 
@@ -917,12 +1737,17 @@
     <!-- Confirm Modal -->
     <div id="confirmModal" class="modal-transition fixed inset-0 z-[80] flex items-center justify-center hidden">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="confirmBackdrop"></div>
-        <div class="bg-surface-200 border border-white/10 rounded-xl shadow-2xl p-6 max-w-xs w-full mx-4 relative z-10 text-center transform scale-95 opacity-0 transition-all duration-300" id="confirmInner">
+        <div class="bg-surface-200 border border-white/10 rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 relative z-10 text-center transform scale-95 opacity-0 transition-all duration-300" id="confirmInner">
             <div class="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/30 text-red-500 flex items-center justify-center mx-auto mb-4">
                 <i class="fa-solid fa-triangle-exclamation text-xl"></i>
             </div>
-            <h3 class="text-white font-serif text-lg mb-2">Hapus Data?</h3>
-            <p id="confirmMessage" class="text-gray-400 text-[11px] mb-6 leading-relaxed">Data ini akan dihapus secara permanen dari sistem.</p>
+            <h3 id="confirmTitle" class="text-white font-serif text-lg mb-2">Konfirmasi Aksi</h3>
+            <p id="confirmMessage" class="text-gray-400 text-[11px] mb-4 leading-relaxed">Data ini akan dihapus secara permanen dari sistem.</p>
+            <div id="confirmReasonWrapper" class="hidden mb-5 text-left">
+                <label id="confirmReasonLabel" class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Alasan</label>
+                <textarea id="confirmReasonInput" rows="3" placeholder="Tuliskan alasan singkat..." class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors resize-none"></textarea>
+                <p class="text-[9px] text-gray-500 mt-1 leading-relaxed">Alasan ini akan tersimpan di catatan status karyawan.</p>
+            </div>
             <div class="flex gap-3 justify-center">
                 <button id="btnCancelConfirm" class="flex-1 px-4 py-2.5 rounded-lg border border-white/10 text-gray-400 hover:bg-white/5 transition-colors text-xs uppercase tracking-widest font-medium">Batal</button>
                 <button id="btnProceedConfirm" class="flex-1 px-4 py-2.5 rounded-lg bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500 hover:text-white transition-colors text-xs uppercase tracking-widest font-bold">Hapus</button>
@@ -978,6 +1803,288 @@
             branches: 'luxehr_branches',
             cameraEverGranted: 'luxehr_camera_ever_granted'
         };
+        // --- GOOGLE SHEET + GOOGLE DRIVE WEB APP URL ---
+        // Frontend hanya memakai URL Web App Apps Script ini. Tidak ada unusedTokenRemoved dan tidak ada toggle web app.
+        const GOOGLE_SHEET_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyh80Es1dB_4t2yIlF-ii0w2mlcKeEXBWUJMCScMito9_ssIwvNkpP8I9WFo-ZH0iLipw/exec';
+        const GOOGLE_SHEET_REQUEST_TIMEOUT_MS = 15000;
+
+        const GOOGLE_TABLE_BY_STORAGE_KEY = {
+            [APP_STORAGE.employees]: 'employees',
+            [APP_STORAGE.attendance]: 'attendance',
+            [APP_STORAGE.shifts]: 'shifts',
+            [APP_STORAGE.branches]: 'branches'
+        };
+
+        let googleSheetReady = false;
+        let googleSheetBooting = false;
+        const googleSyncTimers = {};
+
+        const isGoogleSheetConfigured = () => {
+            return Boolean(
+                GOOGLE_SHEET_WEBAPP_URL &&
+                /^https:\/\/script\.google\.com\/macros\/s\//.test(GOOGLE_SHEET_WEBAPP_URL) &&
+                !GOOGLE_SHEET_WEBAPP_URL.includes('PASTE_GOOGLE_APPS_SCRIPT')
+            );
+        };
+
+        const updateSyncStatus = (label, mode = 'local') => {
+            const badge = document.getElementById('syncStatusBadge');
+            const btn = document.getElementById('manualSyncBtn');
+            if (!badge || !btn) return;
+            badge.textContent = label;
+            btn.classList.remove('text-gray-400', 'text-gold-500', 'text-green-400', 'text-red-400', 'border-green-500/40', 'border-red-500/40', 'border-gold-500/40');
+            if (mode === 'online') btn.classList.add('text-green-400', 'border-green-500/40');
+            else if (mode === 'error') btn.classList.add('text-red-400', 'border-red-500/40');
+            else if (mode === 'syncing') btn.classList.add('text-gold-500', 'border-gold-500/40');
+            else btn.classList.add('text-gray-400');
+        };
+
+        const googleSheetRequest = (action, payload = {}) => {
+            if (!isGoogleSheetConfigured()) {
+                return Promise.reject(new Error('URL Web App Google Sheet/Drive belum dikonfigurasi.'));
+            }
+
+            return new Promise((resolve, reject) => {
+                const requestId = `luxehr_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+                const iframeName = `luxehr_transport_${requestId}`;
+                const timeoutMs = Number(GOOGLE_SHEET_REQUEST_TIMEOUT_MS) || 15000;
+                let iframe = null;
+                let form = null;
+                let settled = false;
+
+                const cleanup = () => {
+                    window.removeEventListener('message', handleMessage);
+                    if (timeoutId) clearTimeout(timeoutId);
+                    setTimeout(() => {
+                        if (form && form.parentNode) form.parentNode.removeChild(form);
+                        if (iframe && iframe.parentNode) iframe.parentNode.removeChild(iframe);
+                    }, 300);
+                };
+
+                const finish = (fn, value) => {
+                    if (settled) return;
+                    settled = true;
+                    cleanup();
+                    fn(value);
+                };
+
+                const handleMessage = (event) => {
+                    const data = event && event.data;
+                    if (!data || data.luxehr !== true || data.requestId !== requestId) return;
+                    if (data.ok === false) {
+                        finish(reject, new Error(data.error || 'Google Apps Script mengembalikan status gagal.'));
+                    } else {
+                        finish(resolve, data);
+                    }
+                };
+
+                const timeoutId = setTimeout(() => {
+                    finish(reject, new Error(`Koneksi Google Apps Script timeout setelah ${Math.round(timeoutMs / 1000)} detik.`));
+                }, timeoutMs);
+
+                try {
+                    window.addEventListener('message', handleMessage);
+
+                    iframe = document.createElement('iframe');
+                    iframe.name = iframeName;
+                    iframe.title = 'LuxeHR Google Sheet Transport';
+                    iframe.style.position = 'absolute';
+                    iframe.style.left = '-9999px';
+                    iframe.style.top = '-9999px';
+                    iframe.style.width = '1px';
+                    iframe.style.height = '1px';
+                    iframe.style.opacity = '0';
+                    iframe.setAttribute('aria-hidden', 'true');
+
+                    form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = GOOGLE_SHEET_WEBAPP_URL;
+                    form.target = iframeName;
+                    form.enctype = 'application/x-www-form-urlencoded';
+                    form.acceptCharset = 'UTF-8';
+                    form.style.display = 'none';
+
+                    const payloadInput = document.createElement('input');
+                    payloadInput.type = 'hidden';
+                    payloadInput.name = 'payload';
+                    payloadInput.value = JSON.stringify({
+                        _requestId: requestId,
+                        _responseMode: 'postMessage',
+                        action,
+                        ...payload
+                    });
+
+                    const modeInput = document.createElement('input');
+                    modeInput.type = 'hidden';
+                    modeInput.name = 'responseMode';
+                    modeInput.value = 'postMessage';
+
+                    const requestInput = document.createElement('input');
+                    requestInput.type = 'hidden';
+                    requestInput.name = 'requestId';
+                    requestInput.value = requestId;
+
+                    form.appendChild(payloadInput);
+                    form.appendChild(modeInput);
+                    form.appendChild(requestInput);
+
+                    document.body.appendChild(iframe);
+                    document.body.appendChild(form);
+                    form.submit();
+                } catch (error) {
+                    finish(reject, error);
+                }
+            });
+        };
+
+        const writeLocalOnly = (key, value) => {
+            localStorage.setItem(key, JSON.stringify(value));
+        };
+
+        const hasRemoteRows = (data) => {
+            if (!data) return false;
+            return ['employees', 'attendance', 'shifts', 'branches'].some(key => Array.isArray(data[key]) && data[key].length > 0);
+        };
+
+        const persistAllLocalOnly = () => {
+            writeLocalOnly(APP_STORAGE.employees, employees);
+            writeLocalOnly(APP_STORAGE.attendance, attendance);
+            writeLocalOnly(APP_STORAGE.shifts, shifts);
+            writeLocalOnly(APP_STORAGE.branches, branches);
+        };
+
+        const applyRemoteData = (data = {}) => {
+            if (Array.isArray(data.employees) && data.employees.length) employees = data.employees;
+            if (Array.isArray(data.attendance) && data.attendance.length) attendance = data.attendance;
+            if (Array.isArray(data.shifts) && data.shifts.length) shifts = data.shifts;
+            if (Array.isArray(data.branches) && data.branches.length) branches = data.branches;
+            persistAllLocalOnly();
+        };
+
+        const initGoogleSheetDatabase = async () => {
+            if (!isGoogleSheetConfigured()) {
+                googleSheetReady = false;
+                updateSyncStatus('Local', 'local');
+                return;
+            }
+            googleSheetBooting = true;
+            updateSyncStatus('Connecting', 'syncing');
+            try {
+                const response = await googleSheetRequest('init');
+                const remoteData = response.data || {};
+                if (hasRemoteRows(remoteData)) {
+                    applyRemoteData(remoteData);
+                } else {
+                    await googleSheetRequest('saveAll', {
+                        data: { employees, attendance, shifts, branches }
+                    });
+                }
+                googleSheetReady = true;
+                updateSyncStatus('GSheet', 'online');
+            } catch (error) {
+                googleSheetReady = false;
+                console.error('Google Sheet/Drive gagal dimuat:', error);
+                updateSyncStatus('Offline', 'error');
+                showToast('Google Sheet/Drive belum tersambung. Sistem memakai data lokal.', 'error');
+            } finally {
+                googleSheetBooting = false;
+            }
+        };
+
+        const queueGoogleTableSync = (key, value) => {
+            if (!googleSheetReady || googleSheetBooting) return;
+            const table = GOOGLE_TABLE_BY_STORAGE_KEY[key];
+            if (!table) return;
+            clearTimeout(googleSyncTimers[key]);
+            googleSyncTimers[key] = setTimeout(async () => {
+                try {
+                    updateSyncStatus('Syncing', 'syncing');
+                    await googleSheetRequest('saveTable', { table, rows: value });
+                    updateSyncStatus('GSheet', 'online');
+                } catch (error) {
+                    console.error(`Gagal sync tabel ${table}:`, error);
+                    updateSyncStatus('Offline', 'error');
+                    showToast(`Gagal sync ${table} ke Google Sheet. Data lokal tetap aman.`, 'error');
+                }
+            }, 700);
+        };
+
+        const manualSyncToGoogle = async () => {
+            if (!isGoogleSheetConfigured()) {
+                showToast('URL Web App Google Sheet/Drive belum valid.', 'error');
+                return;
+            }
+            try {
+                updateSyncStatus('Syncing', 'syncing');
+                await googleSheetRequest('saveAll', { data: { employees, attendance, shifts, branches } });
+                googleSheetReady = true;
+                updateSyncStatus('GSheet', 'online');
+                showToast('Semua data berhasil disinkronkan ke Google Sheet.', 'success');
+            } catch (error) {
+                console.error('Manual sync gagal:', error);
+                updateSyncStatus('Offline', 'error');
+                showToast('Manual sync gagal. Cek URL Web App dan permission Apps Script.', 'error');
+            }
+        };
+
+        const uploadFileToGoogleDrive = async (file, category, ownerName) => {
+            if (!file) return '';
+            if (!isGoogleSheetConfigured()) {
+                throw new Error('Upload gambar membutuhkan URL Web App Google Sheet/Drive yang valid.');
+            }
+            const maxSizeMb = 7;
+            if (file.size > maxSizeMb * 1024 * 1024) {
+                throw new Error(`Ukuran file maksimal ${maxSizeMb} MB.`);
+            }
+            const base64 = await fileToBase64Payload(file);
+            const cleanOwner = String(ownerName || 'employee').replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 60);
+            const response = await googleSheetRequest('uploadFile', {
+                file: {
+                    name: `${category}_${cleanOwner}_${Date.now()}_${file.name}`,
+                    mimeType: file.type || 'application/octet-stream',
+                    base64,
+                    category
+                }
+            });
+            const uploaded = response.file || response.data || {};
+            return uploaded.directUrl || uploaded.url || uploaded.viewUrl || '';
+        };
+
+        const fileToBase64Payload = (file) => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const result = String(reader.result || '');
+                resolve(result.includes(',') ? result.split(',').pop() : result);
+            };
+            reader.onerror = () => reject(reader.error || new Error('Gagal membaca file.'));
+            reader.readAsDataURL(file);
+        });
+
+        const setEmployeePhotoPreview = (src) => {
+            const img = document.getElementById('empPhotoPreview');
+            const placeholder = document.getElementById('empPhotoPlaceholder');
+            if (!img || !placeholder) return;
+            const finalSrc = src || '';
+            if (finalSrc) {
+                img.src = finalSrc;
+                img.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+            } else {
+                img.src = '';
+                img.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+            }
+        };
+
+        const resetEmployeeUploadInputs = () => {
+            const photoInput = document.getElementById('empPhotoFile');
+            const ktpInput = document.getElementById('empKtpFile');
+            const ktpName = document.getElementById('empKtpFileName');
+            if (photoInput) photoInput.value = '';
+            if (ktpInput) ktpInput.value = '';
+            if (ktpName) ktpName.textContent = 'Belum ada file dipilih';
+            setEmployeePhotoPreview('');
+        };
 
         const deepClone = (value) => JSON.parse(JSON.stringify(value));
 
@@ -1001,7 +2108,8 @@
         };
 
         const saveStorage = (key, value) => {
-            localStorage.setItem(key, JSON.stringify(value));
+            writeLocalOnly(key, value);
+            queueGoogleTableSync(key, value);
         };
 
         let employees = safeReadStorage(APP_STORAGE.employees, initialEmployees);
@@ -1010,6 +2118,7 @@
         let branches = safeReadStorage(APP_STORAGE.branches, initialBranches);
 
         let currentFilter = 'Semua Cabang';
+        let currentStatusFilter = 'Semua Status';
         let currentSearch = '';
         let confirmDeleteCallback = null;
         let isSidebarOpen = false;
@@ -1023,7 +2132,8 @@
             'attendance': document.getElementById('attendanceView'),
             'shifts': document.getElementById('shiftsView'),
             'reports': document.getElementById('reportsView'),
-            'payroll': document.getElementById('payrollView')
+            'payroll': document.getElementById('payrollView'),
+            'settings': document.getElementById('settingsView')
         };
         const navs = {
             'dashboard': document.getElementById('nav-dashboard'),
@@ -1031,12 +2141,14 @@
             'attendance': document.getElementById('nav-attendance'),
             'shifts': document.getElementById('nav-shifts'),
             'reports': document.getElementById('nav-reports'),
-            'payroll': document.getElementById('nav-payroll')
+            'payroll': document.getElementById('nav-payroll'),
+            'settings': document.getElementById('nav-settings')
         };
         const pageTitle = document.getElementById('pageTitle');
         const empTable = document.getElementById('employeeTableBody');
         const searchInput = document.getElementById('searchInput');
         const deptContainer = document.getElementById('deptFilterContainer');
+        const statusFilterContainer = document.getElementById('statusFilterContainer');
         
         // Modals
         const empModal = document.getElementById('employeeModal');
@@ -1060,6 +2172,122 @@
 
         const asLowerText = (value) => String(value ?? '').toLowerCase();
         const safeImage = (url) => url || DEFAULT_AVATAR;
+        const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[char]));
+        const monthToIndex = (monthValue) => {
+            const [year, month] = String(monthValue || '').split('-').map(Number);
+            if (!year || !month) return 0;
+            return (year * 12) + month;
+        };
+        const dateToMonthValue = (dateValue) => String(dateValue || '').slice(0, 7);
+
+
+        // --- QR PAYLOAD HELPERS ---
+        // Fix: these helpers are required by ID Card QR, View Card QR, and scanner processing.
+        const normalizeNikValue = (value) => String(value ?? '')
+            .trim()
+            .replace(/^['"`]+|['"`]+$/g, '')
+            .replace(/[<>]/g, '');
+
+        const findEmployeeNikMatch = (candidate) => {
+            const normalized = asLowerText(normalizeNikValue(candidate));
+            if (!normalized) return '';
+            const emp = employees.find(e => asLowerText(e.nik) === normalized);
+            return emp ? emp.nik : normalizeNikValue(candidate);
+        };
+
+        const buildAttendanceQrPayload = (emp) => {
+            const nik = normalizeNikValue(emp?.nik || emp);
+            return JSON.stringify({
+                app: 'LuxeHR',
+                type: 'ATTENDANCE_QR',
+                version: 1,
+                nik,
+                employeeId: emp?.id || '',
+                name: emp?.name || '',
+                createdAt: new Date().toISOString()
+            });
+        };
+
+        const getQrFallbackUrl = (payload, size = 200) => {
+            const safeSize = Math.max(120, Math.min(Number(size) || 200, 500));
+            return `https://api.qrserver.com/v1/create-qr-code/?size=${safeSize}x${safeSize}&data=${encodeURIComponent(String(payload || ''))}`;
+        };
+
+        const renderQrImage = (targetId, payload, size = 200) => {
+            const target = document.getElementById(targetId);
+            if (!target) return;
+
+            const fallbackUrl = getQrFallbackUrl(payload, size);
+            if ('src' in target) target.src = fallbackUrl;
+            else target.innerHTML = `<img src="${fallbackUrl}" alt="QR Code" class="w-full h-full object-contain">`;
+
+            try {
+                if (typeof QRCode !== 'undefined' && QRCode?.toDataURL && 'src' in target) {
+                    QRCode.toDataURL(String(payload || ''), {
+                        width: Number(size) || 200,
+                        margin: 1,
+                        errorCorrectionLevel: 'M'
+                    }).then((dataUrl) => {
+                        target.src = dataUrl;
+                    }).catch((error) => {
+                        console.warn('QR local generator gagal, memakai fallback eksternal.', error);
+                        target.src = fallbackUrl;
+                    });
+                }
+            } catch (error) {
+                console.warn('QR render warning:', error);
+                if ('src' in target) target.src = fallbackUrl;
+            }
+        };
+
+        const extractNikFromQr = (decodedValue) => {
+            const raw = normalizeNikValue(decodedValue);
+            if (!raw) return '';
+
+            // 1) QR lama: langsung berisi NIK karyawan.
+            const directMatch = employees.find(e => asLowerText(e.nik) === asLowerText(raw));
+            if (directMatch) return directMatch.nik;
+
+            // 2) QR internal: JSON payload dari buildAttendanceQrPayload().
+            try {
+                const json = JSON.parse(raw);
+                const jsonNik = json?.nik || json?.employeeNik || json?.empNik || json?.data?.nik;
+                if (jsonNik) return findEmployeeNikMatch(jsonNik);
+            } catch (_) {}
+
+            // 3) QR berupa URL, misalnya https://site/absen?nik=LX-1001.
+            try {
+                const url = new URL(raw, window.location.origin || 'https://luxehr.local');
+                const urlNik = url.searchParams.get('nik') || url.searchParams.get('NIK') || url.searchParams.get('empNik') || url.searchParams.get('employeeNik');
+                if (urlNik) return findEmployeeNikMatch(urlNik);
+            } catch (_) {}
+
+            // 4) QR berupa query string atau key-value: nik=LX-1001 / NIK:LX-1001.
+            try {
+                const queryText = raw.includes('?') ? raw.split('?').pop() : raw;
+                const params = new URLSearchParams(queryText.replace(/^#/, ''));
+                const paramNik = params.get('nik') || params.get('NIK') || params.get('empNik') || params.get('employeeNik');
+                if (paramNik) return findEmployeeNikMatch(paramNik);
+            } catch (_) {}
+
+            const keyValueMatch = raw.match(/(?:^|[\s|,;])(?:nik|employeeNik|empNik)\s*[:=]\s*([A-Za-z0-9._\-\/]+)/i);
+            if (keyValueMatch?.[1]) return findEmployeeNikMatch(keyValueMatch[1]);
+
+            // 5) QR pipe/custom: LUXEHR_ABSEN|LX-1001 atau ATTENDANCE|nik|LX-1001.
+            const parts = raw.split(/[|,;\n\r\t]+/).map(normalizeNikValue).filter(Boolean);
+            for (const part of parts) {
+                const match = employees.find(e => asLowerText(e.nik) === asLowerText(part));
+                if (match) return match.nik;
+            }
+
+            // 6) Fallback terakhir: cari pola NIK yang sama dengan salah satu karyawan di dalam teks QR.
+            const embedded = employees.find(e => e.nik && asLowerText(raw).includes(asLowerText(e.nik)));
+            if (embedded) return embedded.nik;
+
+            return '';
+        };
 
         const normalizeBranchName = (name) => String(name ?? '').trim();
 
@@ -1069,6 +2297,40 @@
         };
 
         const getActiveBranches = () => ['Semua Cabang', ...getBranchNames()];
+
+        const EMPLOYEE_STATUS_FILTERS = ['Semua Status', 'Aktif', 'Cuti', 'Resign', 'Blacklist'];
+        const ACTIVE_ATTENDANCE_STATUS = 'Aktif';
+        const currentDateISO = () => getFormattedTodayDate();
+        const isEmployeeAttendanceEligible = (emp) => emp && emp.status === ACTIVE_ATTENDANCE_STATUS;
+        const isEmployeePayrollEligible = (emp) => !!emp;
+        const isEmployeePayrollEligibleForMonth = (emp, monthVal = '') => {
+            if (!emp) return false;
+            if (emp.status !== 'Blacklist') return true;
+            const blacklistMonth = dateToMonthValue(emp.blacklistDate);
+            if (!monthVal || !blacklistMonth) return true;
+            return monthToIndex(monthVal) <= monthToIndex(blacklistMonth);
+        };
+        const getEmployeeStatusMeta = (status) => {
+            const normalized = status || 'Aktif';
+            const map = {
+                'Aktif': { icon: 'fa-user-check', label: 'Aktif', badge: 'text-[#25D366] bg-[#25D366]/10 border-[#25D366]/30' },
+                'Cuti': { icon: 'fa-plane-departure', label: 'Cuti', badge: 'text-blue-400 bg-blue-500/10 border-blue-500/30' },
+                'Resign': { icon: 'fa-user-minus', label: 'Resign', badge: 'text-orange-400 bg-orange-500/10 border-orange-500/30' },
+                'Blacklist': { icon: 'fa-ban', label: 'Blacklist', badge: 'text-red-400 bg-red-500/10 border-red-500/30' }
+            };
+            return map[normalized] || map['Aktif'];
+        };
+
+        const syncEmployeeLifecycleFields = () => {
+            let changed = false;
+            employees.forEach(emp => {
+                if (!emp.status) { emp.status = 'Aktif'; changed = true; }
+                if (!('statusNote' in emp)) { emp.statusNote = ''; changed = true; }
+                if (!('resignDate' in emp)) { emp.resignDate = ''; changed = true; }
+                if (!('blacklistDate' in emp)) { emp.blacklistDate = ''; changed = true; }
+            });
+            if (changed) saveStorage(APP_STORAGE.employees, employees);
+        };
 
         const syncBranchesFromEmployees = () => {
             let changed = false;
@@ -1141,6 +2403,51 @@
             }, 3000);
         };
 
+        const renderSettings = () => {
+            const statusEl = document.getElementById('settingsConnectionStatus');
+            const lineEl = document.getElementById('settingsAppScriptLineCount');
+            const modeEl = document.getElementById('settingsConfigEnabled');
+            const urlEl = document.getElementById('settingsConfigUrl');
+            const codeEl = document.getElementById('appsScriptCodeBlock');
+            const configured = isGoogleSheetConfigured();
+
+            if (statusEl) {
+                statusEl.textContent = configured ? 'GSheet / Drive Aktif' : 'Local / URL Belum Valid';
+                statusEl.className = configured ? 'text-xs font-bold text-green-400' : 'text-xs font-bold text-gold-500';
+            }
+            if (lineEl && codeEl) lineEl.textContent = `${codeEl.value.split('\n').length} baris`;
+            if (modeEl) modeEl.textContent = 'Mode: Web App URL Only';
+            if (urlEl) urlEl.textContent = GOOGLE_SHEET_WEBAPP_URL || '-';
+        };
+
+        const selectAppsScriptCode = () => {
+            const codeEl = document.getElementById('appsScriptCodeBlock');
+            if (!codeEl) return;
+            codeEl.focus();
+            codeEl.select();
+            showToast('Kode Apps Script sudah dipilih.');
+        };
+
+        const copyAppsScriptCode = async () => {
+            const codeEl = document.getElementById('appsScriptCodeBlock');
+            if (!codeEl) return;
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(codeEl.value);
+                } else {
+                    codeEl.focus();
+                    codeEl.select();
+                    document.execCommand('copy');
+                }
+                showToast('Kode Apps Script berhasil disalin.');
+            } catch (error) {
+                console.error('Gagal menyalin Apps Script:', error);
+                codeEl.focus();
+                codeEl.select();
+                showToast('Gagal menyalin otomatis. Kode sudah dipilih, tekan Ctrl+C.', 'error');
+            }
+        };
+
         const switchView = (viewName) => {
             if (!views[viewName] || !navs[viewName]) return;
             Object.values(views).forEach(v => v.classList.add('hidden'));
@@ -1171,6 +2478,9 @@
             } else if (viewName === 'payroll') {
                 pageTitle.textContent = 'Slip Gaji (Payroll)';
                 setupPayrollView();
+            } else if (viewName === 'settings') {
+                pageTitle.textContent = 'Pengaturan';
+                renderSettings();
             }
 
             if(isSidebarOpen) toggleSidebar(); 
@@ -1198,8 +2508,9 @@
 
             document.getElementById('statTotalEmp').textContent = employees.length;
             
-            const countPresent = todayAttendance.filter(a => a.status === 'Hadir' || a.status === 'Terlambat').length;
-            const countLeaveOrAbsent = employees.length - countPresent;
+            const activeEmployees = employees.filter(isEmployeeAttendanceEligible);
+            const countPresent = todayAttendance.filter(a => a.status === 'Hadir' || a.status === 'Terlambat').filter(a => activeEmployees.some(e => e.id == a.empId)).length;
+            const countLeaveOrAbsent = activeEmployees.length - countPresent;
 
             document.getElementById('statPresent').textContent = countPresent;
             document.getElementById('statLeave').textContent = countLeaveOrAbsent;
@@ -1207,7 +2518,7 @@
             const topEmployeesList = document.getElementById('topEmployeesList');
             topEmployeesList.innerHTML = '';
             
-            const topEmps = [...employees].sort((a, b) => b.perf - a.perf).slice(0, 3);
+            const topEmps = [...employees].filter(e => e.status !== 'Blacklist' && e.status !== 'Resign').sort((a, b) => b.perf - a.perf).slice(0, 3);
             topEmps.forEach((emp, i) => {
                 const colors = ['text-yellow-400', 'text-gray-300', 'text-amber-600'];
                 topEmployeesList.innerHTML += `
@@ -1281,12 +2592,34 @@
             });
         };
 
+        const renderStatusFilters = () => {
+            if (!statusFilterContainer) return;
+            statusFilterContainer.innerHTML = '';
+            EMPLOYEE_STATUS_FILTERS.forEach(status => {
+                const isActive = currentStatusFilter === status;
+                const meta = status === 'Semua Status' ? null : getEmployeeStatusMeta(status);
+                const btn = document.createElement('button');
+                btn.className = `px-3 py-1.5 rounded-full text-[9px] font-medium border ${isActive ? 'border-gold-500 bg-gold-500/10 text-gold-500 shadow-gold-glow' : 'border-white/10 bg-surface-100 text-gray-400 hover:border-gold-500/50 hover:text-gold-400'} transition-all tracking-wide whitespace-nowrap`;
+                btn.innerHTML = status === 'Semua Status' ? 'Semua Status' : `<i class="fa-solid ${meta.icon} mr-1"></i>${status}`;
+                btn.onclick = () => {
+                    currentStatusFilter = status;
+                    renderStatusFilters();
+                    renderEmployees();
+                };
+                statusFilterContainer.appendChild(btn);
+            });
+        };
+
         // --- STREAMING_CHUNK:Rendering advanced Employee Data table... ---
         const renderEmployees = () => {
+            syncEmployeeLifecycleFields();
             let filtered = employees;
             
             if (currentFilter !== 'Semua Cabang') {
                 filtered = filtered.filter(e => e.cabang === currentFilter);
+            }
+            if (currentStatusFilter !== 'Semua Status') {
+                filtered = filtered.filter(e => (e.status || 'Aktif') === currentStatusFilter);
             }
             if (currentSearch) {
                 const q = asLowerText(currentSearch);
@@ -1295,7 +2628,9 @@
                     asLowerText(e.nik).includes(q) ||
                     asLowerText(e.dept).includes(q) ||
                     asLowerText(e.cabang).includes(q) ||
-                    asLowerText(e.position).includes(q)
+                    asLowerText(e.position).includes(q) ||
+                    asLowerText(e.status).includes(q) ||
+                    asLowerText(e.statusNote).includes(q)
                 );
             }
 
@@ -1309,8 +2644,18 @@
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-white/5 transition-colors group';
                 
-                const statusColor = emp.status === 'Aktif' ? 'text-[#25D366] bg-[#25D366]/10 border-[#25D366]/30' : 'text-orange-400 bg-orange-400/10 border-orange-400/30';
-                const empShift = getShiftById(emp.shiftId);
+                const statusMeta = getEmployeeStatusMeta(emp.status);
+                const statusDetail = emp.status === 'Resign'
+                    ? `Resign: ${emp.resignDate || '-'}${emp.statusNote ? ' | ' + emp.statusNote : ''}`
+                    : emp.status === 'Blacklist'
+                        ? `Blacklist: ${emp.blacklistDate || '-'}${emp.statusNote ? ' | ' + emp.statusNote : ''}`
+                        : emp.statusNote || '';
+                const lifecycleButtons = (emp.status === 'Resign' || emp.status === 'Blacklist')
+                    ? `<button onclick="confirmEmployeeStatusChange(${emp.id}, 'Aktif')" class="w-7 h-7 rounded border border-white/10 text-[#25D366] hover:text-[#25D366] hover:border-[#25D366]/40 hover:bg-[#25D366]/10 transition-colors flex items-center justify-center" title="Aktifkan Kembali"><i class="fa-solid fa-rotate-left text-[10px]"></i></button>`
+                    : `
+                        <button onclick="confirmEmployeeStatusChange(${emp.id}, 'Resign')" class="w-7 h-7 rounded border border-white/10 text-orange-400 hover:text-orange-300 hover:border-orange-500/40 hover:bg-orange-500/10 transition-colors flex items-center justify-center" title="Tandai Resign"><i class="fa-solid fa-user-minus text-[10px]"></i></button>
+                        <button onclick="confirmEmployeeStatusChange(${emp.id}, 'Blacklist')" class="w-7 h-7 rounded border border-white/10 text-red-400 hover:text-red-300 hover:border-red-500/40 hover:bg-red-500/10 transition-colors flex items-center justify-center" title="Masukkan Blacklist"><i class="fa-solid fa-ban text-[10px]"></i></button>
+                    `;
 
                 tr.innerHTML = `
                     <td class="py-3 px-5">
@@ -1336,16 +2681,21 @@
                         <p class="text-[8px] text-gray-500 mt-1 uppercase tracking-wider">${emp.bank ? '<i class="fa-solid fa-building-columns mr-1"></i>'+emp.bank.split(' ')[0] : 'Belum Setup'}</p>
                     </td>
                     <td class="py-3 px-5">
-                        <span class="px-2.5 py-1 text-[8px] uppercase tracking-widest border rounded-full ${statusColor}">${emp.status}</span>
+                        <span class="px-2.5 py-1 text-[8px] uppercase tracking-widest border rounded-full ${statusMeta.badge}"><i class="fa-solid ${statusMeta.icon} mr-1"></i>${statusMeta.label}</span>
+                        ${statusDetail ? `<p class="text-[8px] text-gray-500 mt-1 max-w-[150px] truncate" title="${escapeHtml(statusDetail)}">${escapeHtml(statusDetail)}</p>` : ''}
                     </td>
                     <td class="py-3 px-5 text-right">
                         <div class="flex items-center justify-end gap-2">
+                            <button onclick="openEmployeeCardModal(${emp.id})" class="w-7 h-7 rounded border border-white/10 text-blue-400 hover:text-blue-300 hover:border-blue-500/50 hover:bg-blue-500/10 transition-colors flex items-center justify-center" title="View Card Data Karyawan">
+                                <i class="fa-solid fa-id-card text-[10px]"></i>
+                            </button>
                             <button onclick="openQrModalById(${emp.id})" class="w-7 h-7 rounded border border-white/10 text-purple-400 hover:text-purple-300 hover:border-purple-500/50 hover:bg-purple-500/10 transition-colors flex items-center justify-center" title="Lihat ID Card Digital">
                                 <i class="fa-solid fa-qrcode text-[10px]"></i>
                             </button>
                             <button onclick="openEditEmployeeModal(${emp.id})" class="w-7 h-7 rounded border border-white/10 text-gray-400 hover:text-gold-400 hover:border-gold-500/30 hover:bg-gold-500/10 transition-colors flex items-center justify-center" title="Edit Data">
                                 <i class="fa-solid fa-pen text-[10px]"></i>
                             </button>
+                            ${lifecycleButtons}
                             <button onclick="confirmDelete(${emp.id}, 'employee')" class="w-7 h-7 rounded border border-white/10 text-gray-500 hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10 transition-colors flex items-center justify-center" title="Hapus Data">
                                 <i class="fa-solid fa-trash-can text-[10px]"></i>
                             </button>
@@ -1366,11 +2716,11 @@
         };
 
         const openQrModal = (nik, name) => {
-            document.getElementById('qrEmpName').textContent = name;
-            document.getElementById('qrEmpNik').textContent = nik;
-            
-            // Using API to generate QR Code
-            document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(nik)}`;
+            const emp = employees.find(e => asLowerText(e.nik) === asLowerText(nik)) || { nik, name };
+            const payload = buildAttendanceQrPayload(emp);
+            document.getElementById('qrEmpName').textContent = emp.name || name || '-';
+            document.getElementById('qrEmpNik').textContent = emp.nik || nik || '-';
+            renderQrImage('qrImage', payload, 200);
             
             const modal = document.getElementById('qrModal');
             const inner = document.getElementById('qrModalContent');
@@ -1389,17 +2739,152 @@
             setTimeout(() => modal.classList.add('hidden'), 300);
         };
 
+
+        const openEmployeeCardModal = (id) => {
+            const emp = employees.find(e => e.id === id);
+            if (!emp) {
+                showToast('Data karyawan tidak ditemukan.', 'error');
+                return;
+            }
+
+            const modal = document.getElementById('employeeCardModal');
+            const inner = document.getElementById('employeeCardModalContent');
+            const content = document.getElementById('employeeCardContent');
+            if (!modal || !inner || !content) {
+                showToast('Komponen view card belum tersedia.', 'error');
+                return;
+            }
+
+            const shift = getShiftById(emp.shiftId);
+            const statusMeta = getEmployeeStatusMeta(emp.status);
+            const statusDetail = emp.status === 'Resign'
+                ? `Tanggal Resign: ${emp.resignDate || '-'}${emp.statusNote ? ' | ' + emp.statusNote : ''}`
+                : emp.status === 'Blacklist'
+                    ? `Tanggal Blacklist: ${emp.blacklistDate || '-'}${emp.statusNote ? ' | ' + emp.statusNote : ''}`
+                    : (emp.statusNote || 'Tidak ada catatan khusus.');
+            const qrPayload = buildAttendanceQrPayload(emp);
+            const qrUrl = getQrFallbackUrl(qrPayload, 180);
+            const payrollInfo = emp.status === 'Blacklist'
+                ? `Slip gaji tersedia sampai periode ${dateToMonthValue(emp.blacklistDate) || 'bulan blacklist terdata'}.`
+                : emp.status === 'Resign'
+                    ? 'Slip gaji final/historis tetap dapat dibuat sesuai periode yang dipilih.'
+                    : 'Slip gaji dapat dibuat sesuai periode payroll.';
+
+            content.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-5">
+                    <div class="lg:col-span-2 p-6 bg-gradient-to-br from-surface-100 to-surface-300 border-b lg:border-b-0 lg:border-r border-white/5">
+                        <div class="flex flex-col items-center text-center">
+                            <div class="relative mb-4">
+                                <img src="${escapeHtml(safeImage(emp.image))}" onerror="this.src='${DEFAULT_AVATAR}'" alt="${escapeHtml(emp.name)}" class="w-28 h-28 rounded-2xl object-cover border-2 border-gold-500/40 shadow-gold-glow">
+                                <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 text-[8px] uppercase tracking-widest border rounded-full ${statusMeta.badge} bg-surface-200 whitespace-nowrap">
+                                    <i class="fa-solid ${statusMeta.icon} mr-1"></i>${statusMeta.label}
+                                </span>
+                            </div>
+                            <h2 class="mt-3 text-2xl font-serif font-bold text-white leading-tight">${escapeHtml(emp.name)}</h2>
+                            <p class="text-gold-500 text-xs uppercase tracking-widest mt-1">${escapeHtml(emp.position || '-')}</p>
+                            <p class="text-gray-500 text-[10px] mt-2 font-mono">${escapeHtml(emp.nik || '-')}</p>
+
+                            <div class="mt-6 bg-white p-3 rounded-xl shadow-inner">
+                                <img id="employeeCardQrImage" src="${qrUrl}" alt="QR Absensi ${escapeHtml(emp.nik)}" class="w-32 h-32 object-contain">
+                            </div>
+                            <p class="mt-3 text-[9px] text-gray-500 uppercase tracking-widest">QR NIK Karyawan</p>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-3 p-6 space-y-5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div class="rounded-xl border border-white/5 bg-surface-100/50 p-4">
+                                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Cabang Penempatan</p>
+                                <p class="text-sm text-white font-semibold"><i class="fa-solid fa-location-dot text-gold-500 mr-1"></i>${escapeHtml(emp.cabang || '-')}</p>
+                            </div>
+                            <div class="rounded-xl border border-white/5 bg-surface-100/50 p-4">
+                                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Unit Kerja</p>
+                                <p class="text-sm text-white font-semibold"><i class="fa-solid fa-briefcase text-gold-500 mr-1"></i>${escapeHtml(emp.dept || '-')}</p>
+                            </div>
+                            <div class="rounded-xl border border-white/5 bg-surface-100/50 p-4">
+                                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Shift Default</p>
+                                <p class="text-sm text-white font-semibold"><i class="fa-solid ${escapeHtml(shift.icon || 'fa-clock')} text-gold-500 mr-1"></i>${escapeHtml(shift.name || '-')}</p>
+                                <p class="text-[10px] text-gray-500 font-mono mt-1">${escapeHtml(shift.start || '--:--')} - ${escapeHtml(shift.end || '--:--')}</p>
+                            </div>
+                            <div class="rounded-xl border border-white/5 bg-surface-100/50 p-4">
+                                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Tanggal Bergabung</p>
+                                <p class="text-sm text-white font-semibold"><i class="fa-solid fa-calendar-days text-gold-500 mr-1"></i>${escapeHtml(emp.date || '-')}</p>
+                            </div>
+                            <div class="rounded-xl border border-white/5 bg-surface-100/50 p-4">
+                                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Email</p>
+                                <p class="text-xs text-white break-all"><i class="fa-solid fa-envelope text-gold-500 mr-1"></i>${escapeHtml(emp.email || '-')}</p>
+                            </div>
+                            <div class="rounded-xl border border-white/5 bg-surface-100/50 p-4">
+                                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">No. HP / WA</p>
+                                <p class="text-xs text-white font-mono"><i class="fa-solid fa-phone text-gold-500 mr-1"></i>${escapeHtml(emp.phone || '-')}</p>
+                            </div>
+                            <div class="rounded-xl border border-white/5 bg-surface-100/50 p-4">
+                                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Rekening Bank</p>
+                                <p class="text-xs text-white"><i class="fa-solid fa-building-columns text-gold-500 mr-1"></i>${escapeHtml(emp.bank || '-')}</p>
+                            </div>
+                            <div class="rounded-xl border border-white/5 bg-surface-100/50 p-4">
+                                <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Gaji Pokok</p>
+                                <p class="text-sm text-white font-mono font-bold">${formatRupiah(emp.salary)}</p>
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-white/5 bg-surface-100/50 p-4">
+                            <p class="text-[9px] text-gray-500 uppercase tracking-widest mb-2">Catatan Status</p>
+                            <p class="text-xs text-gray-300 leading-relaxed">${escapeHtml(statusDetail)}</p>
+                        </div>
+
+                        <div class="rounded-xl border border-gold-500/20 bg-gold-500/10 p-4">
+                            <p class="text-[9px] text-gold-500 uppercase tracking-widest mb-2">Informasi Payroll</p>
+                            <p class="text-xs text-gray-300 leading-relaxed">${escapeHtml(payrollInfo)}</p>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-2 pt-2">
+                            <button onclick="closeEmployeeCardModal(); openEditEmployeeModal(${emp.id});" class="flex-1 px-4 py-2.5 bg-gold-500 text-surface-400 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-gold-400 transition-all">
+                                <i class="fa-solid fa-pen mr-1"></i> Edit Data
+                            </button>
+                            <button onclick="closeEmployeeCardModal(); openQrModalById(${emp.id});" class="flex-1 px-4 py-2.5 border border-purple-500/30 text-purple-300 bg-purple-500/10 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-purple-500 hover:text-white transition-all">
+                                <i class="fa-solid fa-qrcode mr-1"></i> ID Card QR
+                            </button>
+                            <button onclick="closeEmployeeCardModal()" class="flex-1 px-4 py-2.5 border border-white/10 text-gray-400 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 hover:text-white transition-all">
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+            renderQrImage('employeeCardQrImage', qrPayload, 180);
+            setTimeout(() => {
+                inner.classList.remove('scale-95', 'opacity-0');
+                inner.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        };
+
+        const closeEmployeeCardModal = () => {
+            const modal = document.getElementById('employeeCardModal');
+            const inner = document.getElementById('employeeCardModalContent');
+            if (!modal || !inner) return;
+            inner.classList.remove('scale-100', 'opacity-100');
+            inner.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        };
+
         // --- STREAMING_CHUNK:Processing Real-Time Attendance UI... ---
         const renderAttendanceView = () => {
+            syncEmployeeLifecycleFields();
             const selectedDate = attendanceDateFilter.value || getFormattedTodayDate();
             attendanceDateFilter.value = selectedDate;
             
             const todayLogs = attendance.filter(log => log.date === selectedDate);
+            const attendanceEmployees = employees.filter(isEmployeeAttendanceEligible);
 
             const simSelect = document.getElementById('simEmployeeId');
             const manualSelect = document.getElementById('manualEmpId');
             
-            const optionsHtml = employees.map(emp => `<option value="${emp.id}">${emp.name} (${emp.dept})</option>`).join('');
+            const optionsHtml = attendanceEmployees.length
+                ? attendanceEmployees.map(emp => `<option value="${emp.id}">${emp.name} (${emp.cabang || emp.dept || '-'})</option>`).join('')
+                : `<option value="" disabled selected>Tidak ada karyawan aktif</option>`;
             simSelect.innerHTML = optionsHtml;
             manualSelect.innerHTML = optionsHtml;
 
@@ -1411,7 +2896,16 @@
             const tableBody = document.getElementById('attendanceTableBody');
             tableBody.innerHTML = '';
 
-            employees.forEach(emp => {
+            if (attendanceEmployees.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-gray-500"><i class="fa-solid fa-user-slash text-2xl mb-3 opacity-30"></i><br>Tidak ada karyawan aktif untuk presensi.</td></tr>`;
+                document.getElementById('attendancePresentCount').textContent = 0;
+                document.getElementById('attendanceLateCount').textContent = 0;
+                document.getElementById('attendanceLeaveCount').textContent = 0;
+                document.getElementById('attendanceAbsentCount').textContent = 0;
+                return;
+            }
+
+            attendanceEmployees.forEach(emp => {
                 const log = todayLogs.find(l => l.empId == emp.id);
                 // Snapshot implementation to preserve history
                 let empShift = { ...(shifts.find(s => s.id === emp.shiftId) || shifts[0]) };
@@ -1444,6 +2938,8 @@
                     } else if (log.status === 'Izin' || log.status === 'Cuti') {
                         statusBadgeClass = 'text-blue-400 bg-blue-500/10 border-blue-500/30';
                         leaveCount++;
+                    } else if (log.status === 'Alpa') {
+                        absentCount++;
                     }
                 } else {
                     absentCount++;
@@ -1485,7 +2981,10 @@
         let scannerRunning = false;
         let cameraPermissionGranted = false;
         let pendingCameraStart = false;
+        let scanProcessing = false;
         let lastScanTime = 0;
+        let lastProcessedScanSignature = '';
+        let lastProcessedScanAt = 0;
         let scanTimeout = null;
         let selectedScannerAction = 'Masuk'; // Masuk = Clock In, Pulang = Clock Out
 
@@ -1786,23 +3285,44 @@
 
         const onScanSuccess = (decodedText) => {
             const nowTime = Date.now();
-            if (nowTime - lastScanTime < 3500) return; // Debounce 3.5s per scan
+            if (nowTime - lastScanTime < 900) return; // Debounce kamera agar frame yang sama tidak diproses bertubi-tubi.
             lastScanTime = nowTime;
             processAttendanceScan(decodedText);
         };
 
-        const processAttendanceScan = (nik) => {
-            if (!nik) return;
-            const emp = employees.find(e => asLowerText(e.nik) === asLowerText(nik));
-            if (!emp) {
-                showToast('Data NIK tidak ditemukan!', 'error');
+        const processAttendanceScan = (decodedValue) => {
+            if (scanProcessing) return;
+
+            const nik = extractNikFromQr(decodedValue);
+            if (!nik) {
+                showToast('QR tidak valid. Pastikan memakai QR ID Card karyawan.', 'error');
                 return;
             }
 
             const today = getFormattedTodayDate();
+            const scanAction = selectedScannerAction === 'Pulang' ? 'Pulang' : 'Masuk';
+            const scanSignature = `${today}|${scanAction}|${asLowerText(nik)}`;
+            const nowMs = Date.now();
+            if (scanSignature === lastProcessedScanSignature && nowMs - lastProcessedScanAt < 6000) return;
+
+            scanProcessing = true;
+            lastProcessedScanSignature = scanSignature;
+            lastProcessedScanAt = nowMs;
+
+            const emp = employees.find(e => asLowerText(e.nik) === asLowerText(nik));
+            if (!emp) {
+                scanProcessing = false;
+                showToast(`NIK dari QR tidak ditemukan: ${nik}`, 'error');
+                return;
+            }
+            if (!isEmployeeAttendanceEligible(emp)) {
+                scanProcessing = false;
+                showToast(`Presensi ditolak: ${emp.name} berstatus ${emp.status}.`, 'error');
+                return;
+            }
+
             const now = new Date();
             const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-            const scanAction = selectedScannerAction === 'Pulang' ? 'Pulang' : 'Masuk';
 
             let empLogIndex = attendance.findIndex(log => log.empId === emp.id && log.date === today);
             const empShift = getShiftById(emp.shiftId);
@@ -1817,6 +3337,7 @@
                     const message = existingLog.clockOut && existingLog.clockOut !== '--:--'
                         ? `Scanner: ${emp.name} sudah selesai absen hari ini.`
                         : `Scanner: ${emp.name} sudah Clock In hari ini.`;
+                    scanProcessing = false;
                     showToast(message, 'error');
                     return;
                 }
@@ -1845,17 +3366,20 @@
                 showToast(`Scanner: ${emp.name} berhasil Clock In`, 'success');
             } else {
                 if (empLogIndex === -1) {
+                    scanProcessing = false;
                     showToast(`Scanner: ${emp.name} belum Clock In hari ini.`, 'error');
                     return;
                 }
 
                 let existingLog = attendance[empLogIndex];
                 if (!existingLog.clockIn || existingLog.clockIn === '--:--') {
+                    scanProcessing = false;
                     showToast(`Scanner: ${emp.name} belum memiliki data Clock In valid.`, 'error');
                     return;
                 }
 
                 if (existingLog.clockOut && existingLog.clockOut !== '--:--') {
+                    scanProcessing = false;
                     showToast(`Scanner: ${emp.name} sudah Clock Out hari ini.`, 'error');
                     return;
                 }
@@ -1888,6 +3412,8 @@
             document.getElementById('scanSuccessAction').textContent = actionText;
             document.getElementById('scanSuccessAction').className = `text-xs font-bold tracking-widest uppercase ${actionColor}`;
             document.getElementById('scanSuccessTime').textContent = timeStr;
+
+            setTimeout(() => { scanProcessing = false; }, 700);
 
             clearTimeout(scanTimeout);
             scanTimeout = setTimeout(() => {
@@ -1925,6 +3451,10 @@
             const empData = employees.find(e => e.id == empId);
             if (!empData) {
                 showToast('Pilih karyawan terlebih dahulu.', 'error');
+                return;
+            }
+            if (!isEmployeeAttendanceEligible(empData)) {
+                showToast(`Presensi ditolak: ${empData.name} berstatus ${empData.status}.`, 'error');
                 return;
             }
             const empShift = getShiftById(empData.shiftId);
@@ -1998,6 +3528,15 @@
             const outTimeRaw = document.getElementById('manualClockOut').value;
             const status = document.getElementById('manualStatus').value;
             const selectedDate = document.getElementById('manualDate').value;
+            const manualEmp = employees.find(e => e.id === empId);
+            if (!manualEmp) {
+                showToast('Data karyawan tidak ditemukan.', 'error');
+                return;
+            }
+            if (!isEmployeeAttendanceEligible(manualEmp)) {
+                showToast(`Presensi manual ditolak: ${manualEmp.name} berstatus ${manualEmp.status}.`, 'error');
+                return;
+            }
 
             const formatTime = (time) => {
                 if(!time) return '--:--';
@@ -2219,7 +3758,7 @@
                             <img src="${safeImage(emp.image)}" class="w-8 h-8 rounded-full object-cover border border-white/10" alt="${emp.name}">
                             <div>
                                 <p class="text-xs font-serif text-white">${emp.name}</p>
-                                <p class="text-[9px] text-gray-500 uppercase tracking-widest">${emp.dept}</p>
+                                <p class="text-[9px] text-gray-500 uppercase tracking-widest">${emp.cabang || emp.dept || '-'}</p>
                             </div>
                         </div>
                     </td>
@@ -2234,13 +3773,25 @@
 
         // --- STREAMING_CHUNK:Implementing Payroll features... ---
         const setupPayrollView = () => {
+            syncEmployeeLifecycleFields();
             const today = new Date();
             const monthStr = String(today.getMonth() + 1).padStart(2, '0');
             const payrollMonth = document.getElementById('payrollMonthFilter');
             if (!payrollMonth.value) payrollMonth.value = `${today.getFullYear()}-${monthStr}`;
+            const selectedMonth = payrollMonth.value;
             
             const empSelect = document.getElementById('payrollEmpSelect');
-            empSelect.innerHTML = employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            const eligibleEmployees = employees.filter(emp => isEmployeePayrollEligibleForMonth(emp, selectedMonth));
+            empSelect.innerHTML = eligibleEmployees.length
+                ? eligibleEmployees.map(e => {
+                    const suffix = e.status === 'Blacklist'
+                        ? ` (Blacklist s.d. ${dateToMonthValue(e.blacklistDate) || 'bulan terdata'})`
+                        : e.status === 'Resign'
+                            ? ' (Resign)'
+                            : '';
+                    return `<option value="${e.id}">${e.name}${suffix}</option>`;
+                }).join('')
+                : `<option value="" disabled selected>Tidak ada karyawan eligible payroll pada periode ini</option>`;
             
             document.getElementById('slipGajiPrintArea').classList.add('hidden');
             document.getElementById('slipActionBtns').classList.add('hidden');
@@ -2258,6 +3809,11 @@
             const emp = employees.find(e => e.id == empId);
             if (!emp) {
                 showToast('Data karyawan tidak ditemukan.', 'error');
+                return;
+            }
+            if (!isEmployeePayrollEligibleForMonth(emp, monthVal)) {
+                const blacklistMonth = dateToMonthValue(emp.blacklistDate) || 'bulan blacklist yang tercatat';
+                showToast(`Slip gaji karyawan Blacklist hanya bisa dibuat sampai periode ${blacklistMonth}.`, 'error');
                 return;
             }
             const empLogs = attendance.filter(log => log.empId == emp.id && log.date.startsWith(monthVal));
@@ -2430,6 +3986,7 @@
             resetBranchForm();
             renderBranchList();
             renderFilters();
+            renderStatusFilters();
             populateBranchSelect(newName);
             renderEmployees();
             updateDashboard();
@@ -2442,11 +3999,15 @@
             editingEmployeeId = null;
             document.getElementById('modalTitle').textContent = "Tambah Karyawan VIP";
             empForm.reset();
+            resetEmployeeUploadInputs();
             
             const shiftSelect = document.getElementById('empShift');
             shiftSelect.innerHTML = shifts.map(s => `<option value="${s.id}">${s.name} (${s.start} - ${s.end})</option>`).join('');
-            populateBranchSelect(emp.cabang || 'LuxeHR Pusat (Jakarta)');
             populateBranchSelect();
+            document.getElementById('empStatus').value = 'Aktif';
+            document.getElementById('empResignDate').value = '';
+            document.getElementById('empBlacklistDate').value = '';
+            document.getElementById('empStatusNote').value = '';
 
             const modalContent = document.getElementById('modalContent');
             empModal.classList.remove('hidden');
@@ -2473,11 +4034,18 @@
             document.getElementById('empPosition').value = emp.position;
             document.getElementById('empEmail').value = emp.email;
             document.getElementById('empPhone').value = emp.phone || '';
+            populateBranchSelect(emp.cabang || 'LuxeHR Pusat (Jakarta)');
             document.getElementById('empCabang').value = emp.cabang || 'LuxeHR Pusat (Jakarta)';
             document.getElementById('empSalary').value = emp.salary || '';
             document.getElementById('empBank').value = emp.bank || '';
             document.getElementById('empKtp').value = emp.ktp || '';
             document.getElementById('empDate').value = emp.date;
+            document.getElementById('empStatus').value = emp.status || 'Aktif';
+            document.getElementById('empResignDate').value = emp.resignDate || '';
+            document.getElementById('empBlacklistDate').value = emp.blacklistDate || '';
+            document.getElementById('empStatusNote').value = emp.statusNote || '';
+            resetEmployeeUploadInputs();
+            setEmployeePhotoPreview(emp.image && emp.image !== DEFAULT_AVATAR ? emp.image : '');
 
             const modalContent = document.getElementById('modalContent');
             empModal.classList.remove('hidden');
@@ -2494,36 +4062,43 @@
             setTimeout(() => empModal.classList.add('hidden'), 300);
         };
 
-        empForm.addEventListener('submit', (e) => {
+        empForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const nikInput = document.getElementById('empNik').value.trim();
-            const duplicateNik = employees.some(e => asLowerText(e.nik) === asLowerText(nikInput) && e.id !== editingEmployeeId);
-            if (duplicateNik) {
-                showToast('NIK sudah digunakan karyawan lain.', 'error');
-                return;
+            const submitBtn = empForm.querySelector('button[type="submit"]');
+            const originalSubmitText = submitBtn ? submitBtn.textContent : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Menyimpan...';
+                submitBtn.classList.add('opacity-60', 'cursor-wait');
             }
 
-            if (editingEmployeeId) {
-                const index = employees.findIndex(e => e.id === editingEmployeeId);
-                if (index > -1) {
-                    employees[index].name = document.getElementById('empName').value;
-                    employees[index].nik = nikInput;
-                    employees[index].dept = document.getElementById('empDept').value;
-                    employees[index].shiftId = document.getElementById('empShift').value;
-                    employees[index].position = document.getElementById('empPosition').value;
-                    employees[index].email = document.getElementById('empEmail').value;
-                    employees[index].phone = document.getElementById('empPhone').value;
-                    employees[index].cabang = document.getElementById('empCabang').value;
-                    employees[index].salary = parseInt(document.getElementById('empSalary').value, 10) || 0;
-                    employees[index].bank = document.getElementById('empBank').value;
-                    employees[index].ktp = document.getElementById('empKtp').value;
-                    employees[index].date = document.getElementById('empDate').value;
+            try {
+                const nikInput = document.getElementById('empNik').value.trim();
+                const duplicateNik = employees.some(e => asLowerText(e.nik) === asLowerText(nikInput) && e.id !== editingEmployeeId);
+                if (duplicateNik) {
+                    showToast('NIK sudah digunakan karyawan lain.', 'error');
+                    return;
                 }
-                showToast('Data Karyawan berhasil diperbarui.', 'success');
-            } else {
-                const newEmp = {
-                    id: Date.now(),
+
+                const employeeId = editingEmployeeId || Date.now();
+                const currentEmp = editingEmployeeId ? employees.find(e => e.id === editingEmployeeId) : null;
+                const photoFile = document.getElementById('empPhotoFile')?.files?.[0] || null;
+                const ktpFile = document.getElementById('empKtpFile')?.files?.[0] || null;
+
+                let employeeImage = currentEmp?.image || DEFAULT_AVATAR;
+                let employeeKtp = document.getElementById('empKtp').value.trim();
+
+                if (photoFile) {
+                    showToast('Mengupload foto ke Google Drive...', 'success');
+                    employeeImage = await uploadFileToGoogleDrive(photoFile, 'foto_karyawan', `${nikInput}_${employeeId}`) || employeeImage;
+                }
+                if (ktpFile) {
+                    showToast('Mengupload KTP/identitas ke Google Drive...', 'success');
+                    employeeKtp = await uploadFileToGoogleDrive(ktpFile, 'identitas_karyawan', `${nikInput}_${employeeId}`) || employeeKtp;
+                }
+
+                const employeePayload = {
+                    id: employeeId,
                     name: document.getElementById('empName').value,
                     nik: nikInput,
                     dept: document.getElementById('empDept').value,
@@ -2534,30 +4109,57 @@
                     cabang: document.getElementById('empCabang').value,
                     salary: parseInt(document.getElementById('empSalary').value, 10) || 0,
                     bank: document.getElementById('empBank').value,
-                    ktp: document.getElementById('empKtp').value,
+                    ktp: employeeKtp,
                     date: document.getElementById('empDate').value,
-                    status: 'Aktif',
-                    image: DEFAULT_AVATAR, 
-                    perf: Math.floor(Math.random() * (99 - 75 + 1) + 75) 
+                    status: document.getElementById('empStatus').value || 'Aktif',
+                    resignDate: document.getElementById('empResignDate').value,
+                    blacklistDate: document.getElementById('empBlacklistDate').value,
+                    statusNote: document.getElementById('empStatusNote').value.trim(),
+                    image: employeeImage,
+                    perf: currentEmp?.perf || Math.floor(Math.random() * (99 - 75 + 1) + 75)
                 };
-                employees.push(newEmp);
-                showToast('Karyawan VIP berhasil ditambahkan.', 'success');
-            }
 
-            syncBranchesFromEmployees();
-            saveStorage(APP_STORAGE.employees, employees);
-            saveStorage(APP_STORAGE.branches, branches);
-            
-            closeAddEmployeeModal();
-            renderFilters();
-            renderEmployees();
-            updateDashboard();
+                if (editingEmployeeId) {
+                    const index = employees.findIndex(e => e.id === editingEmployeeId);
+                    if (index > -1) employees[index] = { ...employees[index], ...employeePayload };
+                    showToast('Data Karyawan berhasil diperbarui.', 'success');
+                } else {
+                    employees.push(employeePayload);
+                    showToast('Karyawan VIP berhasil ditambahkan.', 'success');
+                }
+
+                syncBranchesFromEmployees();
+                saveStorage(APP_STORAGE.employees, employees);
+                saveStorage(APP_STORAGE.branches, branches);
+                
+                closeAddEmployeeModal();
+                renderFilters();
+                renderStatusFilters();
+                renderEmployees();
+                renderAttendanceView();
+                updateDashboard();
+            } catch (error) {
+                console.error('Gagal menyimpan karyawan:', error);
+                showToast(error.message || 'Gagal menyimpan karyawan.', 'error');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalSubmitText || 'Simpan Data';
+                    submitBtn.classList.remove('opacity-60', 'cursor-wait');
+                }
+            }
         });
 
         // Universal Delete Confirm Logic
         const confirmDelete = (id, type) => {
             const inner = document.getElementById('confirmInner');
             const msgEl = document.getElementById('confirmMessage');
+            const titleEl = document.getElementById('confirmTitle');
+            titleEl.textContent = 'Konfirmasi Aksi';
+            const reasonWrapper = document.getElementById('confirmReasonWrapper');
+            const reasonInput = document.getElementById('confirmReasonInput');
+            if (reasonWrapper) reasonWrapper.classList.add('hidden');
+            if (reasonInput) reasonInput.value = '';
 
             if (type === 'shift') {
                 const inUse = employees.some(e => e.shiftId === id);
@@ -2565,6 +4167,7 @@
                     showToast('Gagal: Shift ini sedang digunakan oleh karyawan!', 'error');
                     return;
                 }
+                titleEl.textContent = 'Hapus Shift?';
                 msgEl.textContent = "Anda yakin ingin menghapus Jadwal Shift ini?";
                 confirmDeleteCallback = () => {
                     shifts = shifts.filter(s => s.id !== id);
@@ -2573,6 +4176,7 @@
                     showToast('Jadwal Shift berhasil dihapus.', 'success');
                 };
             } else if (type === 'employee') {
+                titleEl.textContent = 'Hapus Karyawan?';
                 msgEl.textContent = "Data karyawan ini akan dihapus secara permanen dari sistem.";
                 confirmDeleteCallback = () => {
                     employees = employees.filter(e => e.id !== id);
@@ -2581,6 +4185,8 @@
                     saveStorage(APP_STORAGE.attendance, attendance);
                     renderEmployees();
                     renderFilters();
+                    renderStatusFilters();
+                    renderAttendanceView();
                     updateDashboard();
                     showToast('Data karyawan dan riwayat absensi terkait berhasil dihapus.', 'success');
                 };
@@ -2593,12 +4199,94 @@
             }, 10);
         };
 
+        const confirmEmployeeStatusChange = (id, targetStatus) => {
+            const emp = employees.find(e => e.id === id);
+            if (!emp) {
+                showToast('Data karyawan tidak ditemukan.', 'error');
+                return;
+            }
+            const titleEl = document.getElementById('confirmTitle');
+            const msgEl = document.getElementById('confirmMessage');
+            const inner = document.getElementById('confirmInner');
+            const reasonWrapper = document.getElementById('confirmReasonWrapper');
+            const reasonInput = document.getElementById('confirmReasonInput');
+            const reasonLabel = document.getElementById('confirmReasonLabel');
+            const proceedBtn = document.getElementById('btnProceedConfirm');
+            const needsReason = targetStatus === 'Resign' || targetStatus === 'Blacklist';
+
+            const labels = {
+                'Aktif': 'Aktifkan Kembali',
+                'Resign': 'Tandai Resign',
+                'Blacklist': 'Masukkan Blacklist'
+            };
+            titleEl.textContent = `${labels[targetStatus] || 'Ubah Status'}?`;
+            msgEl.textContent = targetStatus === 'Blacklist'
+                ? `${emp.name} akan masuk daftar blacklist. Karyawan tidak bisa melakukan presensi, namun slip gaji tetap bisa dibuat sampai bulan blacklist.`
+                : targetStatus === 'Resign'
+                    ? `${emp.name} akan ditandai resign. Karyawan tidak bisa melakukan presensi, namun riwayat data dan payroll historis tetap tersimpan.`
+                    : `${emp.name} akan diaktifkan kembali dan bisa melakukan presensi normal.`;
+
+            if (reasonWrapper) reasonWrapper.classList.toggle('hidden', !needsReason);
+            if (reasonInput) {
+                reasonInput.value = '';
+                reasonInput.placeholder = targetStatus === 'Blacklist'
+                    ? 'Contoh: Pelanggaran disiplin, fraud, atau alasan administratif...'
+                    : targetStatus === 'Resign'
+                        ? 'Contoh: Mengundurkan diri, kontrak selesai, pindah kerja...'
+                        : '';
+            }
+            if (reasonLabel) reasonLabel.textContent = targetStatus === 'Blacklist' ? 'Alasan Blacklist' : targetStatus === 'Resign' ? 'Alasan Resign' : 'Alasan';
+            if (proceedBtn) proceedBtn.textContent = targetStatus === 'Aktif' ? 'Aktifkan' : 'Simpan';
+
+            confirmDeleteCallback = () => {
+                const current = employees.find(e => e.id === id);
+                if (!current) return;
+                const today = currentDateISO();
+                const reason = reasonInput ? reasonInput.value.trim() : '';
+                if (needsReason && !reason) {
+                    showToast(`Alasan ${targetStatus} wajib diisi.`, 'error');
+                    return;
+                }
+                current.status = targetStatus;
+                if (targetStatus === 'Resign') {
+                    current.resignDate = current.resignDate || today;
+                    current.statusNote = reason ? `Resign ${current.resignDate}: ${reason}` : (current.statusNote || `Resign ${current.resignDate}`);
+                } else if (targetStatus === 'Blacklist') {
+                    current.blacklistDate = current.blacklistDate || today;
+                    current.statusNote = reason ? `Blacklist ${current.blacklistDate}: ${reason}` : (current.statusNote || `Blacklist ${current.blacklistDate}`);
+                } else if (targetStatus === 'Aktif') {
+                    current.statusNote = current.statusNote ? `${current.statusNote} | Diaktifkan kembali: ${today}` : `Diaktifkan kembali: ${today}`;
+                }
+                saveStorage(APP_STORAGE.employees, employees);
+                renderFilters();
+                renderStatusFilters();
+                renderEmployees();
+                renderAttendanceView();
+                updateDashboard();
+                setupPayrollView();
+                showToast(`Status ${current.name} berhasil diubah menjadi ${targetStatus}.`, 'success');
+            };
+
+            confirmModal.classList.remove('hidden');
+            setTimeout(() => {
+                inner.classList.remove('scale-95', 'opacity-0');
+                inner.classList.add('scale-100', 'opacity-100');
+                if (needsReason && reasonInput) reasonInput.focus();
+            }, 10);
+        };
+
         const closeConfirmModal = () => {
             const inner = document.getElementById('confirmInner');
             inner.classList.remove('scale-100', 'opacity-100');
             inner.classList.add('scale-95', 'opacity-0');
             setTimeout(() => {
                 confirmModal.classList.add('hidden');
+                const reasonWrapper = document.getElementById('confirmReasonWrapper');
+                const reasonInput = document.getElementById('confirmReasonInput');
+                const proceedBtn = document.getElementById('btnProceedConfirm');
+                if (reasonWrapper) reasonWrapper.classList.add('hidden');
+                if (reasonInput) reasonInput.value = '';
+                if (proceedBtn) proceedBtn.textContent = 'Hapus';
                 confirmDeleteCallback = null;
             }, 300);
         };
@@ -2626,16 +4314,55 @@
 
         attendanceDateFilter.addEventListener('change', renderAttendanceView);
         reportMonthFilter.addEventListener('change', renderReports);
+        document.getElementById('payrollMonthFilter').addEventListener('change', setupPayrollView);
+
+        const empPhotoFileInput = document.getElementById('empPhotoFile');
+        if (empPhotoFileInput) {
+            empPhotoFileInput.addEventListener('change', (event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                setEmployeePhotoPreview(URL.createObjectURL(file));
+            });
+        }
+
+        const empKtpFileInput = document.getElementById('empKtpFile');
+        if (empKtpFileInput) {
+            empKtpFileInput.addEventListener('change', (event) => {
+                const file = event.target.files?.[0];
+                const nameLabel = document.getElementById('empKtpFileName');
+                if (nameLabel) nameLabel.textContent = file ? file.name : 'Belum ada file dipilih';
+            });
+        }
 
         // Initialize App
+        const refreshApplicationViews = (preferredView = null) => {
+            syncEmployeeLifecycleFields();
+            syncBranchesFromEmployees();
+            populateBranchSelect();
+            renderFilters();
+            renderStatusFilters();
+            const activeView = preferredView || Object.keys(views).find(key => views[key] && !views[key].classList.contains('hidden')) || 'dashboard';
+            switchView(activeView);
+        };
+
         window.addEventListener('DOMContentLoaded', () => {
             updateDateTime();
             setInterval(updateDateTime, 1000); 
             if (attendanceDateFilter && !attendanceDateFilter.value) attendanceDateFilter.value = getFormattedTodayDate();
-            syncBranchesFromEmployees();
-            populateBranchSelect();
-            renderFilters();
-            switchView('dashboard');
+
+            // UI dibuka lebih dulu dari data lokal agar aplikasi tidak terasa macet bila endpoint Google lambat/offline.
+            refreshApplicationViews('dashboard');
+
+            // Sinkronisasi Google Sheet/Drive berjalan setelah UI siap. Jika berhasil, tampilan diperbarui otomatis.
+            initGoogleSheetDatabase()
+                .then(() => {
+                    if (googleSheetReady) refreshApplicationViews();
+                })
+                .catch((error) => {
+                    console.error('Init Google Sheet/Drive tidak selesai:', error);
+                    googleSheetReady = false;
+                    updateSyncStatus('Offline', 'error');
+                });
         });
 
     </script>
