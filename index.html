@@ -179,7 +179,7 @@
                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <i class="fa-solid fa-search text-gray-500 text-xs group-focus-within:text-gold-500 transition-colors"></i>
                 </div>
-                <input type="text" id="searchInput" placeholder="Cari karyawan, NIK, atau divisi..." 
+                <input type="text" id="searchInput" placeholder="Cari karyawan, NIK, cabang, atau unit kerja..." 
                        class="w-full pl-9 pr-4 py-2 bg-surface-100 border border-white/10 rounded-full text-xs text-white focus:outline-none focus:border-gold-500 focus:ring-1 focus:ring-gold-500 transition-all shadow-inner placeholder-gray-600 font-light tracking-wide">
             </div>
             
@@ -254,8 +254,8 @@
                             <span class="bg-surface-100 text-gray-400 px-2 py-0.5 rounded text-[9px] font-mono border border-white/5">AKTIF</span>
                         </div>
                         <div>
-                            <h3 class="text-3xl font-serif font-bold text-white mb-1">5</h3>
-                            <p class="text-[10px] text-gray-400 uppercase tracking-widest">Divisi Utama</p>
+                            <h3 class="text-3xl font-serif font-bold text-white mb-1" id="statBranches">0</h3>
+                            <p class="text-[10px] text-gray-400 uppercase tracking-widest">Cabang Aktif</p>
                         </div>
                     </div>
                 </div>
@@ -278,13 +278,21 @@
 
             <!-- EMPLOYEES VIEW -->
             <div id="employeesView" class="hidden animate-fade-in relative z-10 max-w-7xl mx-auto">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                    <div class="flex gap-2 flex-wrap" id="deptFilterContainer">
-                        <!-- Filters -->
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+                    <div class="flex flex-col gap-2">
+                        <p class="text-[9px] text-gray-500 uppercase tracking-widest">Filter Cabang</p>
+                        <div class="flex gap-2 flex-wrap" id="deptFilterContainer">
+                            <!-- Branch filters injected by JS -->
+                        </div>
                     </div>
-                    <button onclick="openAddEmployeeModal()" class="bg-gold-500 text-surface-400 font-bold uppercase tracking-widest py-2.5 px-5 text-xs rounded-lg shadow-gold-glow hover:bg-gold-400 transition-all transform active:scale-95 flex items-center gap-2 whitespace-nowrap">
-                        <i class="fa-solid fa-plus"></i> Tambah Karyawan
-                    </button>
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="openBranchManagerModal()" class="border border-gold-500/30 bg-gold-500/10 text-gold-400 font-bold uppercase tracking-widest py-2.5 px-4 text-xs rounded-lg hover:bg-gold-500 hover:text-surface-400 transition-all transform active:scale-95 flex items-center gap-2 whitespace-nowrap">
+                            <i class="fa-solid fa-code-branch"></i> Kelola Cabang
+                        </button>
+                        <button onclick="openAddEmployeeModal()" class="bg-gold-500 text-surface-400 font-bold uppercase tracking-widest py-2.5 px-5 text-xs rounded-lg shadow-gold-glow hover:bg-gold-400 transition-all transform active:scale-95 flex items-center gap-2 whitespace-nowrap">
+                            <i class="fa-solid fa-plus"></i> Tambah Karyawan
+                        </button>
+                    </div>
                 </div>
 
                 <div class="bg-surface-200 border border-white/5 rounded-xl overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
@@ -293,8 +301,8 @@
                             <thead>
                                 <tr class="bg-surface-100/50">
                                     <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">Profil</th>
-                                    <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">NIK & Cabang</th>
-                                    <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">Divisi & Jabatan</th>
+                                    <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">NIK & Bergabung</th>
+                                    <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">Cabang & Jabatan</th>
                                     <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">Kontak</th>
                                     <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">Status</th>
                                     <th class="py-3 px-5 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5 text-right">Aksi</th>
@@ -522,7 +530,7 @@
                                 <p class="text-[10px] uppercase tracking-widest text-gray-400 mt-3 mb-1 print-text-dark">Nomor Induk Karyawan</p>
                                 <p class="text-sm font-mono text-gray-800 print-text-dark" id="slipEmpNik">-</p>
 
-                                <p class="text-[10px] uppercase tracking-widest text-gray-400 mt-3 mb-1 print-text-dark">Cabang / Divisi</p>
+                                <p class="text-[10px] uppercase tracking-widest text-gray-400 mt-3 mb-1 print-text-dark">Cabang / Unit Kerja</p>
                                 <p class="text-sm text-gray-800 print-text-dark" id="slipEmpCabang">-</p>
                             </div>
                             <div class="text-right">
@@ -645,7 +653,7 @@
                     
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-white/5">
                         <div>
-                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Divisi</label>
+                            <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Unit Kerja</label>
                             <select id="empDept" required class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors">
                                 <option value="Front Office">Front Office</option>
                                 <option value="Food & Beverage">Food & Beverage</option>
@@ -661,10 +669,7 @@
                         <div>
                             <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Cabang Penempatan</label>
                             <select id="empCabang" required class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors">
-                                <option value="LuxeHR Pusat (Jakarta)">LuxeHR Pusat (Jakarta)</option>
-                                <option value="Cabang Bali">Cabang Bali</option>
-                                <option value="Cabang Surabaya">Cabang Surabaya</option>
-                                <option value="Cabang Batam">Cabang Batam</option>
+                                <!-- Cabang injected via JS. User can add/edit from Kelola Cabang. -->
                             </select>
                         </div>
                         
@@ -755,17 +760,23 @@
                     <img id="scanSuccessImage" src="" class="w-full h-full rounded-full object-cover">
                 </div>
                 <h3 id="scanSuccessName" class="text-xl font-serif font-bold text-white mb-1">Name</h3>
-                <p id="scanSuccessDept" class="text-[10px] text-gray-400 uppercase tracking-widest mb-4">Department</p>
+                <p id="scanSuccessDept" class="text-[10px] text-gray-400 uppercase tracking-widest mb-4">Cabang</p>
                 <div class="px-6 py-2 bg-surface-100 rounded-full border border-white/10 mb-2">
                     <p id="scanSuccessAction" class="text-xs font-bold tracking-widest uppercase">CLOCK IN SUCCESS</p>
                 </div>
                 <p id="scanSuccessTime" class="text-sm font-mono font-bold text-white">08:00 AM</p>
             </div>
 
-            <!-- Hidden input for manual/fallback testing -->
-            <form id="scannerForm" class="w-full relative">
+            <!-- Manual input is hidden by default so the scanner screen stays clean -->
+            <button id="showManualScannerInputBtn" type="button" onclick="toggleScannerManualInput(true)" class="w-full px-4 py-2 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:bg-white/5 transition-colors text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">
+                <i class="fa-solid fa-keyboard text-[10px]"></i> Input NIK Manual
+            </button>
+            <form id="scannerForm" class="hidden w-full relative mt-3">
+                <button type="button" onclick="toggleScannerManualInput(false)" class="absolute right-3 top-2.5 text-gray-500 hover:text-white transition-colors" title="Sembunyikan input manual">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
                 <i class="fa-solid fa-keyboard absolute left-4 top-3 text-gray-500 text-xs"></i>
-                <input type="text" id="scannerInput" autocomplete="off" placeholder="Input NIK Manual (Bila Kamera Error)..." class="w-full pl-10 pr-4 py-2.5 bg-surface-100/80 border border-white/10 rounded-xl text-xs font-mono text-center text-white focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all shadow-inner placeholder-gray-600">
+                <input type="text" id="scannerInput" autocomplete="off" placeholder="Input NIK Manual (Bila Kamera Error)..." class="w-full pl-10 pr-9 py-2.5 bg-surface-100/80 border border-white/10 rounded-xl text-xs font-mono text-center text-white focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all shadow-inner placeholder-gray-600">
                 <button type="submit" class="hidden">Submit</button>
             </form>
             <button onclick="closeScannerModal()" class="mt-6 px-6 py-2 text-[10px] uppercase tracking-widest text-gray-400 hover:text-white transition-colors bg-white/5 rounded-lg w-full">Tutup Kamera</button>
@@ -867,6 +878,42 @@
         </div>
     </div>
 
+
+    <!-- Branch Manager Modal -->
+    <div id="branchModal" class="modal-transition fixed inset-0 z-[60] flex items-center justify-center hidden">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-md cursor-pointer" onclick="closeBranchManagerModal()"></div>
+        <div class="bg-surface-200 border border-white/10 rounded-xl shadow-2xl w-full max-w-lg mx-4 relative z-10 transform scale-95 opacity-0 transition-all duration-300 flex flex-col max-h-[90vh]" id="branchModalContent">
+            <div class="px-5 py-4 border-b border-white/5 flex justify-between items-center bg-surface-100/50 rounded-t-xl">
+                <h3 class="text-xs font-serif font-bold text-gold-500 tracking-wider uppercase">Kelola Cabang</h3>
+                <button onclick="closeBranchManagerModal()" class="text-gray-500 hover:text-white transition-colors w-6 h-6 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            <div class="p-5 overflow-y-auto hide-scrollbar">
+                <form id="branchForm" class="flex flex-col sm:flex-row gap-3 mb-5">
+                    <input type="hidden" id="branchEditingId">
+                    <div class="flex-1">
+                        <label class="block text-[9px] uppercase tracking-widest text-gray-400 mb-1.5">Nama Cabang</label>
+                        <input type="text" id="branchNameInput" required placeholder="Contoh: BNI KC Purwokerto" class="w-full px-3 py-2 bg-surface-100 border border-white/10 rounded-lg text-xs text-white focus:border-gold-500 focus:outline-none transition-colors">
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <button type="submit" id="branchSubmitBtn" class="px-4 py-2 bg-gold-500 text-surface-400 rounded-lg text-[10px] uppercase tracking-widest font-bold shadow-gold-glow hover:bg-gold-400 transition-all h-[34px]">Tambah</button>
+                        <button type="button" onclick="resetBranchForm()" class="px-3 py-2 border border-white/10 text-gray-400 rounded-lg text-[10px] uppercase tracking-widest font-medium hover:bg-white/5 transition-colors h-[34px]">Reset</button>
+                    </div>
+                </form>
+                <div class="border border-white/5 rounded-xl overflow-hidden">
+                    <div class="bg-surface-100/50 px-4 py-3 text-[9px] uppercase tracking-widest text-gold-500 font-medium border-b border-white/5">Daftar Cabang</div>
+                    <div id="branchList" class="divide-y divide-white/5">
+                        <!-- Branch list injected by JS -->
+                    </div>
+                </div>
+                <p class="mt-4 text-[10px] text-gray-500 leading-relaxed">
+                    Catatan: bila nama cabang diedit, data karyawan yang memakai nama cabang lama akan ikut diperbarui otomatis.
+                </p>
+            </div>
+        </div>
+    </div>
+
     <!-- Confirm Modal -->
     <div id="confirmModal" class="modal-transition fixed inset-0 z-[80] flex items-center justify-center hidden">
         <div class="absolute inset-0 bg-black/80 backdrop-blur-sm" id="confirmBackdrop"></div>
@@ -907,6 +954,13 @@
             { id: 6, name: 'Sarah Jenkins', nik: 'LX-1155', dept: 'Housekeeping', shiftId: 'SH-3', position: 'Housekeeping Dir.', email: 'sarah@luxe.com', phone: '081555666777', cabang: 'Cabang Surabaya', salary: 10000000, bank: 'BSI 3344556677', ktp: '', date: '2021-11-30', status: 'Aktif', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?fit=crop&w=150&h=150&q=80', perf: 94 },
         ];
 
+        const initialBranches = [
+            { id: 'BR-1', name: 'LuxeHR Pusat (Jakarta)' },
+            { id: 'BR-2', name: 'Cabang Bali' },
+            { id: 'BR-3', name: 'Cabang Surabaya' },
+            { id: 'BR-4', name: 'Cabang Batam' }
+        ];
+
         // Seed default attendance (includes Snapshot concept)
         const initialAttendance = [
             { id: 1, empId: 1, clockIn: '08:45 AM', clockOut: '05:00 PM', status: 'Hadir', date: '2026-05-24', shiftName: 'Morning Shift', shiftBadge: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
@@ -920,7 +974,9 @@
         const APP_STORAGE = {
             employees: 'luxehr_employees',
             attendance: 'luxehr_attendance',
-            shifts: 'luxehr_shifts'
+            shifts: 'luxehr_shifts',
+            branches: 'luxehr_branches',
+            cameraEverGranted: 'luxehr_camera_ever_granted'
         };
 
         const deepClone = (value) => JSON.parse(JSON.stringify(value));
@@ -951,9 +1007,9 @@
         let employees = safeReadStorage(APP_STORAGE.employees, initialEmployees);
         let attendance = safeReadStorage(APP_STORAGE.attendance, initialAttendance);
         let shifts = safeReadStorage(APP_STORAGE.shifts, initialShifts);
+        let branches = safeReadStorage(APP_STORAGE.branches, initialBranches);
 
-        const departments = ['Semua Divisi', 'Front Office', 'Food & Beverage', 'Housekeeping', 'Manajemen', 'Keamanan'];
-        let currentFilter = 'Semua Divisi';
+        let currentFilter = 'Semua Cabang';
         let currentSearch = '';
         let confirmDeleteCallback = null;
         let isSidebarOpen = false;
@@ -988,6 +1044,8 @@
         const confirmModal = document.getElementById('confirmModal');
         const manualAbsenModal = document.getElementById('manualAbsenModal');
         const manualAbsenForm = document.getElementById('manualAbsenForm');
+        const branchModal = document.getElementById('branchModal');
+        const branchForm = document.getElementById('branchForm');
         
         // Form & Filters
         const shiftModal = document.getElementById('shiftModal');
@@ -1003,9 +1061,37 @@
         const asLowerText = (value) => String(value ?? '').toLowerCase();
         const safeImage = (url) => url || DEFAULT_AVATAR;
 
-        const getActiveDepartments = () => {
-            const uniqueDepartments = [...new Set(employees.map(e => e.dept).filter(Boolean))].sort();
-            return ['Semua Divisi', ...uniqueDepartments];
+        const normalizeBranchName = (name) => String(name ?? '').trim();
+
+        const getBranchNames = () => {
+            const names = [...branches.map(b => b.name), ...employees.map(e => e.cabang)].map(normalizeBranchName).filter(Boolean);
+            return [...new Set(names)].sort((a, b) => a.localeCompare(b, 'id-ID'));
+        };
+
+        const getActiveBranches = () => ['Semua Cabang', ...getBranchNames()];
+
+        const syncBranchesFromEmployees = () => {
+            let changed = false;
+            employees.forEach(emp => {
+                const name = normalizeBranchName(emp.cabang);
+                if (name && !branches.some(b => asLowerText(b.name) === asLowerText(name))) {
+                    branches.push({ id: `BR-${Date.now()}-${Math.random().toString(16).slice(2)}`, name });
+                    changed = true;
+                }
+            });
+            if (changed) saveStorage(APP_STORAGE.branches, branches);
+        };
+
+        const populateBranchSelect = (selectedValue = '') => {
+            const select = document.getElementById('empCabang');
+            if (!select) return;
+            syncBranchesFromEmployees();
+            const options = getBranchNames();
+            if (selectedValue && !options.some(name => asLowerText(name) === asLowerText(selectedValue))) {
+                options.push(selectedValue);
+            }
+            select.innerHTML = options.map(name => `<option value="${name}">${name}</option>`).join('');
+            if (selectedValue) select.value = selectedValue;
         };
 
         const getShiftById = (shiftId) => shifts.find(s => s.id === shiftId) || shifts[0] || initialShifts[0];
@@ -1181,13 +1267,13 @@
 
         const renderFilters = () => {
             deptContainer.innerHTML = '';
-            getActiveDepartments().forEach(dept => {
-                const isActive = currentFilter === dept;
+            getActiveBranches().forEach(branch => {
+                const isActive = currentFilter === branch;
                 const btn = document.createElement('button');
                 btn.className = `px-3 py-1.5 rounded-full text-[9px] font-medium border ${isActive ? 'border-gold-500 bg-gold-500/10 text-gold-500 shadow-gold-glow' : 'border-white/10 bg-surface-100 text-gray-400 hover:border-gold-500/50 hover:text-gold-400'} transition-all tracking-wide whitespace-nowrap`;
-                btn.textContent = dept;
+                btn.textContent = branch;
                 btn.onclick = () => {
-                    currentFilter = dept;
+                    currentFilter = branch;
                     renderFilters();
                     renderEmployees();
                 };
@@ -1199,8 +1285,8 @@
         const renderEmployees = () => {
             let filtered = employees;
             
-            if (currentFilter !== 'Semua Divisi') {
-                filtered = filtered.filter(e => e.dept === currentFilter);
+            if (currentFilter !== 'Semua Cabang') {
+                filtered = filtered.filter(e => e.cabang === currentFilter);
             }
             if (currentSearch) {
                 const q = asLowerText(currentSearch);
@@ -1238,11 +1324,12 @@
                     </td>
                     <td class="py-3 px-5">
                         <p class="text-[10px] font-mono text-gray-300">${emp.nik}</p>
-                        <p class="text-[8px] text-gray-500 mt-1"><i class="fa-solid fa-location-dot text-gold-600 mr-1"></i>${emp.cabang || 'Pusat'}</p>
+                        <p class="text-[8px] text-gray-500 mt-1"><i class="fa-solid fa-calendar-days text-gold-600 mr-1"></i>${emp.date || '-'}</p>
                     </td>
                     <td class="py-3 px-5">
                         <p class="text-[10px] text-white">${emp.position}</p>
-                        <p class="text-[9px] text-gold-500 uppercase tracking-wider">${emp.dept}</p>
+                        <p class="text-[9px] text-gold-500 uppercase tracking-wider"><i class="fa-solid fa-location-dot mr-1"></i>${emp.cabang || '-'}</p>
+                        <p class="text-[8px] text-gray-500 uppercase tracking-wider mt-0.5">${emp.dept || 'Unit Kerja'}</p>
                     </td>
                     <td class="py-3 px-5">
                         <p class="text-[10px] text-gray-300 font-mono"><i class="fa-solid fa-phone text-[8px] mr-1 text-gray-500"></i>${emp.phone || '-'}</p>
@@ -1437,6 +1524,32 @@
             updateScannerActionBadge();
         };
 
+        const toggleScannerManualInput = (show = true) => {
+            const form = document.getElementById('scannerForm');
+            const trigger = document.getElementById('showManualScannerInputBtn');
+            const input = document.getElementById('scannerInput');
+            if (form) form.classList.toggle('hidden', !show);
+            if (trigger) trigger.classList.toggle('hidden', show);
+            if (show && input) setTimeout(() => input.focus(), 80);
+        };
+
+        const readCameraPermissionState = async () => {
+            try {
+                if (!navigator.permissions || !navigator.permissions.query) return 'unknown';
+                const result = await navigator.permissions.query({ name: 'camera' });
+                return result?.state || 'unknown';
+            } catch (error) {
+                return 'unknown';
+            }
+        };
+
+        const markCameraGranted = () => {
+            cameraPermissionGranted = true;
+            localStorage.setItem(APP_STORAGE.cameraEverGranted, 'true');
+        };
+
+        const hasCameraEverGranted = () => localStorage.getItem(APP_STORAGE.cameraEverGranted) === 'true';
+
         const selectScannerAction = (action) => {
             setScannerAction(action);
             closeScannerActionMenu();
@@ -1544,7 +1657,7 @@
                 });
                 permissionStream.getTracks().forEach(track => track.stop());
 
-                cameraPermissionGranted = true;
+                markCameraGranted();
                 setCameraPermissionPanel(false);
                 await startCameraScanner();
             } catch (error) {
@@ -1581,7 +1694,7 @@
                 setCameraPermissionPanel(false);
                 reader.classList.remove('hidden');
                 document.getElementById('scannerSuccess').classList.add('hidden');
-                document.getElementById('scannerForm').classList.remove('hidden');
+                toggleScannerManualInput(false);
 
                 let cameraConfig = { facingMode: 'environment' };
                 try {
@@ -1619,17 +1732,14 @@
             const input = document.getElementById('scannerInput');
             document.getElementById('reader').classList.add('hidden');
             document.getElementById('scannerSuccess').classList.add('hidden');
-            document.getElementById('scannerForm').classList.remove('hidden');
-            document.getElementById('scannerSubtitle').textContent = `Mode ${getScannerActionLabel()}: klik Aktifkan Kamera, lalu izinkan akses kamera pada popup browser.`;
-            setCameraPermissionPanel(true, `Mode <span class="text-purple-300 font-semibold">${getScannerActionLabel()}</span> aktif. Tekan tombol di bawah, lalu pilih <span class="text-purple-300 font-semibold">Allow / Izinkan</span> pada popup browser.`);
+            toggleScannerManualInput(false);
+            document.getElementById('scannerSubtitle').textContent = `Mode ${getScannerActionLabel()}: sistem akan membaca izin kamera browser.`;
+            setCameraPermissionPanel(true, `Mode <span class="text-purple-300 font-semibold">${getScannerActionLabel()}</span> aktif. Jika izin kamera belum pernah diberikan, tekan tombol di bawah lalu pilih <span class="text-purple-300 font-semibold">Allow / Izinkan</span>.`);
             updateScannerActionBadge();
-            if (input) {
-                input.value = '';
-                setTimeout(() => input.focus(), 100);
-            }
+            if (input) input.value = '';
         };
 
-        const openScannerModal = (action = selectedScannerAction) => {
+        const openScannerModal = async (action = selectedScannerAction) => {
             setScannerAction(action);
             const modal = document.getElementById('scannerModal');
             const inner = document.getElementById('scannerModalContent');
@@ -1641,6 +1751,22 @@
                 inner.classList.remove('scale-95', 'opacity-0');
                 inner.classList.add('scale-100', 'opacity-100');
             }, 10);
+
+            const subtitle = document.getElementById('scannerSubtitle');
+            const permissionState = await readCameraPermissionState();
+            if (permissionState === 'granted' || hasCameraEverGranted()) {
+                cameraPermissionGranted = true;
+                setCameraPermissionPanel(false);
+                if (subtitle) subtitle.textContent = `Izin kamera sudah aktif. Membuka scanner ${getScannerActionLabel()}...`;
+                startCameraScanner();
+            } else if (permissionState === 'denied') {
+                cameraPermissionGranted = false;
+                setCameraPermissionPanel(true, 'Izin kamera pernah ditolak. Klik ikon gembok di address bar browser, ubah Camera menjadi Allow/Izinkan, lalu coba lagi.');
+                if (subtitle) subtitle.textContent = 'Izin kamera diblokir oleh browser.';
+            } else {
+                cameraPermissionGranted = false;
+                setCameraPermissionPanel(true, `Mode <span class="text-purple-300 font-semibold">${getScannerActionLabel()}</span> aktif. Tekan tombol untuk meminta izin kamera.`);
+            }
         };
 
         const closeScannerModal = () => {
@@ -1749,7 +1875,7 @@
             ensureScannerStopped();
 
             document.getElementById('reader').classList.add('hidden');
-            document.getElementById('scannerForm').classList.add('hidden');
+            toggleScannerManualInput(false);
             document.getElementById('scannerSubtitle').textContent = "Pencatatan Berhasil";
             
             const successUI = document.getElementById('scannerSuccess');
@@ -1758,7 +1884,7 @@
             document.getElementById('scanSuccessBorder').className = `w-24 h-24 rounded-full border-4 p-1 mb-4 transition-all duration-300 ${borderColor}`;
             document.getElementById('scanSuccessImage').src = safeImage(emp.image);
             document.getElementById('scanSuccessName').textContent = emp.name;
-            document.getElementById('scanSuccessDept').textContent = `${emp.dept} • ${emp.position}`;
+            document.getElementById('scanSuccessDept').textContent = `${emp.cabang || emp.dept || '-'} • ${emp.position}`;
             document.getElementById('scanSuccessAction').textContent = actionText;
             document.getElementById('scanSuccessAction').className = `text-xs font-bold tracking-widest uppercase ${actionColor}`;
             document.getElementById('scanSuccessTime').textContent = timeStr;
@@ -1767,7 +1893,7 @@
             scanTimeout = setTimeout(() => {
                 if (!document.getElementById('scannerModal').classList.contains('hidden')) {
                     document.getElementById('scannerSuccess').classList.add('hidden');
-                    document.getElementById('scannerForm').classList.remove('hidden');
+                    toggleScannerManualInput(false);
                     document.getElementById('scannerInput').value = '';
                     if (cameraPermissionGranted) {
                         startCameraScanner();
@@ -2189,6 +2315,126 @@
             showToast("Slip Gaji berhasil dikalkulasi", "success");
         };
 
+
+        // --- BRANCH MASTER DATA MANAGEMENT ---
+        const renderBranchList = () => {
+            const list = document.getElementById('branchList');
+            if (!list) return;
+            syncBranchesFromEmployees();
+            if (branches.length === 0) {
+                list.innerHTML = `<div class="px-4 py-6 text-center text-gray-500 text-xs">Belum ada cabang.</div>`;
+                return;
+            }
+            list.innerHTML = branches
+                .slice()
+                .sort((a, b) => a.name.localeCompare(b.name, 'id-ID'))
+                .map(branch => {
+                    const empCount = employees.filter(emp => emp.cabang === branch.name).length;
+                    return `
+                        <div class="px-4 py-3 flex items-center justify-between gap-3 hover:bg-white/5 transition-colors">
+                            <div class="min-w-0">
+                                <p class="text-xs text-white font-medium truncate">${branch.name}</p>
+                                <p class="text-[9px] text-gray-500 uppercase tracking-wider">${empCount} karyawan terdaftar</p>
+                            </div>
+                            <div class="flex items-center gap-2 flex-shrink-0">
+                                <button type="button" onclick="editBranch('${branch.id}')" class="w-7 h-7 rounded border border-white/10 text-gold-400 hover:border-gold-500/40 hover:bg-gold-500/10 transition-colors" title="Edit cabang">
+                                    <i class="fa-solid fa-pen text-[10px]"></i>
+                                </button>
+                                <button type="button" onclick="deleteBranch('${branch.id}')" class="w-7 h-7 rounded border border-white/10 text-red-400 hover:border-red-500/40 hover:bg-red-500/10 transition-colors" title="Hapus cabang">
+                                    <i class="fa-solid fa-trash-can text-[10px]"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+        };
+
+        const resetBranchForm = () => {
+            document.getElementById('branchEditingId').value = '';
+            document.getElementById('branchNameInput').value = '';
+            document.getElementById('branchSubmitBtn').textContent = 'Tambah';
+        };
+
+        const openBranchManagerModal = () => {
+            resetBranchForm();
+            renderBranchList();
+            branchModal.classList.remove('hidden');
+            const inner = document.getElementById('branchModalContent');
+            setTimeout(() => {
+                inner.classList.remove('scale-95', 'opacity-0');
+                inner.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        };
+
+        const closeBranchManagerModal = () => {
+            const inner = document.getElementById('branchModalContent');
+            inner.classList.remove('scale-100', 'opacity-100');
+            inner.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => branchModal.classList.add('hidden'), 300);
+        };
+
+        const editBranch = (id) => {
+            const branch = branches.find(b => b.id === id);
+            if (!branch) return;
+            document.getElementById('branchEditingId').value = branch.id;
+            document.getElementById('branchNameInput').value = branch.name;
+            document.getElementById('branchSubmitBtn').textContent = 'Update';
+        };
+
+        const deleteBranch = (id) => {
+            const branch = branches.find(b => b.id === id);
+            if (!branch) return;
+            const usedByEmployees = employees.some(emp => emp.cabang === branch.name);
+            if (usedByEmployees) {
+                showToast('Cabang masih digunakan karyawan. Pindahkan karyawan terlebih dahulu.', 'error');
+                return;
+            }
+            branches = branches.filter(b => b.id !== id);
+            saveStorage(APP_STORAGE.branches, branches);
+            renderBranchList();
+            renderFilters();
+            populateBranchSelect();
+            updateDashboard();
+            showToast('Cabang berhasil dihapus.', 'success');
+        };
+
+        branchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('branchNameInput');
+            const editingId = document.getElementById('branchEditingId').value;
+            const newName = normalizeBranchName(input.value);
+            if (!newName) return;
+
+            const duplicate = branches.some(b => asLowerText(b.name) === asLowerText(newName) && b.id !== editingId);
+            if (duplicate) {
+                showToast('Nama cabang sudah ada.', 'error');
+                return;
+            }
+
+            if (editingId) {
+                const branch = branches.find(b => b.id === editingId);
+                if (!branch) return;
+                const oldName = branch.name;
+                branch.name = newName;
+                employees.forEach(emp => {
+                    if (emp.cabang === oldName) emp.cabang = newName;
+                });
+                saveStorage(APP_STORAGE.employees, employees);
+                showToast('Cabang berhasil diperbarui.', 'success');
+            } else {
+                branches.push({ id: `BR-${Date.now()}`, name: newName });
+                showToast('Cabang berhasil ditambahkan.', 'success');
+            }
+
+            saveStorage(APP_STORAGE.branches, branches);
+            resetBranchForm();
+            renderBranchList();
+            renderFilters();
+            populateBranchSelect(newName);
+            renderEmployees();
+            updateDashboard();
+        });
+
         // --- STREAMING_CHUNK:Finalizing forms and actions logic... ---
         let editingEmployeeId = null;
 
@@ -2199,6 +2445,8 @@
             
             const shiftSelect = document.getElementById('empShift');
             shiftSelect.innerHTML = shifts.map(s => `<option value="${s.id}">${s.name} (${s.start} - ${s.end})</option>`).join('');
+            populateBranchSelect(emp.cabang || 'LuxeHR Pusat (Jakarta)');
+            populateBranchSelect();
 
             const modalContent = document.getElementById('modalContent');
             empModal.classList.remove('hidden');
@@ -2296,7 +2544,9 @@
                 showToast('Karyawan VIP berhasil ditambahkan.', 'success');
             }
 
+            syncBranchesFromEmployees();
             saveStorage(APP_STORAGE.employees, employees);
+            saveStorage(APP_STORAGE.branches, branches);
             
             closeAddEmployeeModal();
             renderFilters();
@@ -2382,6 +2632,8 @@
             updateDateTime();
             setInterval(updateDateTime, 1000); 
             if (attendanceDateFilter && !attendanceDateFilter.value) attendanceDateFilter.value = getFormattedTodayDate();
+            syncBranchesFromEmployees();
+            populateBranchSelect();
             renderFilters();
             switchView('dashboard');
         });
