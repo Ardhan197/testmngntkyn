@@ -388,9 +388,23 @@
                                 <input type="date" id="attendanceDateFilter" class="bg-surface-100 border border-white/10 rounded px-2 py-1 text-[10px] text-white focus:border-gold-500 focus:outline-none transition-colors filter invert hue-rotate-180 cursor-pointer">
                             </div>
                             <div class="flex gap-2 flex-wrap">
-                                <button onclick="openScannerModal()" class="px-3 py-1.5 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-purple-500 hover:text-white transition-all flex items-center gap-1.5">
-                                    <i class="fa-solid fa-camera text-[10px]"></i> Scan QR Kamera
-                                </button>
+                                <div class="relative" id="scanQrDropdownWrapper">
+                                    <button type="button" onclick="toggleScannerActionMenu(event)" class="px-3 py-1.5 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-purple-500 hover:text-white transition-all flex items-center gap-1.5">
+                                        <i class="fa-solid fa-camera text-[10px]"></i> Scan QR Kamera
+                                        <i class="fa-solid fa-chevron-down text-[8px]"></i>
+                                    </button>
+
+                                    <div id="scanQrActionMenu" class="hidden absolute right-0 top-full mt-2 w-44 rounded-xl border border-white/10 bg-surface-100 shadow-2xl z-30 overflow-hidden animate-fade-in">
+                                        <button type="button" onclick="selectScannerAction('Masuk')" class="w-full px-4 py-3 text-left text-[10px] uppercase tracking-widest text-[#25D366] hover:bg-[#25D366]/10 transition-colors flex items-center gap-2 border-b border-white/5">
+                                            <i class="fa-solid fa-right-to-bracket w-4 text-center"></i>
+                                            <span>Clock In</span>
+                                        </button>
+                                        <button type="button" onclick="selectScannerAction('Pulang')" class="w-full px-4 py-3 text-left text-[10px] uppercase tracking-widest text-orange-400 hover:bg-orange-500/10 transition-colors flex items-center gap-2">
+                                            <i class="fa-solid fa-right-from-bracket w-4 text-center"></i>
+                                            <span>Clock Out</span>
+                                        </button>
+                                    </div>
+                                </div>
                                 <button onclick="openManualAbsenModal()" class="px-3 py-1.5 bg-gold-500 text-surface-400 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-gold-glow hover:bg-gold-400 transition-colors flex items-center gap-1.5">
                                     <i class="fa-solid fa-user-pen text-[8px]"></i> Catat Manual
                                 </button>
@@ -712,6 +726,7 @@
         <div class="w-full max-w-md mx-4 relative z-10 transform scale-95 opacity-0 transition-all duration-300 flex flex-col items-center bg-surface-200 p-8 rounded-2xl border border-white/10 shadow-2xl" id="scannerModalContent">
             
             <h3 class="text-lg font-serif font-bold text-white tracking-widest uppercase mb-2">Scanner Absensi</h3>
+            <p id="scannerActionBadge" class="mb-2 px-3 py-1 rounded-full border border-[#25D366]/30 bg-[#25D366]/10 text-[#25D366] text-[9px] font-bold uppercase tracking-widest">Mode: Clock In</p>
             <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-4 text-center" id="scannerSubtitle">Klik tombol aktifkan kamera untuk meminta izin browser.</p>
 
             <!-- Camera Permission Gate: penting agar browser menerima request kamera dari klik user -->
@@ -1385,6 +1400,53 @@
         let pendingCameraStart = false;
         let lastScanTime = 0;
         let scanTimeout = null;
+        let selectedScannerAction = 'Masuk'; // Masuk = Clock In, Pulang = Clock Out
+
+        const getScannerActionLabel = () => selectedScannerAction === 'Pulang' ? 'Clock Out' : 'Clock In';
+
+        const closeScannerActionMenu = () => {
+            const menu = document.getElementById('scanQrActionMenu');
+            if (menu) menu.classList.add('hidden');
+        };
+
+        const toggleScannerActionMenu = (event) => {
+            if (event) event.stopPropagation();
+            const menu = document.getElementById('scanQrActionMenu');
+            if (menu) menu.classList.toggle('hidden');
+        };
+
+        const updateScannerActionBadge = () => {
+            const badge = document.getElementById('scannerActionBadge');
+            const input = document.getElementById('scannerInput');
+            const isClockOut = selectedScannerAction === 'Pulang';
+
+            if (badge) {
+                badge.textContent = `Mode: ${getScannerActionLabel()}`;
+                badge.className = isClockOut
+                    ? 'mb-2 px-3 py-1 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-400 text-[9px] font-bold uppercase tracking-widest'
+                    : 'mb-2 px-3 py-1 rounded-full border border-[#25D366]/30 bg-[#25D366]/10 text-[#25D366] text-[9px] font-bold uppercase tracking-widest';
+            }
+
+            if (input) {
+                input.placeholder = `Input NIK Manual untuk ${getScannerActionLabel()}...`;
+            }
+        };
+
+        const setScannerAction = (action) => {
+            selectedScannerAction = action === 'Pulang' ? 'Pulang' : 'Masuk';
+            updateScannerActionBadge();
+        };
+
+        const selectScannerAction = (action) => {
+            setScannerAction(action);
+            closeScannerActionMenu();
+            openScannerModal(action);
+        };
+
+        document.addEventListener('click', (event) => {
+            const wrapper = document.getElementById('scanQrDropdownWrapper');
+            if (wrapper && !wrapper.contains(event.target)) closeScannerActionMenu();
+        });
 
         const getCameraErrorMessage = (error) => {
             const errorName = error?.name || error?.message || 'UnknownError';
@@ -1535,7 +1597,7 @@
                     console.warn('Camera list warning, using facingMode fallback:', deviceError);
                 }
 
-                if (subtitle) subtitle.textContent = 'Kamera aktif. Arahkan QR Code ke kamera.';
+                if (subtitle) subtitle.textContent = `Kamera aktif untuk ${getScannerActionLabel()}. Arahkan QR Code ke kamera.`;
                 await html5QrcodeScanner.start(
                     cameraConfig,
                     { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
@@ -1558,15 +1620,17 @@
             document.getElementById('reader').classList.add('hidden');
             document.getElementById('scannerSuccess').classList.add('hidden');
             document.getElementById('scannerForm').classList.remove('hidden');
-            document.getElementById('scannerSubtitle').textContent = 'Klik Aktifkan Kamera, lalu izinkan akses kamera pada popup browser.';
-            setCameraPermissionPanel(true, 'Tekan tombol di bawah, lalu pilih <span class="text-purple-300 font-semibold">Allow / Izinkan</span> pada popup browser.');
+            document.getElementById('scannerSubtitle').textContent = `Mode ${getScannerActionLabel()}: klik Aktifkan Kamera, lalu izinkan akses kamera pada popup browser.`;
+            setCameraPermissionPanel(true, `Mode <span class="text-purple-300 font-semibold">${getScannerActionLabel()}</span> aktif. Tekan tombol di bawah, lalu pilih <span class="text-purple-300 font-semibold">Allow / Izinkan</span> pada popup browser.`);
+            updateScannerActionBadge();
             if (input) {
                 input.value = '';
                 setTimeout(() => input.focus(), 100);
             }
         };
 
-        const openScannerModal = () => {
+        const openScannerModal = (action = selectedScannerAction) => {
+            setScannerAction(action);
             const modal = document.getElementById('scannerModal');
             const inner = document.getElementById('scannerModalContent');
             clearTimeout(scanTimeout);
@@ -1612,6 +1676,7 @@
             const today = getFormattedTodayDate();
             const now = new Date();
             const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const scanAction = selectedScannerAction === 'Pulang' ? 'Pulang' : 'Masuk';
 
             let empLogIndex = attendance.findIndex(log => log.empId === emp.id && log.date === today);
             const empShift = getShiftById(emp.shiftId);
@@ -1620,8 +1685,16 @@
             let actionColor = "";
             let borderColor = "";
 
-            if (empLogIndex === -1) {
-                // CLOCK IN
+            if (scanAction === 'Masuk') {
+                if (empLogIndex > -1) {
+                    const existingLog = attendance[empLogIndex];
+                    const message = existingLog.clockOut && existingLog.clockOut !== '--:--'
+                        ? `Scanner: ${emp.name} sudah selesai absen hari ini.`
+                        : `Scanner: ${emp.name} sudah Clock In hari ini.`;
+                    showToast(message, 'error');
+                    return;
+                }
+
                 const [shiftHour, shiftMin] = empShift.start.split(':');
                 const limitTime = new Date();
                 limitTime.setHours(parseInt(shiftHour), parseInt(shiftMin), 0, 0);
@@ -1645,18 +1718,27 @@
                 borderColor = status === 'Terlambat' ? 'border-yellow-500 shadow-[0_0_30px_rgba(234,179,8,0.4)]' : 'border-[#25D366] shadow-[0_0_30px_rgba(37,211,102,0.4)]';
                 showToast(`Scanner: ${emp.name} berhasil Clock In`, 'success');
             } else {
-                let existingLog = attendance[empLogIndex];
-                if (existingLog.clockOut !== '--:--') {
-                    showToast(`Scanner: ${emp.name} sudah selesai absen hari ini.`, 'error');
+                if (empLogIndex === -1) {
+                    showToast(`Scanner: ${emp.name} belum Clock In hari ini.`, 'error');
                     return;
-                } else {
-                    // CLOCK OUT
-                    existingLog.clockOut = timeStr;
-                    actionText = `CLOCK OUT BERHASIL`;
-                    actionColor = 'text-orange-400';
-                    borderColor = 'border-orange-400 shadow-[0_0_30px_rgba(251,146,60,0.4)]';
-                    showToast(`Scanner: ${emp.name} berhasil Clock Out.`, 'success');
                 }
+
+                let existingLog = attendance[empLogIndex];
+                if (!existingLog.clockIn || existingLog.clockIn === '--:--') {
+                    showToast(`Scanner: ${emp.name} belum memiliki data Clock In valid.`, 'error');
+                    return;
+                }
+
+                if (existingLog.clockOut && existingLog.clockOut !== '--:--') {
+                    showToast(`Scanner: ${emp.name} sudah Clock Out hari ini.`, 'error');
+                    return;
+                }
+
+                existingLog.clockOut = timeStr;
+                actionText = `CLOCK OUT BERHASIL`;
+                actionColor = 'text-orange-400';
+                borderColor = 'border-orange-400 shadow-[0_0_30px_rgba(251,146,60,0.4)]';
+                showToast(`Scanner: ${emp.name} berhasil Clock Out.`, 'success');
             }
 
             saveStorage(APP_STORAGE.attendance, attendance);
