@@ -362,6 +362,9 @@
                 <button type="button" onclick="switchView('offboarding')" id="nav-offboarding" class="nav-link flex items-center px-3 py-2 rounded-r-lg group transition-all border-l-2 text-left">
                     <i class="fa-solid fa-user-slash w-5 text-center text-sm"></i><span class="ml-2 text-[11px] font-medium tracking-wide">Resign & Blacklist</span>
                 </button>
+                <button type="button" onclick="switchView('maintenance')" id="nav-maintenance" class="nav-link flex items-center px-3 py-2 rounded-r-lg group transition-all border-l-2 text-left">
+                    <i class="fa-solid fa-screwdriver-wrench w-5 text-center text-sm"></i><span class="ml-2 text-[11px] font-medium tracking-wide">Maintenance</span>
+                </button>
                 <button type="button" onclick="switchView('settings')" id="nav-settings" class="nav-link flex items-center px-3 py-2 rounded-r-lg group transition-all border-l-2 text-left">
                     <i class="fa-solid fa-sliders w-5 text-center text-sm"></i><span class="ml-2 text-[11px] font-medium tracking-wide">Pengaturan</span>
                 </button>
@@ -530,6 +533,14 @@
                             </div>
                         </div>
                         <div>
+                            <label class="label-premium">Jam Absensi Manual</label>
+                            <div class="grid grid-cols-[1fr_auto] gap-2">
+                                <input type="time" id="attendanceTimeInput" class="field" aria-label="Jam Absensi Manual">
+                                <button type="button" onclick="setAttendanceTimeNow()" class="border border-gold-500/40 text-gold-500 hover:bg-gold-500 hover:text-surface-400 font-bold uppercase tracking-widest px-3 text-[9px] rounded-lg transition-all whitespace-nowrap">Jam Ini</button>
+                            </div>
+                            <p class="text-[9px] text-gray-500 mt-1 leading-relaxed">Kosongkan jam untuk memakai jam saat tombol Masuk/Pulang ditekan. Isi jam jika ingin koreksi/manual.</p>
+                        </div>
+                        <div>
                             <label class="label-premium">Karyawan</label>
                             <select id="attendanceEmployeeSelect" class="field"></select>
                         </div>
@@ -540,7 +551,7 @@
                             <button type="button" onclick="recordAttendance('in')" class="bg-gold-500/10 border border-gold-500/50 text-gold-500 hover:bg-gold-500 hover:text-surface-400 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-right-to-bracket mr-1"></i> Masuk</button>
                             <button type="button" onclick="recordAttendance('out')" class="bg-white/5 border border-white/10 text-gray-300 hover:border-gold-500/50 hover:text-gold-500 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-right-from-bracket mr-1"></i> Pulang</button>
                         </div>
-                        <div class="p-3 rounded-lg bg-surface-100 border border-white/5 text-gray-400 text-[10px] leading-relaxed"><i class="fa-solid fa-circle-info text-gold-500 mr-1"></i> Data tersimpan lokal dengan backup otomatis. Saat absen masuk, shift disimpan sebagai snapshot sehingga histori lama tidak berubah saat master shift diganti.</div>
+                        <div class="p-3 rounded-lg bg-surface-100 border border-white/5 text-gray-400 text-[10px] leading-relaxed"><i class="fa-solid fa-circle-info text-gold-500 mr-1"></i> Data tersimpan lokal dengan backup otomatis. Tanggal dan jam absensi bisa disesuaikan manual; shift tetap disimpan sebagai snapshot sehingga histori lama tidak berubah saat master shift diganti.</div>
                     </div>
                 </div>
                 <div class="premium-card rounded-xl overflow-hidden lg:col-span-2">
@@ -791,6 +802,63 @@
             <div class="mt-4 p-3 rounded-lg bg-surface-100 border border-white/5 text-gray-400 text-[10px] leading-relaxed"><i class="fa-solid fa-circle-info text-gold-500 mr-1"></i> Proses resign/blacklist tidak menghapus karyawan. Sistem hanya mengubah status dan menyimpan catatan, sehingga absensi, cuti, payroll, dan histori lama tetap aman.</div>
         </section>
 
+        <section id="maintenanceView" class="view hidden flex-1 overflow-y-auto p-4 md:p-6 bg-surface-300 relative">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-5">
+                <div>
+                    <p class="text-[10px] uppercase tracking-[0.25em] text-gold-500 mb-1">Sectional Data Care</p>
+                    <h2 class="text-xl md:text-2xl font-serif font-bold text-white tracking-wide">Maintenance Per Bagian</h2>
+                    <p class="text-[10px] text-gray-500 mt-1 max-w-2xl">Maintenance dibuat per modul agar perbaikan data tidak bersifat global. Gunakan cek, backup, sync, atau repair hanya pada bagian yang diperlukan.</p>
+                </div>
+                <button type="button" onclick="exportMaintenanceReportCSV()" class="border border-white/10 text-gray-300 hover:text-white hover:border-gold-500/40 py-2.5 px-3 text-[10px] uppercase tracking-widest rounded-lg transition-all"><i class="fa-solid fa-file-export mr-1.5"></i> Export Report</button>
+            </div>
+
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4" id="maintenanceSummaryCards"></div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                <div class="premium-card rounded-xl overflow-hidden xl:col-span-2">
+                    <div class="p-4 border-b border-white/5 flex items-start justify-between gap-3">
+                        <div>
+                            <h3 class="font-serif font-bold text-white text-base">Modul Maintenance</h3>
+                            <p class="text-[10px] text-gray-500 mt-0.5">Setiap tombol hanya bekerja pada modul terkait, bukan seluruh aplikasi.</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/20 text-gold-500 text-[9px] uppercase tracking-widest">Non Global</span>
+                    </div>
+                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-3" id="maintenanceModuleGrid"></div>
+                </div>
+
+                <div class="premium-card rounded-xl p-4">
+                    <h3 class="font-serif font-bold text-white text-base mb-1">Hasil Terakhir</h3>
+                    <p class="text-[10px] text-gray-500 mb-4">Ringkasan check/repair terakhir per bagian.</p>
+                    <div id="maintenanceLastResult" class="p-3 rounded-lg bg-surface-100 border border-white/5 text-gray-400 text-[10px] leading-relaxed min-h-[180px]">Belum ada proses maintenance.</div>
+                    <div class="mt-3 grid grid-cols-1 gap-2">
+                        <button type="button" onclick="exportMaintenanceLogCSV()" class="border border-white/10 text-gray-300 hover:text-white hover:border-gold-500/40 py-3 text-[10px] uppercase tracking-widest rounded-lg transition-all"><i class="fa-solid fa-clock-rotate-left mr-1.5"></i> Export Log Maintenance</button>
+                    </div>
+                </div>
+
+                <div class="premium-card rounded-xl overflow-hidden xl:col-span-2">
+                    <div class="p-4 border-b border-white/5">
+                        <h3 class="font-serif font-bold text-white text-base">Daftar Temuan</h3>
+                        <p class="text-[10px] text-gray-500 mt-0.5">Temuan hasil cek modul terakhir. Repair hanya memperbaiki struktur aman, tidak menghapus data bisnis.</p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left whitespace-nowrap">
+                            <thead class="bg-surface-100/50"><tr><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Modul</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Level</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Temuan</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Saran</th></tr></thead>
+                            <tbody id="maintenanceIssueTable" class="divide-y divide-white/5"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="premium-card rounded-xl p-4">
+                    <h3 class="font-serif font-bold text-white text-base mb-1">Prinsip Aman</h3>
+                    <div class="space-y-3 text-[10px] text-gray-400 leading-relaxed mt-3">
+                        <div class="p-3 rounded-lg bg-surface-100 border border-white/5"><i class="fa-solid fa-layer-group text-gold-500 mr-1"></i> Maintenance dipisah per modul: karyawan, absensi, shift, cuti, payroll, resign/blacklist, media, pengaturan, dan sync.</div>
+                        <div class="p-3 rounded-lg bg-surface-100 border border-white/5"><i class="fa-solid fa-shield-halved text-gold-500 mr-1"></i> Repair aman hanya menormalkan struktur, ID, status, snapshot, dan metadata. Data utama tidak dihapus tanpa konfirmasi khusus.</div>
+                        <div class="p-3 rounded-lg bg-surface-100 border border-white/5"><i class="fa-solid fa-cloud-arrow-up text-gold-500 mr-1"></i> Setiap hasil maintenance masuk log lokal dan ikut tersinkron ke Google Sheet.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section id="settingsView" class="view hidden flex-1 overflow-y-auto p-4 md:p-6 bg-surface-300 relative">
             <div class="mb-5"><p class="text-[10px] uppercase tracking-[0.25em] text-gold-500 mb-1">System Preference</p><h2 class="text-xl md:text-2xl font-serif font-bold text-white tracking-wide">Pengaturan Aplikasi</h2></div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -804,21 +872,56 @@
                     </form>
                 </div>
                 <div class="premium-card rounded-xl p-4">
-                    <h3 class="font-serif font-bold text-white text-base mb-1">Backup & Integrasi Google Sheet</h3><p class="text-[10px] text-gray-500 mb-4">Data tetap aman di browser storage. Semua data yang disimpan di aplikasi akan dikirim juga ke Google Sheet, termasuk pengaturan, master dropdown, integrasi, metadata, resign/blacklist, shift, dan histori.</p>
+                    <h3 class="font-serif font-bold text-white text-base mb-1">Backup & Integrasi Google Sheet</h3><p class="text-[10px] text-gray-500 mb-4">Mode cloud-first: Google Sheet menjadi sumber data utama untuk multi user/multi cabang. Browser hanya menyimpan antrean offline/cache sementara; setelah berhasil sync, data bisnis lokal dibersihkan otomatis.</p>
                     <div class="space-y-3">
                         <div><label class="label-premium">Status Storage Lokal</label><div id="storageStatus" class="p-3 rounded-lg bg-surface-100 border border-white/5 text-gray-400 text-[10px] leading-relaxed">Memeriksa data...</div></div>
                         <div><label class="label-premium">Status Google Sheet Sync</label><div id="syncStatus" class="p-3 rounded-lg bg-surface-100 border border-white/5 text-gray-400 text-[10px] leading-relaxed">Belum ada aktivitas sync.</div></div>
+                        <div><label class="label-premium">Status Realtime Cloud</label><div id="cloudRealtimeStatus" class="p-3 rounded-lg bg-surface-100 border border-white/5 text-gray-400 text-[10px] leading-relaxed">Mode realtime belum aktif.</div></div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+                            <div>
+                                <label class="label-premium">Akses Jaringan Cloud</label>
+                                <select id="networkAccessEnabled" class="field">
+                                    <option value="false">Nonaktif / Aman Preview</option>
+                                    <option value="true">Aktif / Izinkan Sync</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label-premium">Mode Data Utama</label>
+                                <select id="cloudFirstEnabled" class="field">
+                                    <option value="true">Cloud-first / Multi User</option>
+                                    <option value="false">Lokal Sementara</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label-premium">Realtime Pull</label>
+                                <select id="realtimePullEnabled" class="field">
+                                    <option value="true">Aktif</option>
+                                    <option value="false">Nonaktif</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="label-premium">Interval Pull Cloud / Detik</label>
+                                <input type="number" id="realtimePullIntervalSeconds" class="field" min="5" value="15">
+                            </div>
+                        </div>
+                        <div class="p-3 rounded-lg bg-surface-100 border border-blue-500/20 text-gray-400 text-[10px] leading-relaxed">
+                            <i class="fa-solid fa-shield-halved text-blue-300 mr-1"></i>
+                            Akses jaringan dibuat <span class="text-yellow-400">nonaktif default</span> agar popup izin jaringan pada mode Pratinjau tidak muncul berulang. Aktifkan hanya saat aplikasi sudah siap sync Google Sheet/Drive.
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <button type="button" onclick="pullCloudDataNow()" class="border border-purple-500/40 text-purple-300 hover:bg-purple-500 hover:text-white font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-cloud-arrow-down mr-1.5"></i> Tarik Data Cloud</button>
+                            <button type="button" onclick="purgeSyncedLocalBusinessData()" class="border border-red-500/40 text-red-300 hover:bg-red-500 hover:text-white font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-broom mr-1.5"></i> Bersihkan Cache Tersync</button>
+                        </div>
                         <div class="p-3 rounded-lg bg-surface-100 border border-gold-500/20 text-gray-400 text-[10px] leading-relaxed">
                             <p class="text-gold-500 uppercase tracking-widest text-[9px] mb-2"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Cakupan Full Sync Google Sheet</p>
-                            <p>Auto-sync mencakup: Karyawan, Absensi, Cuti, Shift, Assignment Shift, Resign, Blacklist, Master Cabang, Master Status, Pengaturan, Integrasi, Metadata Aplikasi, dan Index Storage.</p>
-                            <p class="mt-1 text-green-400"><i class="fa-solid fa-rotate mr-1"></i> Auto-sync aktif: setelah data disimpan, aplikasi membuat antrean dan mengirim full sync otomatis tanpa menunggu tombol Sync Manual.</p>
-                            <p class="mt-1 text-gray-500">Catatan: file gambar foto/KTP tetap disimpan di aplikasi dan backup JSON; ke Google Sheet dikirim status dan ukuran gambar agar cell Google Sheet tidak rusak.</p>
+                            <p>Auto-sync dan realtime pull mencakup: Karyawan, Absensi, Cuti, Shift, Assignment Shift, Resign, Blacklist, Master Cabang, Master Status, Pengaturan, Integrasi, Metadata Aplikasi, Maintenance, dan Drive Files.</p>
+                            <p class="mt-1 text-green-400"><i class="fa-solid fa-rotate mr-1"></i> Cloud-first aktif: perubahan dikirim otomatis ke Google Sheet, lalu data cloud ditarik berkala agar user/cabang lain melihat update terbaru.</p>
+                            <p class="mt-1 text-green-400"><i class="fa-solid fa-folder-open mr-1"></i> Foto karyawan dan KTP akan otomatis dikirim ke Google Drive. Folder akan dibuat otomatis jika belum ada, lalu link Drive dikirim ke Google Sheet.</p>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                             <button type="button" onclick="downloadBackupJSON()" class="border border-gold-500/50 text-gold-500 hover:bg-gold-500 hover:text-surface-400 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-download mr-1.5"></i> Backup JSON</button>
                             <button type="button" onclick="restoreFromBackup()" class="border border-white/10 text-gray-300 hover:border-gold-500/50 hover:text-gold-500 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-rotate-left mr-1.5"></i> Restore Backup</button>
                         </div>
-                        <button type="button" onclick="cleanDummyDataManual()" class="w-full border border-red-500/40 text-red-300 hover:bg-red-500 hover:text-white font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-broom mr-1.5"></i> Bersihkan Data Dummy Lama</button>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                             <button type="button" onclick="testGoogleSheetConnection()" class="border border-blue-500/40 text-blue-300 hover:bg-blue-500 hover:text-white font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-plug-circle-check mr-1.5"></i> Test Koneksi</button>
                             <button type="button" onclick="syncAllToCloud()" class="bg-gold-500 text-surface-400 hover:bg-gold-400 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all shadow-gold-glow"><i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> Sync Manual</button>
@@ -833,7 +936,12 @@
                             <input type="text" id="googleSheetId" class="field font-mono text-[9px]" placeholder="Contoh: 1abcDEFghiJKLmnoPQRstuVWxyz1234567890">
                             <p class="text-[9px] text-gray-500 mt-1 leading-relaxed">Ambil dari URL Google Sheet: docs.google.com/spreadsheets/d/<span class="text-gold-500">SPREADSHEET_ID</span>/edit. Link Apps Script bukan Spreadsheet ID.</p>
                         </div>
-                        <button type="button" onclick="saveIntegrationSettings()" class="w-full border border-gold-500/50 text-gold-500 hover:bg-gold-500 hover:text-surface-400 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-floppy-disk mr-1.5"></i> Simpan Spreadsheet ID</button>
+                        <div>
+                            <label class="label-premium">Nama Folder Google Drive</label>
+                            <input type="text" id="driveRootFolderName" class="field" placeholder="LuxeHR Uploads">
+                            <p class="text-[9px] text-gray-500 mt-1 leading-relaxed">Jika folder belum ada, Apps Script akan membuat folder ini otomatis di Google Drive, termasuk subfolder <span class="text-gold-500">Foto Karyawan</span> dan <span class="text-gold-500">KTP</span>.</p>
+                        </div>
+                        <button type="button" onclick="saveIntegrationSettings()" class="w-full border border-gold-500/50 text-gold-500 hover:bg-gold-500 hover:text-surface-400 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-floppy-disk mr-1.5"></i> Simpan Integrasi</button>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                             <button type="button" onclick="copyWebAppUrl()" class="border border-white/10 text-gray-300 hover:border-gold-500/50 hover:text-gold-500 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-link mr-1.5"></i> Salin URL</button>
                             <button type="button" onclick="openWebAppUrl()" class="border border-white/10 text-gray-300 hover:border-gold-500/50 hover:text-gold-500 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-arrow-up-right-from-square mr-1.5"></i> Buka URL</button>
@@ -842,6 +950,26 @@
                     </div>
                 </div>
                 
+                <div class="premium-card rounded-xl p-4 lg:col-span-2 mt-2 border border-red-500/20">
+                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
+                        <div>
+                            <h3 class="font-serif font-bold text-white text-base">Restart & Kosongkan Data</h3>
+                            <p class="text-[10px] text-gray-500 mt-0.5">Gunakan hanya saat maintenance besar. Fitur ini dipisah agar user bisa memilih reset lokal saja atau mengosongkan seluruh data aplikasi.</p>
+                        </div>
+                        <div class="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-300 text-[9px] uppercase tracking-widest">
+                            <i class="fa-solid fa-power-off mr-1"></i> Zona Berisiko
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <button type="button" onclick="resetLocalApplicationOnly()" class="border border-yellow-500/40 text-yellow-300 hover:bg-yellow-500 hover:text-surface-400 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-rotate-left mr-1.5"></i> Restart Ulang Lokal</button>
+                        <button type="button" onclick="emptyAllApplicationData()" class="border border-red-500/40 text-red-300 hover:bg-red-500 hover:text-white font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-trash-can mr-1.5"></i> Kosongkan Seluruh Data</button>
+                    </div>
+                    <div class="mt-3 p-3 rounded-lg bg-surface-100 border border-white/5 text-gray-400 text-[10px] leading-relaxed">
+                        <p><span class="text-yellow-300">Restart Ulang Lokal</span> menghapus storage browser dan reload aplikasi. Integrasi cloud di browser ikut terhapus, tetapi Google Sheet tidak disentuh.</p>
+                        <p class="mt-1"><span class="text-red-300">Kosongkan Seluruh Data</span> mengosongkan data karyawan, absensi, cuti, shift, resign, blacklist, master, maintenance, dan pengaturan. Jika akses jaringan cloud aktif, hasil kosong akan ikut dikirim ke Google Sheet.</p>
+                    </div>
+                </div>
+
                 <div class="premium-card rounded-xl p-4 lg:col-span-2 mt-2">
                     <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
                         <div>
@@ -888,25 +1016,29 @@
                 <!-- NEW CARD: Google Apps Script Template -->
                 <div class="premium-card rounded-xl p-4 lg:col-span-2 mt-2">
                     <div class="flex justify-between items-center mb-1">
-                        <h3 class="font-serif font-bold text-white text-base">Google Apps Script Template (Auto-Sync Batch Version)</h3>
+                        <h3 class="font-serif font-bold text-white text-base">Google Apps Script Template (Realtime Cloud-First Version)</h3>
                         <button type="button" onclick="copyAppScript()" class="border border-white/10 text-gray-300 hover:text-white hover:border-gold-500/40 py-1.5 px-3 text-[9px] uppercase tracking-widest rounded-lg transition-all flex items-center gap-1.5">
                             <i class="fa-solid fa-copy"></i> Salin Kode
                         </button>
                     </div>
-                    <p class="text-[10px] text-gray-500 mb-4">Script cerdas full sync: otomatis membersihkan & mengganti data agar tidak tumpang tindih, serta menerima semua sheet aplikasi termasuk Pengaturan, Master Dropdown, Integrasi, dan Metadata.</p>
+                    <p class="text-[10px] text-gray-500 mb-4">Script cerdas realtime cloud-first: mendukung full sync batch, read-all cloud pull, upload Google Drive, serta mode multi-user berbasis Google Sheet sebagai sumber data utama.</p>
                     <textarea id="appScriptTemplate" class="field min-h-[420px] font-mono text-[10px] leading-relaxed resize-y bg-surface-100/80 cursor-text" readonly spellcheck="false">
 /**
- * LuxeHR Premium - Google Sheet Connector v2.7 Auto-Sync Batch
+ * LuxeHR Premium - Google Sheet + Google Drive Connector v2.9
  *
- * WAJIB DIPAKAI untuk LuxeHR v3.8.0 ke atas.
- * Versi ini sudah mendukung:
+ * WAJIB DIPAKAI untuk LuxeHR v4.3.0 ke atas.
+ * Versi ini mendukung:
  * - Test koneksi / ping.
  * - Sync satu sheet.
  * - Full sync banyak sheet dalam 1 request batch.
+ * - Read-all cloud pull untuk mode realtime cloud-first multi user.
  * - Auto-sync dari aplikasi tanpa harus selalu klik Sync Manual.
+ * - Upload gambar Foto Karyawan dan KTP ke Google Drive.
+ * - Membuat folder Google Drive otomatis jika belum ada.
+ * - Menulis link/file ID Google Drive ke Google Sheet.
  * - Semua data aplikasi: karyawan, absensi, cuti, shift, resign, blacklist,
  *   master cabang, master status, pengaturan, integrasi, metadata, storage index,
- *   dan sync manifest.
+ *   drive file index, dan sync manifest.
  *
  * Cara pakai:
  * 1. Buka Google Sheet tujuan.
@@ -919,12 +1051,15 @@
  *    - Who has access: Anyone
  * 5. Copy URL /exec ke aplikasi LuxeHR jika URL berubah.
  *
- * Catatan:
+ * Catatan penting:
  * - Jangan pakai variabel SHEET_ID lama. Versi ini memakai DEFAULT_SPREADSHEET_ID.
+ * - Fitur upload Google Drive membutuhkan izin DriveApp. Saat deploy pertama kali,
+ *   Google akan meminta authorization ulang.
  * - Setelah mengganti script, WAJIB klik Deploy > Manage deployments > Edit > New version > Deploy.
  */
 const DEFAULT_SPREADSHEET_ID = 'GANTI_DENGAN_ID_SPREADSHEET_ANDA';
-const LUXEHR_CONNECTOR_VERSION = '2.7.0-auto-sync-batch';
+const DEFAULT_DRIVE_ROOT_FOLDER_NAME = 'LuxeHR Uploads';
+const LUXEHR_CONNECTOR_VERSION = '2.9.0-realtime-cloud-first';
 const LUXEHR_HEADER_BG = '#D4AF37';
 const LUXEHR_HEADER_FG = '#FFFFFF';
 
@@ -947,7 +1082,6 @@ function nowIso() {
 function getRequestBody(e) {
   const raw = e && e.postData && e.postData.contents ? e.postData.contents : '';
   if (!raw) return {};
-
   try {
     return JSON.parse(raw);
   } catch (jsonError) {
@@ -978,11 +1112,9 @@ function getSpreadsheetId(request) {
   const fromProperty = PropertiesService.getScriptProperties().getProperty('LUXEHR_SPREADSHEET_ID') || '';
   const fromConstant = String(DEFAULT_SPREADSHEET_ID || '').trim();
   const selected = fromPayload || fromProperty || fromConstant;
-
   if (!selected || selected === 'GANTI_DENGAN_ID_SPREADSHEET_ANDA') {
     throw new Error('Spreadsheet ID belum dikonfigurasi. Isi DEFAULT_SPREADSHEET_ID di Apps Script atau isi Spreadsheet ID di Pengaturan LuxeHR. Link Web App bukan Spreadsheet ID.');
   }
-
   return selected;
 }
 
@@ -995,6 +1127,14 @@ function sanitizeSheetName(name) {
   return String(name || 'Log_Umum')
     .replace(/[\\/?*\[\]:]/g, '_')
     .slice(0, 99) || 'Log_Umum';
+}
+
+function sanitizeDriveName(name, fallback) {
+  return String(name || fallback || 'LuxeHR')
+    .replace(/[\\/:*?"<>|#%{}~&]/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120) || fallback || 'LuxeHR';
 }
 
 function normalizeRecords(data) {
@@ -1035,121 +1175,286 @@ function getExistingHeaders(sheet) {
   return sheet.getRange(1, 1, 1, lastColumn).getValues()[0].filter(String);
 }
 
+
+function readSheetRecords(ss, sheetName) {
+  const safeName = sanitizeSheetName(sheetName);
+  const sheet = ss.getSheetByName(safeName);
+  if (!sheet) return [];
+  const lastRow = sheet.getLastRow();
+  const lastColumn = sheet.getLastColumn();
+  if (lastRow < 2 || lastColumn < 1) return [];
+  const values = sheet.getRange(1, 1, lastRow, lastColumn).getValues();
+  const headers = (values[0] || []).map(function(header) { return String(header || '').trim(); });
+  const records = [];
+  for (let r = 1; r < values.length; r++) {
+    const row = values[r];
+    const record = {};
+    let hasValue = false;
+    headers.forEach(function(header, c) {
+      if (!header) return;
+      const value = row[c];
+      if (value !== '' && value !== null && value !== undefined) hasValue = true;
+      record[header] = value instanceof Date ? value.toISOString() : value;
+    });
+    if (hasValue) records.push(record);
+  }
+  return records;
+}
+
+function processReadAll(ss, request) {
+  const defaultSheets = [
+    'Data_Karyawan',
+    'Data_Absensi',
+    'Data_Cuti',
+    'Data_Shift',
+    'Data_Shift_Assignment',
+    'Data_Resign',
+    'Data_Blacklist',
+    'Data_Master_Cabang',
+    'Data_Master_Status',
+    'Data_Master_Dropdown',
+    'Data_Pengaturan',
+    'Data_Integrasi',
+    'Data_App_Metadata',
+    'Data_Drive_Files',
+    'Data_Maintenance_Log',
+    'Data_Maintenance_Report',
+    'Data_Sync_Manifest'
+  ];
+  const requestedSheets = Array.isArray(request.sheets) && request.sheets.length ? request.sheets : defaultSheets;
+  const sheets = {};
+  let totalRows = 0;
+  requestedSheets.forEach(function(name) {
+    const rows = readSheetRecords(ss, name);
+    sheets[sanitizeSheetName(name)] = rows;
+    totalRows += rows.length;
+  });
+  return {
+    status: 'success',
+    message: 'Cloud data berhasil dibaca. ' + requestedSheets.length + ' sheet, total ' + totalRows + ' baris.',
+    action: 'readAll',
+    sheets: sheets,
+    totalSheets: requestedSheets.length,
+    totalRows: totalRows,
+    spreadsheetName: ss.getName(),
+    connectorVersion: LUXEHR_CONNECTOR_VERSION,
+    serverTime: nowIso()
+  };
+}
+
+function writeRealtimeState(ss, request, batchResult) {
+  try {
+    const state = [{
+      appVersion: request.appVersion || '',
+      connectorVersion: LUXEHR_CONNECTOR_VERSION,
+      syncMode: request.mode || request.action || 'batchSync',
+      deviceId: request.deviceId || '',
+      clientTime: request.clientTime || '',
+      serverTime: nowIso(),
+      totalJobs: batchResult && batchResult.summary ? batchResult.summary.totalJobs : '',
+      totalRows: batchResult && batchResult.summary ? batchResult.summary.totalRows : '',
+      status: batchResult && batchResult.status ? batchResult.status : 'success'
+    }];
+    writeRecords(ss, { sheetName: 'Data_Realtime_State', data: state, overwrite: true });
+  } catch (stateError) {}
+}
+
 function writeRecords(ss, request) {
   const sheetName = sanitizeSheetName(request.sheetName || 'Log_Umum');
   const records = normalizeRecords(request.data).map(prepareRecord);
   const overwrite = request.overwrite === true || request.overwrite === 'true';
   let sheet = ss.getSheetByName(sheetName);
-
   if (!sheet) sheet = ss.insertSheet(sheetName);
-
   if (overwrite) {
     sheet.clearContents();
     sheet.clearFormats();
   }
-
   let headers = overwrite ? [] : getExistingHeaders(sheet);
-
   records.forEach(function(record) {
     Object.keys(record).forEach(function(key) {
       if (headers.indexOf(key) === -1) headers.push(key);
     });
   });
-
   if (headers.length === 0) headers = ['timestamp'];
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   styleHeader(sheet, headers.length);
-
   if (records.length === 0) {
-    return {
-      status: 'success',
-      message: 'Sheet ' + sheetName + ' berhasil dikosongkan/diperbarui tanpa baris data.',
-      sheetName: sheetName,
-      rows: 0,
-      overwrite: overwrite
-    };
+    return { status: 'success', message: 'Sheet ' + sheetName + ' berhasil dikosongkan/diperbarui tanpa baris data.', sheetName: sheetName, rows: 0, overwrite: overwrite };
   }
-
   const rows = records.map(function(record) {
     return headers.map(function(header) {
       return record[header] !== undefined && record[header] !== null ? record[header] : '';
     });
   });
-
   const startRow = overwrite ? 2 : Math.max(sheet.getLastRow() + 1, 2);
   sheet.getRange(startRow, 1, rows.length, headers.length).setValues(rows);
+  try { sheet.autoResizeColumns(1, Math.min(headers.length, 25)); } catch (resizeError) {}
+  return { status: 'success', message: 'Berhasil memproses ' + rows.length + ' baris di sheet ' + sheetName, sheetName: sheetName, rows: rows.length, overwrite: overwrite };
+}
 
-  try {
-    sheet.autoResizeColumns(1, Math.min(headers.length, 25));
-  } catch (resizeError) {
-    // Auto resize bukan proses kritis. Abaikan jika terkena limit Google.
+function ensureDriveFolder(parentFolder, folderName) {
+  const safeName = sanitizeDriveName(folderName, 'LuxeHR');
+  const existing = parentFolder.getFoldersByName(safeName);
+  if (existing.hasNext()) return existing.next();
+  return parentFolder.createFolder(safeName);
+}
+
+function parseDataUrl(dataUrl) {
+  const text = String(dataUrl || '');
+  const match = text.match(/^data:([^;]+);base64,(.+)$/);
+  if (!match) throw new Error('Format dataUrl gambar tidak valid.');
+  return { mimeType: match[1], base64: match[2] };
+}
+
+function extensionFromMime(mimeType) {
+  const mime = String(mimeType || '').toLowerCase();
+  if (mime.indexOf('png') !== -1) return 'png';
+  if (mime.indexOf('webp') !== -1) return 'webp';
+  if (mime.indexOf('gif') !== -1) return 'gif';
+  return 'jpg';
+}
+
+function uploadOneDriveFile(rootFolder, upload) {
+  const parsed = parseDataUrl(upload.dataUrl);
+  const type = String(upload.type || 'file').toLowerCase();
+  const subFolderName = sanitizeDriveName(upload.subFolderName || (type === 'ktp' ? 'KTP' : 'Foto Karyawan'), 'Dokumen');
+  const folder = ensureDriveFolder(rootFolder, subFolderName);
+  const ext = extensionFromMime(parsed.mimeType);
+  const rawName = upload.fileName || (String(upload.nik || upload.employeeId || 'employee') + '_' + type + '_' + String(upload.dataHash || Date.now()) + '.' + ext);
+  const fileName = sanitizeDriveName(rawName, 'luxehr_upload.' + ext);
+
+  const existing = folder.getFilesByName(fileName);
+  while (existing.hasNext()) {
+    try { existing.next().setTrashed(true); } catch (trashError) {}
   }
+
+  const bytes = Utilities.base64Decode(parsed.base64);
+  const blob = Utilities.newBlob(bytes, parsed.mimeType, fileName);
+  const file = folder.createFile(blob);
+  file.setDescription('Uploaded by LuxeHR ' + LUXEHR_CONNECTOR_VERSION + ' | employeeId=' + (upload.employeeId || '') + ' | type=' + type + ' | time=' + nowIso());
+  try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (sharingError) {}
 
   return {
     status: 'success',
-    message: 'Berhasil memproses ' + rows.length + ' baris di sheet ' + sheetName,
-    sheetName: sheetName,
-    rows: rows.length,
-    overwrite: overwrite
+    employeeId: upload.employeeId || '',
+    nik: upload.nik || '',
+    employeeName: upload.employeeName || '',
+    type: type,
+    dataHash: upload.dataHash || '',
+    fileName: fileName,
+    mimeType: parsed.mimeType,
+    sizeBytes: bytes.length,
+    sizeKb: Math.round(bytes.length / 1024),
+    fileId: file.getId(),
+    fileUrl: file.getUrl(),
+    downloadUrl: 'https://drive.google.com/uc?id=' + file.getId(),
+    folderId: folder.getId(),
+    folderName: subFolderName,
+    rootFolderName: rootFolder.getName(),
+    uploadedAt: nowIso()
   };
+}
+
+function processDriveUploads(request) {
+  const uploads = Array.isArray(request.driveUploads) ? request.driveUploads : [];
+  if (!uploads.length) return [];
+  const rootName = sanitizeDriveName(request.driveRootFolderName || DEFAULT_DRIVE_ROOT_FOLDER_NAME, DEFAULT_DRIVE_ROOT_FOLDER_NAME);
+  const rootFolder = ensureDriveFolder(DriveApp.getRootFolder(), rootName);
+  return uploads.map(function(upload, index) {
+    try {
+      const result = uploadOneDriveFile(rootFolder, upload || {});
+      result.index = index + 1;
+      return result;
+    } catch (error) {
+      return {
+        index: index + 1,
+        status: 'error',
+        employeeId: upload && upload.employeeId ? upload.employeeId : '',
+        nik: upload && upload.nik ? upload.nik : '',
+        employeeName: upload && upload.employeeName ? upload.employeeName : '',
+        type: upload && upload.type ? upload.type : '',
+        dataHash: upload && upload.dataHash ? upload.dataHash : '',
+        message: error && error.message ? error.message : String(error),
+        uploadedAt: nowIso()
+      };
+    }
+  });
+}
+
+function applyDriveUploadResultsToJobs(jobs, uploadResults) {
+  const success = (uploadResults || []).filter(function(item) { return item && item.status === 'success'; });
+  if (!success.length) return jobs;
+  (jobs || []).forEach(function(job) {
+    if (!job || sanitizeSheetName(job.sheetName) !== 'Data_Karyawan') return;
+    const rows = normalizeRecords(job.data);
+    rows.forEach(function(row) {
+      success.forEach(function(file) {
+        if (String(row.id || row.employeeId || '') !== String(file.employeeId || '')) return;
+        if (file.type === 'photo') {
+          row.photoDriveUrl = file.fileUrl;
+          row.photoDriveFileId = file.fileId;
+          row.photoDriveDownloadUrl = file.downloadUrl;
+          row.photoDriveHash = file.dataHash;
+          row.photoDriveSyncedAt = file.uploadedAt;
+          row.photo = file.fileUrl;
+        }
+        if (file.type === 'ktp') {
+          row.ktpDriveUrl = file.fileUrl;
+          row.ktpDriveFileId = file.fileId;
+          row.ktpDriveDownloadUrl = file.downloadUrl;
+          row.ktpDriveHash = file.dataHash;
+          row.ktpDriveSyncedAt = file.uploadedAt;
+          row.ktpImage = file.fileUrl;
+        }
+      });
+    });
+    job.data = rows;
+  });
+  return jobs;
 }
 
 function buildPingData(request) {
   const incoming = normalizeRecords(request.data);
   if (incoming.length) return incoming;
-  return [{
-    test: 'Ping LuxeHR',
-    connectorVersion: LUXEHR_CONNECTOR_VERSION,
-    appVersion: request.appVersion || '',
-    clientTime: request.clientTime || '',
-    serverTime: nowIso()
-  }];
+  return [{ test: 'Ping LuxeHR', connectorVersion: LUXEHR_CONNECTOR_VERSION, appVersion: request.appVersion || '', clientTime: request.clientTime || '', serverTime: nowIso() }];
 }
 
 function processBatchSync(ss, request) {
   const jobs = Array.isArray(request.jobs) ? request.jobs : [];
-  if (!jobs.length) {
-    throw new Error('Payload batch kosong. Aplikasi harus mengirim field jobs berisi daftar sheet.');
+  if (!jobs.length) throw new Error('Payload batch kosong. Aplikasi harus mengirim field jobs berisi daftar sheet.');
+
+  const driveUploads = processDriveUploads(request);
+  applyDriveUploadResultsToJobs(jobs, driveUploads);
+  if (driveUploads.length) {
+    jobs.push({ sheetName: 'Data_Drive_Files', overwrite: true, data: driveUploads });
   }
 
   const results = [];
   let successCount = 0;
   let failedCount = 0;
   let totalRows = 0;
-
   jobs.forEach(function(job, index) {
     try {
-      const mergedJob = Object.assign({}, job, {
-        overwrite: job.overwrite !== undefined ? job.overwrite : true
-      });
+      const mergedJob = Object.assign({}, job, { overwrite: job.overwrite !== undefined ? job.overwrite : true });
       const result = writeRecords(ss, mergedJob);
       successCount += 1;
       totalRows += Number(result.rows || 0);
       results.push(Object.assign({ index: index + 1 }, result));
     } catch (jobError) {
       failedCount += 1;
-      results.push({
-        index: index + 1,
-        status: 'error',
-        sheetName: job && job.sheetName ? sanitizeSheetName(job.sheetName) : 'Tidak diketahui',
-        message: jobError && jobError.message ? jobError.message : String(jobError)
-      });
+      results.push({ index: index + 1, status: 'error', sheetName: job && job.sheetName ? sanitizeSheetName(job.sheetName) : 'Tidak diketahui', message: jobError && jobError.message ? jobError.message : String(jobError) });
     }
   });
+  const uploadErrorCount = driveUploads.filter(function(item) { return item.status === 'error'; }).length;
+  const uploadSuccessCount = driveUploads.filter(function(item) { return item.status === 'success'; }).length;
+  if (uploadErrorCount > 0) failedCount += uploadErrorCount;
 
-  const summary = {
-    totalJobs: jobs.length,
-    successCount: successCount,
-    failedCount: failedCount,
-    totalRows: totalRows
-  };
-
+  const summary = { totalJobs: jobs.length, successCount: successCount, failedCount: failedCount, totalRows: totalRows, driveUploadSuccessCount: uploadSuccessCount, driveUploadErrorCount: uploadErrorCount };
   return {
     status: failedCount > 0 ? 'error' : 'success',
-    message: failedCount > 0
-      ? 'Batch sync selesai dengan ' + failedCount + ' sheet gagal.'
-      : 'Batch sync berhasil. ' + successCount + ' sheet diproses, total ' + totalRows + ' baris.',
+    message: failedCount > 0 ? 'Batch sync selesai dengan ' + failedCount + ' proses gagal.' : 'Batch sync berhasil. ' + successCount + ' sheet diproses, total ' + totalRows + ' baris, ' + uploadSuccessCount + ' file Drive tersimpan.',
     summary: summary,
+    driveUploads: driveUploads,
     results: results
   };
 }
@@ -1157,55 +1462,40 @@ function processBatchSync(ss, request) {
 function doPost(e) {
   try {
     const request = parseRequest(e);
-
     if (request.action === 'setSpreadsheetId') {
       const savedId = setLuxeHRSpreadsheetId(request.spreadsheetId);
-      return jsonOutput({
-        status: 'success',
-        message: 'Spreadsheet ID berhasil disimpan di Script Properties.',
-        spreadsheetId: savedId,
-        connectorVersion: LUXEHR_CONNECTOR_VERSION,
-        serverTime: nowIso()
-      });
+      return jsonOutput({ status: 'success', message: 'Spreadsheet ID berhasil disimpan di Script Properties.', spreadsheetId: savedId, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: nowIso() });
     }
-
     const ss = getSpreadsheet(request);
-
+    if (request.action === 'readAll') {
+      return jsonOutput(processReadAll(ss, request));
+    }
     if (request.action === 'ping') {
-      const result = writeRecords(ss, {
-        sheetName: request.sheetName || 'Ping',
-        data: buildPingData(request),
-        overwrite: false
-      });
+      const result = writeRecords(ss, { sheetName: request.sheetName || 'Ping', data: buildPingData(request), overwrite: false });
       result.message = 'Koneksi berhasil. Apps Script terhubung ke spreadsheet: ' + ss.getName();
       result.spreadsheetName = ss.getName();
       result.connectorVersion = LUXEHR_CONNECTOR_VERSION;
       result.serverTime = nowIso();
       return jsonOutput(result);
     }
-
     if (request.action === 'batchSync' || Array.isArray(request.jobs)) {
       const batchResult = processBatchSync(ss, request);
+      writeRealtimeState(ss, request, batchResult);
       batchResult.spreadsheetName = ss.getName();
       batchResult.connectorVersion = LUXEHR_CONNECTOR_VERSION;
       batchResult.serverTime = nowIso();
       return jsonOutput(batchResult);
     }
-
+    const uploadResults = processDriveUploads(request);
+    if (uploadResults.length) request.driveUploads = uploadResults;
     const result = writeRecords(ss, request);
     result.spreadsheetName = ss.getName();
     result.connectorVersion = LUXEHR_CONNECTOR_VERSION;
     result.serverTime = nowIso();
+    result.driveUploads = uploadResults;
     return jsonOutput(result);
   } catch (error) {
-    return jsonOutput({
-      status: 'error',
-      message: error && error.message ? error.message : String(error),
-      hint: 'Pastikan DEFAULT_SPREADSHEET_ID benar, deployment Web App sudah versi terbaru, akses Web App = Anyone, dan Anda memakai template LuxeHR Connector v2.7.',
-      connectorVersion: LUXEHR_CONNECTOR_VERSION,
-      serverTime: nowIso(),
-      stack: error && error.stack ? error.stack : ''
-    });
+    return jsonOutput({ status: 'error', message: error && error.message ? error.message : String(error), hint: 'Pastikan DEFAULT_SPREADSHEET_ID benar, deployment Web App sudah versi terbaru, akses Web App = Anyone, izin DriveApp sudah diberikan, dan Anda memakai template LuxeHR Connector v2.9.', connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: nowIso(), stack: error && error.stack ? error.stack : '' });
   }
 }
 
@@ -1213,21 +1503,12 @@ function doGet(e) {
   try {
     const request = parseRequest(e);
     const ss = getSpreadsheet(request);
-    return jsonOutput({
-      status: 'success',
-      message: 'LuxeHR Smart API aktif dan berhasil membuka spreadsheet.',
-      spreadsheetName: ss.getName(),
-      connectorVersion: LUXEHR_CONNECTOR_VERSION,
-      serverTime: nowIso()
-    });
+    if (request.action === 'readAll') {
+      return jsonOutput(processReadAll(ss, request));
+    }
+    return jsonOutput({ status: 'success', message: 'LuxeHR Smart API aktif dan berhasil membuka spreadsheet.', spreadsheetName: ss.getName(), connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: nowIso() });
   } catch (error) {
-    return jsonOutput({
-      status: 'error',
-      message: error && error.message ? error.message : String(error),
-      hint: 'Jika membuka URL Web App tanpa parameter, DEFAULT_SPREADSHEET_ID wajib diisi di Apps Script atau disimpan lewat action setSpreadsheetId.',
-      connectorVersion: LUXEHR_CONNECTOR_VERSION,
-      serverTime: nowIso()
-    });
+    return jsonOutput({ status: 'error', message: error && error.message ? error.message : String(error), hint: 'Jika membuka URL Web App tanpa parameter, DEFAULT_SPREADSHEET_ID wajib diisi di Apps Script atau disimpan lewat action setSpreadsheetId.', connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: nowIso() });
   }
 }
 
@@ -1248,15 +1529,19 @@ function setupLuxeHRSheets() {
     'Data_Integrasi',
     'Data_App_Metadata',
     'Data_Storage_Index',
+    'Data_Drive_Files',
+    'Data_Maintenance_Log',
+    'Data_Maintenance_Report',
+    'Data_Realtime_State',
     'Data_Sync_Manifest',
     'Ping'
   ];
-
-  sheetNames.forEach(function(name) {
-    if (!ss.getSheetByName(name)) ss.insertSheet(name);
-  });
-
-  return 'Setup selesai. Total sheet LuxeHR tersedia: ' + sheetNames.length;
+  sheetNames.forEach(function(name) { if (!ss.getSheetByName(name)) ss.insertSheet(name); });
+  const rootName = DEFAULT_DRIVE_ROOT_FOLDER_NAME;
+  const root = ensureDriveFolder(DriveApp.getRootFolder(), rootName);
+  ensureDriveFolder(root, 'Foto Karyawan');
+  ensureDriveFolder(root, 'KTP');
+  return 'Setup selesai. Total sheet LuxeHR tersedia: ' + sheetNames.length + '. Folder Drive tersedia: ' + root.getName() + '. Connector: ' + LUXEHR_CONNECTOR_VERSION;
 }
 </textarea>
                 </div>
@@ -1283,7 +1568,7 @@ function setupLuxeHRSheets() {
                     <div><label class="label-premium">No. HP</label><input type="tel" id="empPhone" class="field" placeholder="0812..."></div>
                     <div><label class="label-premium">Email</label><input type="email" id="empEmail" class="field" placeholder="nama@email.com"></div>
                     <div><label class="label-premium">Gaji Pokok</label><input type="text" inputmode="numeric" id="empSalary" class="field money-field" data-money="true" required placeholder="0"></div>
-                    <div><label class="label-premium">Shift Default</label><select id="empDefaultShift" class="field"></select></div>
+                    <div class="md:col-span-1"><label class="label-premium">Pengaturan Shift</label><button type="button" onclick="goToShiftManagementFromEmployeeModal()" class="w-full border border-gold-500/40 bg-gold-500/10 text-gold-500 hover:bg-gold-500 hover:text-surface-400 font-bold uppercase tracking-widest py-3 px-3 text-[9px] rounded-lg transition-all"><i class="fa-solid fa-user-clock mr-1.5"></i> Atur di Halaman Shift</button><p class="dropdown-hint"><i class="fa-solid fa-lock text-gold-500"></i>Shift hanya dibuat/diubah di menu Shift. Setelah tambah karyawan baru, aplikasi akan langsung membuka halaman Shift.</p></div>
                     <div><label class="label-premium">Status Dokumen</label><div id="employeeDocumentStatus" class="p-3 rounded-lg bg-surface-100 border border-white/5 text-gray-400 text-[10px] min-h-[38px] flex items-center">Belum ada gambar.</div></div>
 
                     <input type="hidden" id="empPhotoData">
@@ -1448,7 +1733,7 @@ function setupLuxeHRSheets() {
             // Masukkan URL Web App Google Apps Script Anda di dalam tanda kutip di bawah ini:
             const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUM-uaRnj_sftvEJKT6KSXM26x7dh_2rU9YaKRTlb18QHXMDkRg0nLwf4Z_R5k_Ipl-w/exec";
 
-            const APP_VERSION = '3.8.0-app-script-batch-auto-sync';
+            const APP_VERSION = '4.3.0-network-gate-reset';
             const PAYROLL_MONTH_DAYS = 30;
             const STANDARD_WORKDAY_HOURS = 12;
             const STANDARD_WORKDAY_MINUTES = STANDARD_WORKDAY_HOURS * 60;
@@ -1460,13 +1745,13 @@ function setupLuxeHRSheets() {
                 shiftAssignments: 'luxehr_shift_assignments',
                 resignRecords: 'luxehr_resign_records',
                 blacklistRecords: 'luxehr_blacklist_records',
+                maintenanceLogs: 'luxehr_maintenance_logs',
                 settings: 'luxehr_settings',
                 syncMeta: 'luxehr_sync_meta',
                 syncQueue: 'luxehr_sync_queue'
             };
             const BACKUP_SUFFIX = '_backup';
             const META_KEY = 'luxehr_storage_meta';
-            const CLEANUP_META_KEY = 'luxehr_dummy_cleanup_meta';
             const defaultPhoto = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
                 <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
                     <rect width="300" height="300" fill="#1A1A1A"/>
@@ -1495,28 +1780,9 @@ function setupLuxeHRSheets() {
                 ktp: { maxWidth: 1280, maxHeight: 900, quality: 0.76 }
             };
             let imageProcessingCount = 0;
-
-            // Tidak ada data dummy yang di-seed ke aplikasi.
-            // Array di bawah sengaja kosong agar instalasi pertama bersih.
-            const dummyEmployees = [];
-            const defaultShifts = [];
             const DEFAULT_EMPLOYEE_STATUSES = ['Aktif', 'Kontrak', 'Training', 'Nonaktif'];
             const OFFBOARDING_STATUSES = ['Resign', 'Blacklist'];
             const OPERATION_EXCLUDED_STATUSES = ['Nonaktif', 'Resign', 'Blacklist'];
-
-            // Daftar seed lama hanya dipakai untuk migrasi pembersihan otomatis.
-            // Data asli user tidak akan dihapus kecuali cocok dengan identitas dummy lama ini.
-            const LEGACY_DUMMY_EMPLOYEES = [
-                { id: '1', nik: 'EMP-001', name: 'Alexander Wijaya', email: 'alexander@luxehr.id' },
-                { id: '2', nik: 'EMP-002', name: 'Nadia Prameswari', email: 'nadia@luxehr.id' },
-                { id: '3', nik: 'EMP-003', name: 'Raka Mahendra', email: 'raka@luxehr.id' },
-                { id: '4', nik: 'EMP-004', name: 'Sinta Ayu Lestari', email: 'sinta@luxehr.id' }
-            ];
-            const LEGACY_DUMMY_SHIFTS = [
-                { id: '1', name: 'Shift Pagi', startTime: '08:00', endTime: '16:00' },
-                { id: '2', name: 'Shift Siang', startTime: '13:00', endTime: '21:00' },
-                { id: '3', name: 'Shift Malam', startTime: '22:00', endTime: '06:00' }
-            ];
 
             let employees = [];
             let attendance = [];
@@ -1525,6 +1791,7 @@ function setupLuxeHRSheets() {
             let shiftAssignments = [];
             let resignRecords = [];
             let blacklistRecords = [];
+            let maintenanceLogs = [];
             let settings = {};
             let activeView = 'dashboard';
             let confirmCallback = null;
@@ -1537,6 +1804,13 @@ function setupLuxeHRSheets() {
             let autoSyncServiceStarted = false;
             const AUTO_SYNC_DEBOUNCE_MS = 5000;
             const AUTO_SYNC_MIN_RETRY_MS = 30000;
+            const REALTIME_PULL_DEFAULT_SECONDS = 15;
+            const REALTIME_PULL_MIN_SECONDS = 5;
+            const CLOUD_FIRST_PURGE_DELAY_MS = 350;
+            let realtimePullTimer = null;
+            let realtimePullInProgress = false;
+            let cloudHydrationInProgress = false;
+            let lastCloudFingerprint = '';
 
             function byId(id) { return document.getElementById(id); }
             function clone(value) { return JSON.parse(JSON.stringify(value)); }
@@ -1559,7 +1833,7 @@ function setupLuxeHRSheets() {
                 return true;
             }
             function markMeta() {
-                const meta = { appVersion: APP_VERSION, updatedAt: new Date().toISOString(), employeesCount: employees.length, attendanceCount: attendance.length, leavesCount: leaves.length, shiftsCount: shifts.length, shiftAssignmentsCount: shiftAssignments.length, resignCount: resignRecords.length, blacklistCount: blacklistRecords.length };
+                const meta = { appVersion: APP_VERSION, updatedAt: new Date().toISOString(), employeesCount: employees.length, attendanceCount: attendance.length, leavesCount: leaves.length, shiftsCount: shifts.length, shiftAssignmentsCount: shiftAssignments.length, resignCount: resignRecords.length, blacklistCount: blacklistRecords.length, maintenanceLogCount: maintenanceLogs.length };
                 try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (error) { console.warn('Meta storage failed', error); }
             }
             function safeRead(key, fallback, validator) {
@@ -1615,6 +1889,7 @@ function setupLuxeHRSheets() {
                 const nextMeta = Object.assign({}, getSyncMeta(), meta, { updatedAt: new Date().toISOString() });
                 try { localStorage.setItem(STORAGE_KEYS.syncMeta, JSON.stringify(nextMeta)); } catch (error) { console.warn('Sync meta storage failed', error); }
                 renderSyncStatus();
+                renderRealtimeStatus();
                 return nextMeta;
             }
             function getSyncStatusClass(status) {
@@ -1727,6 +2002,7 @@ function setupLuxeHRSheets() {
                 const queue = getSyncQueue();
                 if (!force && !queue.pending) return { ok: true, skipped: true, reason: 'empty-queue' };
                 if (!force && !getAutoSyncEnabled()) return { ok: false, skipped: true, reason: 'auto-sync-disabled' };
+                if (!isNetworkAccessEnabled()) return getNetworkDisabledResult('auto-sync-network-disabled');
                 if (syncInProgress) {
                     scheduleAutoSync(10000);
                     return { ok: false, skipped: true, reason: 'sync-in-progress' };
@@ -1763,6 +2039,10 @@ function setupLuxeHRSheets() {
                         retryCount: 0,
                         lastResult: result.fallbackCount > 0 ? 'sent-with-fallback' : 'success'
                     });
+                    if (isCloudFirstEnabled()) {
+                        purgeSyncedLocalBusinessData({ silent: true, force: true });
+                        setTimeout(() => pullCloudDataNow({ silent: true, force: true }), 1200);
+                    }
                 } else {
                     const retryCount = Number(queue.retryCount || 0) + 1;
                     const retryDelay = Math.min(10 * 60 * 1000, Math.max(AUTO_SYNC_MIN_RETRY_MS, retryCount * AUTO_SYNC_MIN_RETRY_MS));
@@ -1826,6 +2106,9 @@ function setupLuxeHRSheets() {
                     overwrite,
                     spreadsheetId: getConfiguredSpreadsheetId(),
                     clientTime: new Date().toISOString(),
+                    driveRootFolderName: getDriveRootFolderName(),
+                    deviceId: getDeviceId(),
+                    driveUploads: sheetName === 'Data_Karyawan' ? getPendingDriveUploads() : [],
                     data: prepareSyncData(sheetName, payloadData)
                 };
             }
@@ -1841,11 +2124,15 @@ function setupLuxeHRSheets() {
                     action,
                     mode: 'full-batch-auto-sync',
                     spreadsheetId: getConfiguredSpreadsheetId(),
+                    driveRootFolderName: getDriveRootFolderName(),
+                    deviceId: getDeviceId(),
+                    driveUploads: getPendingDriveUploads(),
                     clientTime: new Date().toISOString(),
                     jobs: normalizedJobs
                 };
             }
             async function postToAppsScript(payload, allowOpaqueFallback = true) {
+                if (!isNetworkAccessEnabled()) throw new Error('Akses jaringan cloud sedang nonaktif. Aktifkan di Pengaturan.');
                 const jsonBody = JSON.stringify(payload);
                 const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
                     method: 'POST',
@@ -1872,6 +2159,7 @@ function setupLuxeHRSheets() {
                 return { verified: true, mode: 'verified-fetch', result };
             }
             async function postToAppsScriptOpaque(payload) {
+                if (!isNetworkAccessEnabled()) throw new Error('Akses jaringan cloud sedang nonaktif. Aktifkan di Pengaturan.');
                 await fetch(GOOGLE_APPS_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -1883,6 +2171,10 @@ function setupLuxeHRSheets() {
             async function autoSyncToCloud(sheetName, payloadData, overwrite = true, options = {}) {
                 const silent = options.silent !== false;
                 const allowFallback = options.allowFallback !== false;
+                if (!isNetworkAccessEnabled()) {
+                    if (!silent) showToast('Akses jaringan cloud masih nonaktif', 'warning');
+                    return getNetworkDisabledResult('sheet-sync-network-disabled');
+                }
                 if (!GOOGLE_APPS_SCRIPT_URL || GOOGLE_APPS_SCRIPT_URL.includes('GANTI_DENGAN')) {
                     saveSyncMeta({ status: 'error', sheetName, mode: 'not-configured', lastAttemptAt: new Date().toISOString(), lastError: 'GOOGLE_APPS_SCRIPT_URL belum diisi.', message: 'Google Sheet belum dikonfigurasi.' });
                     if (!silent) showToast('URL Google Apps Script belum dikonfigurasi', 'error');
@@ -1922,6 +2214,7 @@ function setupLuxeHRSheets() {
                 }
             }
             async function testGoogleSheetConnection() {
+                if (!requireNetworkAccess('connection-test-network-disabled')) return;
                 const payload = buildSyncPayload('Ping', [{ test: 'Koneksi dari LuxeHR', timestamp: new Date().toISOString() }], false, 'ping');
                 saveSyncMeta({ status: 'syncing', sheetName: 'Ping', mode: 'connection-test', lastAttemptAt: new Date().toISOString(), lastError: null, message: 'Mengetes koneksi Google Apps Script...' });
                 try {
@@ -1939,6 +2232,10 @@ function setupLuxeHRSheets() {
                 if (syncInProgress) {
                     if (!silent) showToast('Sync sedang berjalan', 'warning');
                     return { ok: false, skipped: true, reason: 'sync-in-progress', verifiedCount: 0, fallbackCount: 0, failedCount: 0 };
+                }
+                if (!isNetworkAccessEnabled()) {
+                    if (!silent) showToast('Akses jaringan cloud masih nonaktif', 'warning');
+                    return getNetworkDisabledResult('batch-sync-network-disabled');
                 }
                 if (!GOOGLE_APPS_SCRIPT_URL || GOOGLE_APPS_SCRIPT_URL.includes('GANTI_DENGAN')) {
                     saveSyncMeta({
@@ -1979,6 +2276,7 @@ function setupLuxeHRSheets() {
 
                 try {
                     const response = await postToAppsScript(payload);
+                    const uploadedDriveFiles = applyDriveUploadResultsToLocal(response.result?.driveUploads || []);
                     const summary = response.result?.summary || {};
                     const failedCount = Number(summary.failedCount || 0);
                     const successCount = Number(summary.successCount || jobs.length);
@@ -2004,9 +2302,14 @@ function setupLuxeHRSheets() {
                         lastSuccessAt: new Date().toISOString(),
                         lastAttemptAt: new Date().toISOString(),
                         lastError: null,
-                        message: `${isAuto ? 'Auto-sync' : 'Sync manual'} batch berhasil. ${successCount} sheet dan ${totalRows} baris terkirim ke Google Sheet.`
+                        message: `${isAuto ? 'Auto-sync' : 'Sync manual'} batch berhasil. ${successCount} sheet, ${totalRows} baris, dan ${uploadedDriveFiles} file Drive tersinkron. Cache lokal bisnis akan dibersihkan.`
                     });
-                    if (!silent) showToast('Semua data berhasil sync batch', 'success');
+                    saveSyncQueue({ pending: false, nextRunAt: null, lastRunAt: new Date().toISOString(), retryCount: 0, lastResult: 'success' });
+                    if (isCloudFirstEnabled()) {
+                        setTimeout(() => purgeSyncedLocalBusinessData({ silent: true, force: true }), CLOUD_FIRST_PURGE_DELAY_MS);
+                        setTimeout(() => pullCloudDataNow({ silent: true, force: true }), 1400);
+                    }
+                    if (!silent) showToast(uploadedDriveFiles ? `Semua data sync. ${uploadedDriveFiles} file masuk Google Drive` : 'Semua data berhasil sync batch', 'success');
                     return { ok: true, verifiedCount: successCount, fallbackCount: 0, failedCount: 0 };
                 } catch (error) {
                     console.warn('[Batch Sync Warning]:', error);
@@ -2038,97 +2341,6 @@ function setupLuxeHRSheets() {
                     syncInProgress = false;
                     renderSyncStatus();
                 }
-            }
-
-
-            let dummyCleanupPerformed = false;
-            let dummyCleanupSummary = null;
-
-            function isLegacyDummyEmployee(emp) {
-                if (!emp || typeof emp !== 'object') return false;
-                return LEGACY_DUMMY_EMPLOYEES.some(seed => {
-                    const nikMatch = safeLower(emp.nik) === safeLower(seed.nik);
-                    const nameMatch = safeLower(emp.name) === safeLower(seed.name);
-                    const emailMatch = safeLower(emp.email) === safeLower(seed.email);
-                    return nikMatch && (nameMatch || emailMatch);
-                });
-            }
-            function isLegacyDummyShift(shift) {
-                if (!shift || typeof shift !== 'object') return false;
-                return LEGACY_DUMMY_SHIFTS.some(seed => {
-                    return String(shift.id) === String(seed.id)
-                        && safeLower(shift.name) === safeLower(seed.name)
-                        && String(shift.startTime || '') === String(seed.startTime)
-                        && String(shift.endTime || '') === String(seed.endTime);
-                });
-            }
-            function cleanLegacyDummyData(options = {}) {
-                const { persist = false } = options;
-                const before = {
-                    employees: employees.length,
-                    attendance: attendance.length,
-                    leaves: leaves.length,
-                    shifts: shifts.length,
-                    shiftAssignments: shiftAssignments.length,
-                    settings: JSON.stringify(settings || {})
-                };
-
-                const removedEmployeeIds = employees.filter(isLegacyDummyEmployee).map(emp => String(emp.id));
-                const removedEmployeeNames = employees.filter(isLegacyDummyEmployee).map(emp => emp.name).filter(Boolean);
-                employees = employees.filter(emp => !isLegacyDummyEmployee(emp));
-
-                if (removedEmployeeIds.length || removedEmployeeNames.length) {
-                    attendance = attendance.filter(log => {
-                        const byIdMatch = removedEmployeeIds.includes(String(log.employeeId));
-                        const byNameMatch = removedEmployeeNames.some(name => safeLower(log.employeeName) === safeLower(name));
-                        return !byIdMatch && !byNameMatch;
-                    });
-                    leaves = leaves.filter(item => !removedEmployeeIds.includes(String(item.employeeId)));
-                    shiftAssignments = shiftAssignments.filter(item => !removedEmployeeIds.includes(String(item.employeeId)));
-                }
-
-                const removedShiftIds = shifts.filter(isLegacyDummyShift).map(shift => String(shift.id));
-                shifts = shifts.filter(shift => !isLegacyDummyShift(shift));
-                if (removedShiftIds.length) {
-                    employees = employees.map(emp => removedShiftIds.includes(String(emp.defaultShiftId)) ? { ...emp, defaultShiftId: '' } : emp);
-                    shiftAssignments = shiftAssignments.filter(item => !removedShiftIds.includes(String(item.shiftId)));
-                }
-
-                if (settings && typeof settings === 'object') {
-                    if (settings.companyName === 'PT Luxe Human Capital') settings.companyName = '';
-                    if (settings.companyAddress === 'Jl. Jenderal Sudirman Kav. 1, Jakarta Selatan') settings.companyAddress = '';
-                }
-
-                const summary = {
-                    removedEmployees: before.employees - employees.length,
-                    removedAttendance: before.attendance - attendance.length,
-                    removedLeaves: before.leaves - leaves.length,
-                    removedShifts: before.shifts - shifts.length,
-                    removedShiftAssignments: before.shiftAssignments - shiftAssignments.length,
-                    cleanedSettings: before.settings !== JSON.stringify(settings || {}),
-                    cleanedAt: new Date().toISOString()
-                };
-                const changed = summary.removedEmployees > 0
-                    || summary.removedAttendance > 0
-                    || summary.removedLeaves > 0
-                    || summary.removedShifts > 0
-                    || summary.removedShiftAssignments > 0
-                    || summary.cleanedSettings;
-
-                if (changed) {
-                    dummyCleanupPerformed = true;
-                    dummyCleanupSummary = summary;
-                    try { localStorage.setItem(CLEANUP_META_KEY, JSON.stringify(summary)); } catch (error) { console.warn('Cleanup meta write failed', error); }
-                    if (persist) {
-                        safeWrite(STORAGE_KEYS.employees, employees, Array.isArray);
-                        safeWrite(STORAGE_KEYS.attendance, attendance, Array.isArray);
-                        safeWrite(STORAGE_KEYS.leaves, leaves, Array.isArray);
-                        safeWrite(STORAGE_KEYS.shifts, shifts, Array.isArray);
-                        safeWrite(STORAGE_KEYS.shiftAssignments, shiftAssignments, Array.isArray);
-                        safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
-                    }
-                }
-                return { changed, summary };
             }
             function migrateCabangTerminology() {
                 let changed = false;
@@ -2190,67 +2402,55 @@ function setupLuxeHRSheets() {
                 }
                 return changed;
             }
-
-            function cleanDummyDataManual() {
-                showConfirm('Bersihkan semua data dummy lama? Data asli yang tidak cocok dengan seed dummy tidak akan dihapus. Setelah itu gunakan Sync Manual bila ingin Google Sheet ikut bersih.', () => {
-                    const result = cleanLegacyDummyData({ persist: true });
-                    migrateCabangTerminology();
-                    migrateEmployeeImages();
-                    migrateShiftData();
-                    safeWrite(STORAGE_KEYS.employees, employees, Array.isArray);
-                    safeWrite(STORAGE_KEYS.attendance, attendance, Array.isArray);
-                    safeWrite(STORAGE_KEYS.leaves, leaves, Array.isArray);
-                    safeWrite(STORAGE_KEYS.shifts, shifts, Array.isArray);
-                    safeWrite(STORAGE_KEYS.shiftAssignments, shiftAssignments, Array.isArray);
-                    safeWrite(STORAGE_KEYS.resignRecords, resignRecords, Array.isArray);
-                    safeWrite(STORAGE_KEYS.blacklistRecords, blacklistRecords, Array.isArray);
-                    safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
-                    renderCompanyIdentity();
-                    renderAllSelectors();
-                    renderActiveView();
-                    updateStorageStatus();
-                    if (result.changed) { requestAutoSyncAfterLocalSave('Data dummy lama dibersihkan'); showToast('Data dummy lama berhasil dibersihkan', 'success'); }
-                    else showToast('Tidak ada data dummy lama yang ditemukan', 'info');
-                });
-            }
-
             function initStorage() {
-                employees = safeRead(STORAGE_KEYS.employees, dummyEmployees, Array.isArray);
+                employees = safeRead(STORAGE_KEYS.employees, [], Array.isArray);
                 attendance = safeRead(STORAGE_KEYS.attendance, [], Array.isArray);
                 leaves = safeRead(STORAGE_KEYS.leaves, [], Array.isArray);
-                shifts = safeRead(STORAGE_KEYS.shifts, defaultShifts, Array.isArray);
+                shifts = safeRead(STORAGE_KEYS.shifts, [], Array.isArray);
                 shiftAssignments = safeRead(STORAGE_KEYS.shiftAssignments, [], Array.isArray);
                 resignRecords = safeRead(STORAGE_KEYS.resignRecords, [], Array.isArray);
                 blacklistRecords = safeRead(STORAGE_KEYS.blacklistRecords, [], Array.isArray);
+                maintenanceLogs = safeRead(STORAGE_KEYS.maintenanceLogs, [], Array.isArray);
                 settings = safeRead(STORAGE_KEYS.settings, {
                     companyName: '',
                     companyAddress: '',
                     standardStartTime: '08:00',
                     googleSheetId: '',
+                    driveRootFolderName: 'LuxeHR Uploads',
                     branchOptions: [],
                     employeeStatusOptions: DEFAULT_EMPLOYEE_STATUSES,
                     offboardingFeatureInitialized: false,
                     autoSyncEnabled: true,
-                    autoSyncIntervalSeconds: 60
+                    autoSyncIntervalSeconds: 60,
+                    networkAccessEnabled: false,
+                    cloudFirstEnabled: true,
+                    realtimePullEnabled: true,
+                    realtimePullIntervalSeconds: REALTIME_PULL_DEFAULT_SECONDS
                 }, value => value && typeof value === 'object' && !Array.isArray(value));
 
+                if (!settings.driveRootFolderName) settings.driveRootFolderName = 'LuxeHR Uploads';
+                settings.cloudFirstEnabled = settings.cloudFirstEnabled !== false;
+                settings.realtimePullEnabled = settings.realtimePullEnabled !== false;
+                settings.realtimePullIntervalSeconds = Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS);
                 normalizeMasterDropdowns();
                 ensureOffboardingStatusesOnce();
-                cleanLegacyDummyData({ persist: true });
                 migrateCabangTerminology();
                 migrateEmployeeImages();
                 migrateShiftData();
                 migrateOffboardingData();
                 normalizeMasterDropdowns();
-                if (!hasStorageValue(STORAGE_KEYS.employees)) safeWrite(STORAGE_KEYS.employees, employees, Array.isArray);
-                if (!hasStorageValue(STORAGE_KEYS.attendance)) safeWrite(STORAGE_KEYS.attendance, attendance, Array.isArray);
-                if (!hasStorageValue(STORAGE_KEYS.leaves)) safeWrite(STORAGE_KEYS.leaves, leaves, Array.isArray);
-                if (!hasStorageValue(STORAGE_KEYS.shifts)) safeWrite(STORAGE_KEYS.shifts, shifts, Array.isArray);
-                if (!hasStorageValue(STORAGE_KEYS.shiftAssignments)) safeWrite(STORAGE_KEYS.shiftAssignments, shiftAssignments, Array.isArray);
-                if (!hasStorageValue(STORAGE_KEYS.resignRecords)) safeWrite(STORAGE_KEYS.resignRecords, resignRecords, Array.isArray);
-                if (!hasStorageValue(STORAGE_KEYS.blacklistRecords)) safeWrite(STORAGE_KEYS.blacklistRecords, blacklistRecords, Array.isArray);
-                if (!hasStorageValue(STORAGE_KEYS.settings)) safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
-                else safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
+                const shouldKeepBusinessLocal = !isCloudFirstEnabled() || !navigator.onLine || getSyncQueue().pending;
+                if (shouldKeepBusinessLocal) {
+                    if (!hasStorageValue(STORAGE_KEYS.employees)) safeWrite(STORAGE_KEYS.employees, employees, Array.isArray);
+                    if (!hasStorageValue(STORAGE_KEYS.attendance)) safeWrite(STORAGE_KEYS.attendance, attendance, Array.isArray);
+                    if (!hasStorageValue(STORAGE_KEYS.leaves)) safeWrite(STORAGE_KEYS.leaves, leaves, Array.isArray);
+                    if (!hasStorageValue(STORAGE_KEYS.shifts)) safeWrite(STORAGE_KEYS.shifts, shifts, Array.isArray);
+                    if (!hasStorageValue(STORAGE_KEYS.shiftAssignments)) safeWrite(STORAGE_KEYS.shiftAssignments, shiftAssignments, Array.isArray);
+                    if (!hasStorageValue(STORAGE_KEYS.resignRecords)) safeWrite(STORAGE_KEYS.resignRecords, resignRecords, Array.isArray);
+                    if (!hasStorageValue(STORAGE_KEYS.blacklistRecords)) safeWrite(STORAGE_KEYS.blacklistRecords, blacklistRecords, Array.isArray);
+                    if (!hasStorageValue(STORAGE_KEYS.maintenanceLogs)) safeWrite(STORAGE_KEYS.maintenanceLogs, maintenanceLogs, Array.isArray);
+                }
+                safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
             }
             
             // --- SAVE & AUTO-SYNC OTOMATIS ---
@@ -2284,10 +2484,20 @@ function setupLuxeHRSheets() {
                 safeWrite(STORAGE_KEYS.blacklistRecords, blacklistRecords, Array.isArray);
                 requestAutoSyncAfterLocalSave('Data blacklist disimpan');
             }
+            function saveMaintenanceLogs(reason = 'Log maintenance disimpan') {
+                maintenanceLogs = Array.isArray(maintenanceLogs) ? maintenanceLogs.slice(0, 300) : [];
+                safeWrite(STORAGE_KEYS.maintenanceLogs, maintenanceLogs, Array.isArray);
+                requestAutoSyncAfterLocalSave(reason);
+            }
             function saveSettings() {
                 normalizeMasterDropdowns();
                 settings.autoSyncEnabled = settings.autoSyncEnabled !== false;
                 settings.autoSyncIntervalSeconds = Number(settings.autoSyncIntervalSeconds || 60);
+                settings.networkAccessEnabled = settings.networkAccessEnabled === true;
+                settings.cloudFirstEnabled = settings.cloudFirstEnabled !== false;
+                settings.realtimePullEnabled = settings.realtimePullEnabled !== false;
+                settings.realtimePullIntervalSeconds = Math.max(REALTIME_PULL_MIN_SECONDS, Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS));
+                settings.driveRootFolderName = String(settings.driveRootFolderName || 'LuxeHR Uploads').trim() || 'LuxeHR Uploads';
                 safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
                 requestAutoSyncAfterLocalSave('Pengaturan aplikasi disimpan');
             }
@@ -2309,6 +2519,22 @@ function setupLuxeHRSheets() {
                 renderAttendance();
                 updateAttendanceShiftInfo();
                 showToast('Tanggal absensi diubah ke hari ini', 'success');
+            }
+            function getCurrentTimeHHMM() {
+                const now = new Date();
+                return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            }
+            function isValidTimeHHMM(value) { return /^([01]\d|2[0-3]):[0-5]\d$/.test(String(value || '')); }
+            function getSelectedAttendanceTime() {
+                const input = byId('attendanceTimeInput');
+                const value = String(input?.value || '').trim();
+                if (!value) return getCurrentTimeHHMM();
+                return isValidTimeHHMM(value) ? value : '';
+            }
+            function setAttendanceTimeNow() {
+                const input = byId('attendanceTimeInput');
+                if (input) input.value = getCurrentTimeHHMM();
+                showToast('Jam absensi diisi dengan jam saat ini', 'success');
             }
             function safeLower(v) { return String(v || '').toLowerCase(); }
             function getEmployee(id) { return employees.find(emp => String(emp.id) === String(id)); }
@@ -2440,17 +2666,176 @@ function setupLuxeHRSheets() {
                     updateEmployeeDocumentStatus();
                 }
             }
+            function getDriveRootFolderName() {
+                return String(settings.driveRootFolderName || 'LuxeHR Uploads').trim() || 'LuxeHR Uploads';
+            }
+            function dataUrlMimeType(value) {
+                const match = String(value || '').match(/^data:([^;]+);base64,/);
+                return match ? match[1] : '';
+            }
+            function dataUrlExtension(value) {
+                const mime = dataUrlMimeType(value).toLowerCase();
+                if (mime.includes('png')) return 'png';
+                if (mime.includes('webp')) return 'webp';
+                if (mime.includes('gif')) return 'gif';
+                return 'jpg';
+            }
+            function hashString(value) {
+                const text = String(value || '');
+                let hash = 2166136261;
+                for (let i = 0; i < text.length; i += 1) {
+                    hash ^= text.charCodeAt(i);
+                    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+                }
+                return (hash >>> 0).toString(36);
+            }
+            function sanitizeFilePart(value, fallback = 'file') {
+                return String(value || fallback)
+                    .replace(/[^a-zA-Z0-9._-]+/g, '_')
+                    .replace(/_+/g, '_')
+                    .replace(/^_+|_+$/g, '')
+                    .slice(0, 80) || fallback;
+            }
+            function buildDriveFileName(emp, type, dataUrl) {
+                const hash = hashString(dataUrl);
+                const ext = dataUrlExtension(dataUrl);
+                const label = type === 'ktp' ? 'KTP' : 'FOTO';
+                const nik = sanitizeFilePart(emp?.nik || emp?.id || 'karyawan');
+                const name = sanitizeFilePart(emp?.name || 'karyawan');
+                return `${nik}_${name}_${label}_${hash}.${ext}`;
+            }
+            function getPendingDriveUploads() {
+                const uploads = [];
+                employees.forEach(emp => {
+                    const photo = emp?.photo || '';
+                    if (isDataUrl(photo)) {
+                        const hash = hashString(photo);
+                        if (String(emp.photoDriveHash || '') !== hash) {
+                            uploads.push({
+                                employeeId: emp.id,
+                                nik: emp.nik || '',
+                                employeeName: emp.name || '',
+                                type: 'photo',
+                                subFolderName: 'Foto Karyawan',
+                                fileName: buildDriveFileName(emp, 'photo', photo),
+                                mimeType: dataUrlMimeType(photo),
+                                dataHash: hash,
+                                dataUrl: photo
+                            });
+                        }
+                    }
+                    const ktp = emp?.ktpImage || '';
+                    if (isDataUrl(ktp)) {
+                        const hash = hashString(ktp);
+                        if (String(emp.ktpDriveHash || '') !== hash) {
+                            uploads.push({
+                                employeeId: emp.id,
+                                nik: emp.nik || '',
+                                employeeName: emp.name || '',
+                                type: 'ktp',
+                                subFolderName: 'KTP',
+                                fileName: buildDriveFileName(emp, 'ktp', ktp),
+                                mimeType: dataUrlMimeType(ktp),
+                                dataHash: hash,
+                                dataUrl: ktp
+                            });
+                        }
+                    }
+                });
+                return uploads;
+            }
+            function getDriveFileSheetRows() {
+                const rows = [];
+                employees.forEach(emp => {
+                    if (emp.photoDriveUrl || emp.photoDriveFileId) {
+                        rows.push({
+                            employeeId: emp.id,
+                            nik: emp.nik || '',
+                            employeeName: emp.name || '',
+                            type: 'photo',
+                            fileId: emp.photoDriveFileId || '',
+                            fileUrl: emp.photoDriveUrl || '',
+                            downloadUrl: emp.photoDriveDownloadUrl || '',
+                            dataHash: emp.photoDriveHash || '',
+                            syncedAt: emp.photoDriveSyncedAt || '',
+                            updatedAt: new Date().toISOString()
+                        });
+                    }
+                    if (emp.ktpDriveUrl || emp.ktpDriveFileId) {
+                        rows.push({
+                            employeeId: emp.id,
+                            nik: emp.nik || '',
+                            employeeName: emp.name || '',
+                            type: 'ktp',
+                            fileId: emp.ktpDriveFileId || '',
+                            fileUrl: emp.ktpDriveUrl || '',
+                            downloadUrl: emp.ktpDriveDownloadUrl || '',
+                            dataHash: emp.ktpDriveHash || '',
+                            syncedAt: emp.ktpDriveSyncedAt || '',
+                            updatedAt: new Date().toISOString()
+                        });
+                    }
+                });
+                if (!rows.length) rows.push({ employeeId: '', nik: '', employeeName: '', type: 'empty', fileId: '', fileUrl: '', syncedAt: '', updatedAt: new Date().toISOString() });
+                return rows;
+            }
+            function applyDriveUploadResultsToLocal(uploadResults = []) {
+                const success = (uploadResults || []).filter(item => item && item.status === 'success' && item.employeeId);
+                if (!success.length) return 0;
+                let changed = false;
+                success.forEach(file => {
+                    const emp = getEmployee(file.employeeId);
+                    if (!emp) return;
+                    if (file.type === 'photo') {
+                        emp.photoDriveUrl = file.fileUrl || '';
+                        emp.photoDriveFileId = file.fileId || '';
+                        emp.photoDriveDownloadUrl = file.downloadUrl || '';
+                        emp.photoDriveHash = file.dataHash || '';
+                        emp.photoDriveSyncedAt = file.uploadedAt || new Date().toISOString();
+                        changed = true;
+                    }
+                    if (file.type === 'ktp') {
+                        emp.ktpDriveUrl = file.fileUrl || '';
+                        emp.ktpDriveFileId = file.fileId || '';
+                        emp.ktpDriveDownloadUrl = file.downloadUrl || '';
+                        emp.ktpDriveHash = file.dataHash || '';
+                        emp.ktpDriveSyncedAt = file.uploadedAt || new Date().toISOString();
+                        changed = true;
+                    }
+                });
+                if (changed) {
+                    safeWrite(STORAGE_KEYS.employees, employees, Array.isArray);
+                    renderCompanyIdentity();
+                    if (activeView === 'employees') renderEmployees();
+                    if (activeView === 'settings') renderSettings();
+                }
+                return success.length;
+            }
             function prepareEmployeeForSheet(emp) {
                 const photo = emp?.photo || '';
                 const ktpImage = emp?.ktpImage || '';
+                const photoHash = isDataUrl(photo) ? hashString(photo) : '';
+                const ktpHash = isDataUrl(ktpImage) ? hashString(ktpImage) : '';
                 return {
                     ...emp,
-                    photo: isDataUrl(photo) ? '[FOTO TERSIMPAN DI APLIKASI - GUNAKAN BACKUP JSON UNTUK FILE GAMBAR]' : photo,
+                    photo: isDataUrl(photo) ? (emp.photoDriveUrl || '[FOTO MENUNGGU UPLOAD GOOGLE DRIVE]') : photo,
                     photoStorage: getImageStorageType(photo),
                     photoSizeKb: imageSizeKb(photo),
-                    ktpImage: isDataUrl(ktpImage) ? '[KTP TERSIMPAN DI APLIKASI - GUNAKAN BACKUP JSON UNTUK FILE GAMBAR]' : ktpImage,
+                    photoLocalHash: photoHash,
+                    photoDriveUrl: emp.photoDriveUrl || '',
+                    photoDriveFileId: emp.photoDriveFileId || '',
+                    photoDriveDownloadUrl: emp.photoDriveDownloadUrl || '',
+                    photoDriveHash: emp.photoDriveHash || '',
+                    photoDriveSyncedAt: emp.photoDriveSyncedAt || '',
+                    ktpImage: isDataUrl(ktpImage) ? (emp.ktpDriveUrl || '[KTP MENUNGGU UPLOAD GOOGLE DRIVE]') : ktpImage,
                     ktpStorage: getImageStorageType(ktpImage),
-                    ktpSizeKb: imageSizeKb(ktpImage)
+                    ktpSizeKb: imageSizeKb(ktpImage),
+                    ktpLocalHash: ktpHash,
+                    ktpDriveUrl: emp.ktpDriveUrl || '',
+                    ktpDriveFileId: emp.ktpDriveFileId || '',
+                    ktpDriveDownloadUrl: emp.ktpDriveDownloadUrl || '',
+                    ktpDriveHash: emp.ktpDriveHash || '',
+                    ktpDriveSyncedAt: emp.ktpDriveSyncedAt || ''
                 };
             }
             function prepareSyncData(sheetName, payloadData) {
@@ -2501,17 +2886,22 @@ function setupLuxeHRSheets() {
                 return [
                     { key: 'webAppUrl', value: GOOGLE_APPS_SCRIPT_URL, jenis: 'Apps Script Web App URL', updatedAt: new Date().toISOString() },
                     { key: 'spreadsheetId', value: getConfiguredSpreadsheetId(), jenis: 'Google Sheet Spreadsheet ID', updatedAt: new Date().toISOString() },
+                    { key: 'driveRootFolderName', value: getDriveRootFolderName(), jenis: 'Google Drive Root Folder', updatedAt: new Date().toISOString() },
+                    { key: 'pendingDriveUploads', value: getPendingDriveUploads().length, jenis: 'Antrean Upload Gambar Google Drive', updatedAt: new Date().toISOString() },
                     { key: 'syncStatus', value: getSyncMeta().status || 'idle', jenis: 'Status Sync Terakhir', updatedAt: new Date().toISOString() },
                     { key: 'lastSuccessAt', value: getSyncMeta().lastSuccessAt || '', jenis: 'Sync Terakhir Berhasil', updatedAt: new Date().toISOString() },
                     { key: 'lastAttemptAt', value: getSyncMeta().lastAttemptAt || '', jenis: 'Sync Terakhir Dicoba', updatedAt: new Date().toISOString() },
                     { key: 'autoSyncEnabled', value: getAutoSyncEnabled(), jenis: 'Status Auto Sync', updatedAt: new Date().toISOString() },
                     { key: 'autoSyncQueuePending', value: getSyncQueue().pending, jenis: 'Antrean Auto Sync', updatedAt: new Date().toISOString() },
-                    { key: 'autoSyncLastReason', value: getSyncQueue().lastReason || '', jenis: 'Alasan Antrean Auto Sync', updatedAt: new Date().toISOString() }
+                    { key: 'autoSyncLastReason', value: getSyncQueue().lastReason || '', jenis: 'Alasan Antrean Auto Sync', updatedAt: new Date().toISOString() },
+                    { key: 'cloudFirstEnabled', value: isCloudFirstEnabled(), jenis: 'Mode Cloud First', updatedAt: new Date().toISOString() },
+                    { key: 'realtimePullEnabled', value: isRealtimePullEnabled(), jenis: 'Status Realtime Pull', updatedAt: new Date().toISOString() },
+                    { key: 'realtimePullIntervalSeconds', value: Math.round(getRealtimePullIntervalMs() / 1000), jenis: 'Interval Pull Cloud Detik', updatedAt: new Date().toISOString() },
+                    { key: 'lastCloudPullAt', value: getSyncMeta().lastCloudPullAt || '', jenis: 'Terakhir Tarik Data Cloud', updatedAt: new Date().toISOString() }
                 ];
             }
             function getAppMetadataRows() {
                 const meta = safeParse(localStorage.getItem(META_KEY), {});
-                const cleanupMeta = safeParse(localStorage.getItem(CLEANUP_META_KEY), {});
                 const syncMeta = getSyncMeta();
                 return [{
                     app: 'LuxeHR Premium',
@@ -2524,14 +2914,17 @@ function setupLuxeHRSheets() {
                     shiftAssignmentCount: shiftAssignments.length,
                     resignCount: resignRecords.length,
                     blacklistCount: blacklistRecords.length,
+                    maintenanceLogCount: maintenanceLogs.length,
                     branchCount: getBranches().length,
                     statusCount: getEmployeeStatuses().length,
+                    driveRootFolderName: getDriveRootFolderName(),
+                    pendingDriveUploads: getPendingDriveUploads().length,
+                    photoDriveUploadedCount: employees.filter(emp => emp.photoDriveUrl || emp.photoDriveFileId).length,
+                    ktpDriveUploadedCount: employees.filter(emp => emp.ktpDriveUrl || emp.ktpDriveFileId).length,
                     payrollMonthDays: PAYROLL_MONTH_DAYS,
                     standardWorkdayHours: STANDARD_WORKDAY_HOURS,
                     standardWorkdayMinutes: STANDARD_WORKDAY_MINUTES,
                     storageUpdatedAt: meta.updatedAt || '',
-                    dummyCleanupPerformed: Boolean(cleanupMeta.performedAt || dummyCleanupPerformed),
-                    dummyCleanupAt: cleanupMeta.performedAt || '',
                     syncStatus: syncMeta.status || 'idle',
                     syncSheetName: syncMeta.sheetName || '',
                     syncMode: syncMeta.mode || '',
@@ -2541,7 +2934,11 @@ function setupLuxeHRSheets() {
                     autoSyncEnabled: getAutoSyncEnabled(),
                     autoSyncQueuePending: getSyncQueue().pending,
                     autoSyncLastReason: getSyncQueue().lastReason || '',
-                    autoSyncLastRunAt: getSyncQueue().lastRunAt || ''
+                    autoSyncLastRunAt: getSyncQueue().lastRunAt || '',
+                    cloudFirstEnabled: isCloudFirstEnabled(),
+                    realtimePullEnabled: isRealtimePullEnabled(),
+                    realtimePullIntervalSeconds: Math.round(getRealtimePullIntervalMs() / 1000),
+                    lastCloudPullAt: syncMeta.lastCloudPullAt || ''
                 }];
             }
             function getStorageIndexRows() {
@@ -2553,11 +2950,12 @@ function setupLuxeHRSheets() {
                     ['Assignment Shift', STORAGE_KEYS.shiftAssignments, shiftAssignments.length],
                     ['Resign', STORAGE_KEYS.resignRecords, resignRecords.length],
                     ['Blacklist', STORAGE_KEYS.blacklistRecords, blacklistRecords.length],
+                    ['Maintenance Log', STORAGE_KEYS.maintenanceLogs, maintenanceLogs.length],
                     ['Pengaturan', STORAGE_KEYS.settings, settings && typeof settings === 'object' ? Object.keys(settings).length : 0],
                     ['Sync Meta', STORAGE_KEYS.syncMeta, getSyncMeta() ? 1 : 0],
                     ['Sync Queue', STORAGE_KEYS.syncQueue, getSyncQueue().pending ? 1 : 0],
                     ['Storage Meta', META_KEY, safeParse(localStorage.getItem(META_KEY), null) ? 1 : 0],
-                    ['Dummy Cleanup Meta', CLEANUP_META_KEY, safeParse(localStorage.getItem(CLEANUP_META_KEY), null) ? 1 : 0]
+                    ['Drive File Index', 'google_drive_files', getDriveFileSheetRows().filter(row => row.type !== 'empty').length]
                 ];
                 return entries.map(([moduleName, storageKey, recordCount]) => ({
                     moduleName,
@@ -2584,7 +2982,10 @@ function setupLuxeHRSheets() {
                     ['Data_Pengaturan', getSettingSheetRows()],
                     ['Data_Integrasi', getIntegrationSheetRows()],
                     ['Data_App_Metadata', getAppMetadataRows()],
-                    ['Data_Storage_Index', getStorageIndexRows()]
+                    ['Data_Storage_Index', getStorageIndexRows()],
+                    ['Data_Drive_Files', getDriveFileSheetRows()],
+                    ['Data_Maintenance_Log', getMaintenanceLogSheetRows()],
+                    ['Data_Maintenance_Report', getMaintenanceReportRows()]
                 ];
             }
             function getSyncManifestRows(jobs) {
@@ -2608,9 +3009,274 @@ function setupLuxeHRSheets() {
                 requestAutoSyncAfterLocalSave('Pengaturan/master data berubah');
             }
 
+            function isNetworkAccessEnabled() { return settings && settings.networkAccessEnabled === true; }
+            function getNetworkDisabledResult(mode = 'network-disabled') {
+                const message = 'Akses jaringan cloud sedang nonaktif. Aktifkan di Pengaturan agar aplikasi dapat menghubungi Google Sheet/Drive.';
+                saveSyncMeta({
+                    status: 'warning',
+                    sheetName: 'Network Gate',
+                    mode,
+                    lastAttemptAt: new Date().toISOString(),
+                    lastError: null,
+                    message
+                });
+                return { ok: false, skipped: true, reason: 'network-disabled', message };
+            }
+            function requireNetworkAccess(mode = 'network-request') {
+                if (isNetworkAccessEnabled()) return true;
+                getNetworkDisabledResult(mode);
+                showToast('Akses jaringan cloud masih nonaktif', 'warning');
+                return false;
+            }
+
+            function getDeviceId() {
+                const key = 'luxehr_device_id';
+                let id = localStorage.getItem(key);
+                if (!id) {
+                    id = `device_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+                    try { localStorage.setItem(key, id); } catch (error) {}
+                }
+                return id;
+            }
+            function isCloudFirstEnabled() { return settings.cloudFirstEnabled !== false; }
+            function isRealtimePullEnabled() { return settings.realtimePullEnabled !== false; }
+            function getRealtimePullIntervalMs() {
+                const seconds = Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS);
+                const safeSeconds = Number.isFinite(seconds) ? Math.max(REALTIME_PULL_MIN_SECONDS, seconds) : REALTIME_PULL_DEFAULT_SECONDS;
+                return safeSeconds * 1000;
+            }
+            function getBusinessStorageKeys() {
+                return [
+                    STORAGE_KEYS.employees,
+                    STORAGE_KEYS.attendance,
+                    STORAGE_KEYS.leaves,
+                    STORAGE_KEYS.shifts,
+                    STORAGE_KEYS.shiftAssignments,
+                    STORAGE_KEYS.resignRecords,
+                    STORAGE_KEYS.blacklistRecords,
+                    STORAGE_KEYS.maintenanceLogs
+                ].filter(Boolean);
+            }
+            function hasUnsyncedOfflineData() { return Boolean(getSyncQueue().pending); }
+            function purgeSyncedLocalBusinessData(options = {}) {
+                const force = options.force === true;
+                const silent = options.silent === true;
+                if (!force && hasUnsyncedOfflineData()) {
+                    if (!silent) showToast('Cache belum dibersihkan karena masih ada antrean sync', 'warning');
+                    return { ok: false, skipped: true, reason: 'pending-sync' };
+                }
+                let removed = 0;
+                getBusinessStorageKeys().forEach(key => {
+                    [key, getBackupKey(key)].forEach(storageKey => {
+                        if (localStorage.getItem(storageKey) !== null) {
+                            localStorage.removeItem(storageKey);
+                            removed += 1;
+                        }
+                    });
+                });
+                try { localStorage.removeItem(META_KEY); } catch (error) {}
+                updateStorageStatus();
+                renderRealtimeStatus();
+                if (!silent) showToast(`Cache data bisnis tersync dibersihkan (${removed} item)`, 'success');
+                return { ok: true, removed };
+            }
+            function parseCloudValue(value) {
+                if (value === null || value === undefined) return '';
+                if (typeof value !== 'string') return value;
+                const text = value.trim();
+                if (!text) return '';
+                if ((text.startsWith('{') && text.endsWith('}')) || (text.startsWith('[') && text.endsWith(']'))) {
+                    try { return JSON.parse(text); } catch (error) { return value; }
+                }
+                if (text === 'true') return true;
+                if (text === 'false') return false;
+                return value;
+            }
+            function cleanCloudRows(rows = [], keyFields = []) {
+                const list = Array.isArray(rows) ? rows : [];
+                return list
+                    .map(row => {
+                        const next = {};
+                        Object.keys(row || {}).forEach(key => { next[key] = parseCloudValue(row[key]); });
+                        return next;
+                    })
+                    .filter(row => keyFields.length ? keyFields.some(key => String(row[key] ?? '').trim() !== '') : Object.values(row).some(value => String(value ?? '').trim() !== ''));
+            }
+            function settingsFromCloudRows(rows = []) {
+                const next = { ...(settings || {}) };
+                cleanCloudRows(rows, ['settingKey']).forEach(row => {
+                    if (!row.settingKey || row.settingKey === 'empty') return;
+                    next[row.settingKey] = parseCloudValue(row.settingValue);
+                });
+                return next;
+            }
+            function listFromMasterRows(rows = []) {
+                return uniqueTextList(cleanCloudRows(rows, ['nama']).map(row => row.nama).filter(Boolean));
+            }
+            function getCloudFingerprint(sheets) {
+                try {
+                    const counts = Object.keys(sheets || {}).sort().map(name => `${name}:${Array.isArray(sheets[name]) ? sheets[name].length : 0}`).join('|');
+                    const stateRows = sheets?.Data_Realtime_State || [];
+                    const stateText = JSON.stringify(stateRows.slice(-3));
+                    return `${counts}::${hashString(stateText)}`;
+                } catch (error) {
+                    return String(Date.now());
+                }
+            }
+            function hydrateStateFromCloud(sheets = {}) {
+                cloudHydrationInProgress = true;
+                try {
+                    const cloudSettings = settingsFromCloudRows(sheets.Data_Pengaturan || []);
+                    settings = Object.assign({
+                        companyName: '',
+                        companyAddress: '',
+                        standardStartTime: '08:00',
+                        googleSheetId: getConfiguredSpreadsheetId(),
+                        driveRootFolderName: 'LuxeHR Uploads',
+                        branchOptions: [],
+                        employeeStatusOptions: [],
+                        offboardingFeatureInitialized: true,
+                        autoSyncEnabled: true,
+                        autoSyncIntervalSeconds: 60,
+                        cloudFirstEnabled: true,
+                        realtimePullEnabled: true,
+                        realtimePullIntervalSeconds: REALTIME_PULL_DEFAULT_SECONDS
+                    }, cloudSettings || {});
+                    const cloudBranches = listFromMasterRows(sheets.Data_Master_Cabang || []);
+                    const cloudStatuses = listFromMasterRows(sheets.Data_Master_Status || []);
+                    if (cloudBranches.length) settings.branchOptions = cloudBranches;
+                    if (cloudStatuses.length) settings.employeeStatusOptions = cloudStatuses;
+
+                    employees = cleanCloudRows(sheets.Data_Karyawan || [], ['id', 'nik', 'name']);
+                    attendance = cleanCloudRows(sheets.Data_Absensi || [], ['id', 'employeeId', 'date']);
+                    leaves = cleanCloudRows(sheets.Data_Cuti || [], ['id', 'employeeId']);
+                    shifts = cleanCloudRows(sheets.Data_Shift || [], ['id', 'name']);
+                    shiftAssignments = cleanCloudRows(sheets.Data_Shift_Assignment || [], ['id', 'employeeId', 'shiftId']);
+                    resignRecords = cleanCloudRows(sheets.Data_Resign || [], ['id', 'employeeId']);
+                    blacklistRecords = cleanCloudRows(sheets.Data_Blacklist || [], ['id', 'employeeId']);
+                    maintenanceLogs = cleanCloudRows(sheets.Data_Maintenance_Log || [], ['id', 'moduleId', 'checkedAt']);
+
+                    settings.cloudFirstEnabled = settings.cloudFirstEnabled !== false;
+                    settings.realtimePullEnabled = settings.realtimePullEnabled !== false;
+                    settings.realtimePullIntervalSeconds = Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS);
+                    if (!settings.driveRootFolderName) settings.driveRootFolderName = 'LuxeHR Uploads';
+                    normalizeMasterDropdowns();
+                    migrateCabangTerminology();
+                    migrateEmployeeImages();
+                    migrateShiftData();
+                    migrateOffboardingData();
+                    normalizeMasterDropdowns();
+                    renderCompanyIdentity();
+                    renderAllSelectors();
+                    setupPremiumSelects(document);
+                    refreshPremiumSelects(document);
+                    renderActiveView();
+                    updateStorageStatus();
+                    renderRealtimeStatus();
+                } finally {
+                    cloudHydrationInProgress = false;
+                }
+            }
+            async function pullCloudDataNow(options = {}) {
+                const silent = options.silent === true;
+                const force = options.force === true || options.initial === true;
+                if (!isNetworkAccessEnabled()) return getNetworkDisabledResult('cloud-pull-network-disabled');
+                if (!isCloudFirstEnabled() && !force) return { ok: false, skipped: true, reason: 'cloud-first-disabled' };
+                if (!GOOGLE_APPS_SCRIPT_URL || GOOGLE_APPS_SCRIPT_URL.includes('GANTI_DENGAN')) return { ok: false, skipped: true, reason: 'url-not-configured' };
+                if (!navigator.onLine) {
+                    saveSyncMeta({ status: 'warning', sheetName: 'Cloud Pull', mode: 'cloud-pull-offline', lastAttemptAt: new Date().toISOString(), lastError: 'Browser offline.', message: 'Realtime cloud tertunda karena browser offline.' });
+                    return { ok: false, skipped: true, reason: 'offline' };
+                }
+                if (!force && hasUnsyncedOfflineData()) {
+                    scheduleAutoSync(1000);
+                    return { ok: false, skipped: true, reason: 'pending-local-sync' };
+                }
+                if (realtimePullInProgress || syncInProgress) return { ok: false, skipped: true, reason: 'busy' };
+                realtimePullInProgress = true;
+                saveSyncMeta({ status: 'syncing', sheetName: 'Cloud Pull', mode: 'read-all-cloud', lastAttemptAt: new Date().toISOString(), lastError: null, message: 'Menarik data terbaru dari Google Sheet...' });
+                try {
+                    const response = await postToAppsScript({
+                        app: 'LuxeHR Premium',
+                        appVersion: APP_VERSION,
+                        action: 'readAll',
+                        spreadsheetId: getConfiguredSpreadsheetId(),
+                        clientTime: new Date().toISOString(),
+                        deviceId: getDeviceId()
+                    }, false);
+                    const result = response.result || {};
+                    const sheets = result.sheets || {};
+                    const fingerprint = getCloudFingerprint(sheets);
+                    const changed = fingerprint !== lastCloudFingerprint;
+                    lastCloudFingerprint = fingerprint;
+                    if (changed || force) hydrateStateFromCloud(sheets);
+                    saveSyncMeta({
+                        status: 'success',
+                        sheetName: 'Cloud Pull',
+                        mode: changed ? 'cloud-data-refreshed' : 'cloud-data-current',
+                        lastSuccessAt: new Date().toISOString(),
+                        lastAttemptAt: new Date().toISOString(),
+                        lastCloudPullAt: new Date().toISOString(),
+                        lastCloudPullRows: result.totalRows || 0,
+                        lastCloudPullSheets: result.totalSheets || Object.keys(sheets).length,
+                        lastError: null,
+                        message: changed ? 'Data terbaru berhasil ditarik dari Google Sheet.' : 'Data cloud sudah terbaru.'
+                    });
+                    if (!silent && changed) showToast('Data terbaru dari cloud berhasil dimuat', 'success');
+                    if (isCloudFirstEnabled()) purgeSyncedLocalBusinessData({ silent: true, force: true });
+                    return { ok: true, changed, rows: result.totalRows || 0 };
+                } catch (error) {
+                    saveSyncMeta({ status: 'error', sheetName: 'Cloud Pull', mode: 'read-all-cloud-failed', lastAttemptAt: new Date().toISOString(), lastError: error.message || String(error), message: 'Gagal menarik data cloud. Cek Apps Script v2.9 dan koneksi.' });
+                    if (!silent) showToast('Gagal menarik data cloud', 'error');
+                    return { ok: false, error };
+                } finally {
+                    realtimePullInProgress = false;
+                    renderRealtimeStatus();
+                }
+            }
+            function renderRealtimeStatus() {
+                const el = byId('cloudRealtimeStatus');
+                if (!el) return;
+                const meta = getSyncMeta();
+                const queue = getSyncQueue();
+                const lastPull = meta.lastCloudPullAt ? new Date(meta.lastCloudPullAt).toLocaleString('id-ID') : '-';
+                const intervalSec = Math.round(getRealtimePullIntervalMs() / 1000);
+                const network = isNetworkAccessEnabled() ? 'Aktif' : 'Nonaktif / aman untuk Pratinjau';
+                const mode = isCloudFirstEnabled() ? 'Cloud-first' : 'Lokal sementara';
+                const pull = isRealtimePullEnabled() && isNetworkAccessEnabled() ? `Aktif setiap ${intervalSec} detik` : 'Nonaktif';
+                const localPolicy = queue.pending ? 'Ada antrean offline/lokal yang belum tersync' : 'Cache bisnis lokal dibersihkan setelah sync sukses';
+                el.innerHTML = `
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-tower-broadcast text-gold-500 mt-0.5"></i>
+                        <div>
+                            <p class="text-white text-[11px]">Mode: ${escapeHtml(mode)} untuk multi user/multi cabang.</p>
+                            <p>Akses jaringan: <span class="${isNetworkAccessEnabled() ? 'text-green-400' : 'text-yellow-400'}">${escapeHtml(network)}</span></p>
+                            <p>Realtime pull: <span class="${isRealtimePullEnabled() && isNetworkAccessEnabled() ? 'text-green-400' : 'text-yellow-400'}">${escapeHtml(pull)}</span></p>
+                            <p>Terakhir tarik cloud: ${escapeHtml(lastPull)}</p>
+                            <p>Baris cloud terakhir: ${escapeHtml(meta.lastCloudPullRows || '-')}</p>
+                            <p>Storage lokal: <span class="${queue.pending ? 'text-yellow-400' : 'text-green-400'}">${escapeHtml(localPolicy)}</span></p>
+                        </div>
+                    </div>`;
+            }
+            function startRealtimeCloudService() {
+                if (realtimePullTimer) clearInterval(realtimePullTimer);
+                realtimePullTimer = setInterval(() => {
+                    if (!document.hidden && isNetworkAccessEnabled() && isRealtimePullEnabled() && isCloudFirstEnabled()) pullCloudDataNow({ silent: true });
+                }, getRealtimePullIntervalMs());
+                window.addEventListener('online', () => {
+                    if (!isNetworkAccessEnabled()) return;
+                    if (hasUnsyncedOfflineData()) runAutoSyncQueue(true);
+                    setTimeout(() => pullCloudDataNow({ silent: true, force: true }), 2500);
+                });
+                document.addEventListener('visibilitychange', () => {
+                    if (!document.hidden && isNetworkAccessEnabled() && isRealtimePullEnabled() && isCloudFirstEnabled()) pullCloudDataNow({ silent: true });
+                });
+                if (navigator.onLine && isNetworkAccessEnabled() && isCloudFirstEnabled()) setTimeout(() => pullCloudDataNow({ silent: true, initial: true }), 1200);
+                renderRealtimeStatus();
+            }
+
             function getShift(id) { return shifts.find(shift => String(shift.id) === String(id)); }
             function getActiveShifts() { return shifts.filter(shift => shift.status !== 'Nonaktif'); }
-            function getDefaultShift() { return getActiveShifts()[0] || shifts[0] || defaultShifts[0]; }
+            function getDefaultShift() { return getActiveShifts()[0] || shifts[0] || null; }
             function getShiftDisplay(shift) {
                 if (!shift) return 'Shift belum diatur';
                 return `${shift.name} (${shift.startTime || '-'}-${shift.endTime || '-'})`;
@@ -2701,7 +3367,7 @@ function setupLuxeHRSheets() {
                 return `${log?.shiftStart || '-'}-${log?.shiftEnd || '-'}`;
             }
             function migrateShiftData() {
-                if (!Array.isArray(shifts)) shifts = clone(defaultShifts);
+                if (!Array.isArray(shifts)) shifts = [];
                 const fallbackShift = getDefaultShift();
                 let changed = false;
                 employees = employees.map(emp => {
@@ -3129,7 +3795,7 @@ function setupLuxeHRSheets() {
             function toggleSidebar() { isSidebarOpen ? closeSidebar() : openSidebar(); }
 
             function switchView(view) {
-                const views = ['dashboard', 'employees', 'attendance', 'attendanceHistory', 'shift', 'leave', 'payroll', 'offboarding', 'settings'];
+                const views = ['dashboard', 'employees', 'attendance', 'attendanceHistory', 'shift', 'leave', 'payroll', 'offboarding', 'maintenance', 'settings'];
                 if (!views.includes(view)) view = 'dashboard';
                 activeView = view;
                 views.forEach(name => {
@@ -3154,6 +3820,7 @@ function setupLuxeHRSheets() {
                 if (activeView === 'leave') renderLeaves();
                 if (activeView === 'payroll') renderPayroll();
                 if (activeView === 'offboarding') renderOffboarding();
+                if (activeView === 'maintenance') renderMaintenance();
                 if (activeView === 'settings') renderSettings();
             }
 
@@ -3230,7 +3897,7 @@ function setupLuxeHRSheets() {
                     return;
                 }
                 tbody.innerHTML = filtered.map(emp => `
-                    <tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4"><div class="flex items-center gap-3"><img src="${escapeHtml(getEmployeePhotoSource(emp))}" class="w-9 h-9 rounded-full object-cover border border-gold-500/30" alt="${escapeHtml(emp.name)}"><div><p class="text-white text-[11px] font-medium">${escapeHtml(emp.name)}</p><p class="text-gray-500 text-[9px]">${escapeHtml(emp.email || '-')}</p></div></div></td><td class="py-3 px-4 text-gold-500 font-mono text-[10px]">${escapeHtml(emp.nik)}</td><td class="py-3 px-4 text-gray-400 text-[10px]">${escapeHtml(emp.branch)}</td><td class="py-3 px-4 text-gray-300 text-[10px]">${escapeHtml(getShiftDisplay(getShift(emp.defaultShiftId) || getDefaultShift()))}</td><td class="py-3 px-4 text-gray-300 text-[10px]">${escapeHtml(emp.position)}</td><td class="py-3 px-4">${getStatusBadge(emp.status)}</td><td class="py-3 px-4 text-right"><div class="inline-flex gap-1"><button type="button" onclick="openIdCard(${Number(emp.id)})" class="btn-icon hover:text-gold-500 hover:border-gold-500/30" title="ID Card"><i class="fa-solid fa-id-card text-[10px]"></i></button><button type="button" onclick="openEmployeeDocuments(${Number(emp.id)})" class="btn-icon hover:text-gold-500 hover:border-gold-500/30" title="Foto & KTP"><i class="fa-solid fa-images text-[10px]"></i></button><button type="button" onclick="openEmployeeModal(${Number(emp.id)})" class="btn-icon hover:text-white hover:border-white/30" title="Edit"><i class="fa-solid fa-pen text-[10px]"></i></button>${!isOffboardingStatus(emp.status) ? `<button type="button" onclick="openOffboardingModal(${Number(emp.id)}, 'resign')" class="btn-icon hover:text-orange-300 hover:border-orange-500/30" title="Proses Resign"><i class="fa-solid fa-person-walking-arrow-right text-[10px]"></i></button><button type="button" onclick="openOffboardingModal(${Number(emp.id)}, 'blacklist')" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Blacklist"><i class="fa-solid fa-ban text-[10px]"></i></button>` : `<button type="button" onclick="reactivateEmployee(${Number(emp.id)})" class="btn-icon hover:text-green-400 hover:border-green-500/30" title="Pulihkan Status"><i class="fa-solid fa-user-check text-[10px]"></i></button>`}<button type="button" onclick="deleteEmployee(${Number(emp.id)})" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Hapus"><i class="fa-solid fa-trash-can text-[10px]"></i></button></div></td></tr>`).join('');
+                    <tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4"><div class="flex items-center gap-3"><img src="${escapeHtml(getEmployeePhotoSource(emp))}" class="w-9 h-9 rounded-full object-cover border border-gold-500/30" alt="${escapeHtml(emp.name)}"><div><p class="text-white text-[11px] font-medium">${escapeHtml(emp.name)}</p><p class="text-gray-500 text-[9px]">${escapeHtml(emp.email || '-')}</p></div></div></td><td class="py-3 px-4 text-gold-500 font-mono text-[10px]">${escapeHtml(emp.nik)}</td><td class="py-3 px-4 text-gray-400 text-[10px]">${escapeHtml(emp.branch)}</td><td class="py-3 px-4 text-gray-300 text-[10px]"><button type="button" onclick="openShiftManagementForEmployee(${Number(emp.id)})" class="inline-flex items-center gap-1.5 rounded-full border border-gold-500/25 bg-gold-500/10 px-2.5 py-1 text-[9px] uppercase tracking-widest text-gold-500 hover:bg-gold-500 hover:text-surface-400 transition-all" title="Atur shift di halaman Shift"><i class="fa-solid fa-user-clock"></i>${escapeHtml(getShiftDisplay(getEmployeeShift(emp.id, todayKey())))}</button></td><td class="py-3 px-4 text-gray-300 text-[10px]">${escapeHtml(emp.position)}</td><td class="py-3 px-4">${getStatusBadge(emp.status)}</td><td class="py-3 px-4 text-right"><div class="inline-flex gap-1"><button type="button" onclick="openIdCard(${Number(emp.id)})" class="btn-icon hover:text-gold-500 hover:border-gold-500/30" title="ID Card"><i class="fa-solid fa-id-card text-[10px]"></i></button><button type="button" onclick="openEmployeeDocuments(${Number(emp.id)})" class="btn-icon hover:text-gold-500 hover:border-gold-500/30" title="Foto & KTP"><i class="fa-solid fa-images text-[10px]"></i></button><button type="button" onclick="openEmployeeModal(${Number(emp.id)})" class="btn-icon hover:text-white hover:border-white/30" title="Edit"><i class="fa-solid fa-pen text-[10px]"></i></button>${!isOffboardingStatus(emp.status) ? `<button type="button" onclick="openOffboardingModal(${Number(emp.id)}, 'resign')" class="btn-icon hover:text-orange-300 hover:border-orange-500/30" title="Proses Resign"><i class="fa-solid fa-person-walking-arrow-right text-[10px]"></i></button><button type="button" onclick="openOffboardingModal(${Number(emp.id)}, 'blacklist')" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Blacklist"><i class="fa-solid fa-ban text-[10px]"></i></button>` : `<button type="button" onclick="reactivateEmployee(${Number(emp.id)})" class="btn-icon hover:text-green-400 hover:border-green-500/30" title="Pulihkan Status"><i class="fa-solid fa-user-check text-[10px]"></i></button>`}<button type="button" onclick="deleteEmployee(${Number(emp.id)})" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Hapus"><i class="fa-solid fa-trash-can text-[10px]"></i></button></div></td></tr>`).join('');
             }
 
             function openEmployeeModal(id = null) {
@@ -3258,7 +3925,6 @@ function setupLuxeHRSheets() {
                     byId('empPhone').value = emp.phone || '';
                     byId('empEmail').value = emp.email || '';
                     setMoneyInputValue('empSalary', emp.salary || 0);
-                    byId('empDefaultShift').value = emp.defaultShiftId || getDefaultShift()?.id || '';
                     byId('empPhotoUrl').value = !isDataUrl(emp.photo) ? (emp.photo || '') : '';
                     byId('empKtpUrl').value = !isDataUrl(emp.ktpImage) ? (emp.ktpImage || '') : '';
                     setEmployeeImageValue('photo', emp.photo || '', 'open');
@@ -3268,7 +3934,6 @@ function setupLuxeHRSheets() {
                     byId('empNik').value = '';
                     byId('empStatus').value = getEmployeeStatuses()[0] || 'Aktif';
                     setMoneyInputValue('empSalary', 0);
-                    byId('empDefaultShift').value = getDefaultShift()?.id || '';
                     byId('empPhotoUrl').value = '';
                     byId('empKtpUrl').value = '';
                     setEmployeeImageValue('photo', '', 'new');
@@ -3296,6 +3961,8 @@ function setupLuxeHRSheets() {
                     return;
                 }
                 const id = byId('employeeId').value;
+                const existingEmployee = id ? getEmployee(id) : null;
+                let newlyCreatedEmployeeId = null;
                 const data = {
                     nik: byId('empNik').value.trim(),
                     name: byId('empName').value.trim(),
@@ -3306,7 +3973,7 @@ function setupLuxeHRSheets() {
                     phone: byId('empPhone').value.trim(),
                     email: byId('empEmail').value.trim(),
                     salary: parseMoneyValue(byId('empSalary').value),
-                    defaultShiftId: byId('empDefaultShift') ? Number(byId('empDefaultShift').value || 0) : (getDefaultShift()?.id || ''),
+                    defaultShiftId: existingEmployee?.defaultShiftId || '',
                     photo: byId('empPhotoData').value.trim(),
                     ktpImage: byId('empKtpData').value.trim(),
                     address: byId('empAddress').value.trim()
@@ -3332,15 +3999,21 @@ function setupLuxeHRSheets() {
                     employees = employees.map(emp => String(emp.id) === String(id) ? { ...emp, ...data, id: emp.id } : emp);
                     showToast('Data karyawan berhasil diperbarui', 'success');
                 } else {
-                    employees.unshift({ id: Date.now(), ...data });
-                    showToast('Karyawan baru berhasil ditambahkan', 'success');
+                    newlyCreatedEmployeeId = Date.now();
+                    employees.unshift({ id: newlyCreatedEmployeeId, ...data });
+                    showToast('Karyawan baru berhasil ditambahkan. Silakan atur shift di halaman Shift.', 'success');
                 }
                 try {
                     saveSettings();
                     saveEmployees();
                     closeEmployeeModal();
                     renderAllSelectors();
-                    renderActiveView();
+                    if (newlyCreatedEmployeeId) {
+                        switchView('shift');
+                        setTimeout(() => prefillShiftAssignmentForEmployee(newlyCreatedEmployeeId), 360);
+                    } else {
+                        renderActiveView();
+                    }
                     updateStorageStatus();
                 } catch (error) {
                     showToast('Gagal menyimpan data. Cek storage browser.', 'error');
@@ -3599,10 +4272,10 @@ function setupLuxeHRSheets() {
                 const empId = byId('attendanceEmployeeSelect').value;
                 const emp = getEmployee(empId);
                 if (!emp) return showToast('Pilih karyawan terlebih dahulu', 'error');
-                const now = new Date();
                 const date = getSelectedAttendanceDate();
                 if (date > todayKey()) return showToast('Tanggal absensi tidak boleh melebihi hari ini', 'error');
-                const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
+                const time = getSelectedAttendanceTime();
+                if (!time) return showToast('Format jam absensi tidak valid', 'error');
                 const shift = getEmployeeShift(emp.id, date);
                 let log = attendance.find(a => String(a.employeeId) === String(empId) && a.date === date);
                 const dateLabel = formatDateKeyLong(date);
@@ -3640,11 +4313,40 @@ function setupLuxeHRSheets() {
             }
 
 
+            function openShiftManagementForEmployee(employeeId) {
+                switchView('shift');
+                setTimeout(() => prefillShiftAssignmentForEmployee(employeeId), 260);
+            }
+            function goToShiftManagementFromEmployeeModal() {
+                closeEmployeeModal();
+                setTimeout(() => {
+                    switchView('shift');
+                    showToast('Pengaturan shift hanya dilakukan di halaman Shift', 'info');
+                }, 320);
+            }
+            function prefillShiftAssignmentForEmployee(employeeId) {
+                const emp = getEmployee(employeeId);
+                if (!emp) return;
+                renderShiftView();
+                const employeeSelect = byId('shiftEmployee');
+                if (employeeSelect) {
+                    employeeSelect.value = String(employeeId);
+                    refreshPremiumSelect(employeeSelect);
+                }
+                const startInput = byId('shiftAssignStart');
+                if (startInput && !startInput.value) startInput.value = todayKey();
+                const form = byId('shiftAssignmentForm');
+                if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (!getActiveShifts().length) {
+                    showToast(`Buat master shift terlebih dahulu untuk ${emp.name}`, 'warning');
+                } else {
+                    showToast(`Pilih shift untuk ${emp.name}, lalu simpan assignment`, 'info');
+                }
+            }
+
             function renderShiftSelectors() {
                 const activeShiftOptions = getActiveShifts().map(shift => `<option value="${Number(shift.id)}">${escapeHtml(getShiftDisplay(shift))}</option>`).join('');
                 const allShiftOptions = shifts.map(shift => `<option value="${Number(shift.id)}">${escapeHtml(getShiftDisplay(shift))}${shift.status === 'Nonaktif' ? ' - Nonaktif' : ''}</option>`).join('');
-                const empShift = byId('empDefaultShift');
-                if (empShift) { empShift.innerHTML = activeShiftOptions || `<option value="">Belum ada shift aktif</option>`; refreshPremiumSelect(empShift); }
                 const assignShift = byId('shiftAssignSelect');
                 if (assignShift) { assignShift.innerHTML = activeShiftOptions || `<option value="">Belum ada shift aktif</option>`; refreshPremiumSelect(assignShift); }
             }
@@ -4143,6 +4845,516 @@ function setupLuxeHRSheets() {
                 });
             }
 
+
+            // --- SECTIONAL MAINTENANCE ---
+            function getMaintenanceModules() {
+                return [
+                    { id: 'employees', label: 'Data Karyawan', icon: 'fa-users', color: 'text-blue-300', sheetNames: ['Data_Karyawan'], storageKeys: [STORAGE_KEYS.employees], count: () => employees.length, data: () => employees },
+                    { id: 'attendance', label: 'Absensi & Histori', icon: 'fa-fingerprint', color: 'text-green-300', sheetNames: ['Data_Absensi'], storageKeys: [STORAGE_KEYS.attendance], count: () => attendance.length, data: () => attendance },
+                    { id: 'shifts', label: 'Shift & Assignment', icon: 'fa-business-time', color: 'text-gold-500', sheetNames: ['Data_Shift', 'Data_Shift_Assignment'], storageKeys: [STORAGE_KEYS.shifts, STORAGE_KEYS.shiftAssignments], count: () => shifts.length + shiftAssignments.length, data: () => ({ shifts, shiftAssignments }) },
+                    { id: 'leaves', label: 'Cuti & Izin', icon: 'fa-calendar-check', color: 'text-purple-300', sheetNames: ['Data_Cuti'], storageKeys: [STORAGE_KEYS.leaves], count: () => leaves.length, data: () => leaves },
+                    { id: 'payroll', label: 'Payroll', icon: 'fa-wallet', color: 'text-emerald-300', sheetNames: ['Data_App_Metadata'], storageKeys: [], count: () => employees.filter(isEmployeeEligibleForOperations).length, data: () => getPayrollMaintenanceRows() },
+                    { id: 'offboarding', label: 'Resign & Blacklist', icon: 'fa-user-slash', color: 'text-red-300', sheetNames: ['Data_Resign', 'Data_Blacklist'], storageKeys: [STORAGE_KEYS.resignRecords, STORAGE_KEYS.blacklistRecords], count: () => resignRecords.length + blacklistRecords.length, data: () => ({ resignRecords, blacklistRecords }) },
+                    { id: 'mediaDrive', label: 'Foto, KTP & Drive', icon: 'fa-images', color: 'text-pink-300', sheetNames: ['Data_Drive_Files'], storageKeys: [STORAGE_KEYS.employees], count: () => getPendingDriveUploads().length, data: () => getDriveFileSheetRows() },
+                    { id: 'settingsMaster', label: 'Pengaturan & Master', icon: 'fa-sliders', color: 'text-cyan-300', sheetNames: ['Data_Pengaturan', 'Data_Master_Cabang', 'Data_Master_Status', 'Data_Master_Dropdown', 'Data_Integrasi'], storageKeys: [STORAGE_KEYS.settings], count: () => Object.keys(settings || {}).length, data: () => ({ settings, cabang: getBranches(), status: getEmployeeStatuses() }) },
+                    { id: 'syncStorage', label: 'Sync & Storage', icon: 'fa-database', color: 'text-yellow-300', sheetNames: ['Data_Storage_Index', 'Data_Sync_Manifest', 'Data_Maintenance_Log', 'Data_Maintenance_Report'], storageKeys: [STORAGE_KEYS.syncMeta, STORAGE_KEYS.syncQueue, STORAGE_KEYS.maintenanceLogs], count: () => getStorageIndexRows().length, data: () => ({ storage: getStorageIndexRows(), sync: getSyncMeta(), queue: getSyncQueue() }) }
+                ];
+            }
+            function getMaintenanceModule(id) { return getMaintenanceModules().find(module => module.id === id); }
+            function maintenanceLevelBadge(level) {
+                const normalized = safeLower(level);
+                const cls = normalized === 'error' ? 'bg-red-500/10 text-red-400 border-red-500/30' : normalized === 'warning' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' : 'bg-green-500/10 text-green-400 border-green-500/30';
+                const label = normalized === 'error' ? 'Kritis' : normalized === 'warning' ? 'Perlu Cek' : 'Aman';
+                return `<span class="px-2 py-1 rounded-full border text-[9px] uppercase tracking-widest ${cls}">${label}</span>`;
+            }
+            function pushMaintenanceIssue(list, level, message, suggestion = '') {
+                list.push({ level, message, suggestion, createdAt: new Date().toISOString() });
+            }
+            function getDuplicateValues(rows, key) {
+                const seen = new Map();
+                const dup = new Set();
+                rows.forEach(row => {
+                    const value = safeLower(row?.[key]);
+                    if (!value) return;
+                    if (seen.has(value)) dup.add(row[key]);
+                    else seen.set(value, true);
+                });
+                return [...dup];
+            }
+            function analyzeMaintenanceModule(moduleId) {
+                const issues = [];
+                const module = getMaintenanceModule(moduleId);
+                if (!module) {
+                    pushMaintenanceIssue(issues, 'error', 'Modul maintenance tidak ditemukan.', 'Refresh aplikasi lalu coba lagi.');
+                    return { moduleId, moduleLabel: moduleId, status: 'error', issues, recordCount: 0, checkedAt: new Date().toISOString() };
+                }
+                if (moduleId === 'employees') {
+                    const missingId = employees.filter(e => !e || e.id === undefined || e.id === null || e.id === '').length;
+                    const missingName = employees.filter(e => !String(e?.name || '').trim()).length;
+                    const missingNik = employees.filter(e => !String(e?.nik || '').trim()).length;
+                    const duplicateNik = getDuplicateValues(employees, 'nik');
+                    const invalidSalary = employees.filter(e => Number.isNaN(Number(e?.salary || 0))).length;
+                    const missingStatus = employees.filter(e => !String(e?.status || '').trim()).length;
+                    if (missingId) pushMaintenanceIssue(issues, 'warning', `${missingId} karyawan belum memiliki ID internal.`, 'Jalankan Repair modul Data Karyawan.');
+                    if (missingName) pushMaintenanceIssue(issues, 'error', `${missingName} karyawan belum memiliki nama.`, 'Lengkapi nama di Data Karyawan.');
+                    if (missingNik) pushMaintenanceIssue(issues, 'warning', `${missingNik} karyawan belum memiliki NIK.`, 'Lengkapi NIK agar integrasi dan blacklist lebih akurat.');
+                    if (duplicateNik.length) pushMaintenanceIssue(issues, 'warning', `${duplicateNik.length} NIK terindikasi duplikat.`, 'Cek manual NIK: ' + duplicateNik.slice(0, 3).join(', '));
+                    if (invalidSalary) pushMaintenanceIssue(issues, 'warning', `${invalidSalary} nominal gaji tidak valid.`, 'Jalankan Repair untuk menormalkan nominal menjadi angka.');
+                    if (missingStatus) pushMaintenanceIssue(issues, 'warning', `${missingStatus} karyawan belum memiliki status.`, 'Jalankan Repair atau pilih status dari master status.');
+                }
+                if (moduleId === 'attendance') {
+                    const missingId = attendance.filter(a => !a?.id).length;
+                    const invalidDate = attendance.filter(a => !isValidDateKey(a?.date)).length;
+                    const orphan = attendance.filter(a => a?.employeeId && !getEmployee(a.employeeId)).length;
+                    const missingSnapshot = attendance.filter(a => a?.checkIn && (!a.employeeName || !a.employeeNik || !a.shiftName)).length;
+                    const invalidTime = attendance.filter(a => (a?.checkIn && !isValidTimeHHMM(a.checkIn)) || (a?.checkOut && !isValidTimeHHMM(a.checkOut))).length;
+                    if (missingId) pushMaintenanceIssue(issues, 'warning', `${missingId} log absensi belum punya ID.`, 'Jalankan Repair modul Absensi.');
+                    if (invalidDate) pushMaintenanceIssue(issues, 'error', `${invalidDate} log absensi memiliki tanggal tidak valid.`, 'Jalankan Repair atau koreksi histori secara manual.');
+                    if (orphan) pushMaintenanceIssue(issues, 'warning', `${orphan} log absensi tidak menemukan karyawan aktif/arsip.`, 'Log tetap aman karena snapshot histori disimpan.');
+                    if (missingSnapshot) pushMaintenanceIssue(issues, 'warning', `${missingSnapshot} log absensi belum lengkap snapshot karyawan/shift.`, 'Jalankan Repair untuk melengkapi snapshot dari data saat ini.');
+                    if (invalidTime) pushMaintenanceIssue(issues, 'error', `${invalidTime} log absensi memiliki format jam tidak valid.`, 'Koreksi jam di histori/backup.');
+                }
+                if (moduleId === 'shifts') {
+                    const missingId = shifts.filter(s => !s?.id).length;
+                    const missingName = shifts.filter(s => !String(s?.name || '').trim()).length;
+                    const invalidTime = shifts.filter(s => !isValidTimeHHMM(s?.startTime) || !isValidTimeHHMM(s?.endTime)).length;
+                    const orphanEmployee = shiftAssignments.filter(a => a?.employeeId && !getEmployee(a.employeeId)).length;
+                    const orphanShift = shiftAssignments.filter(a => a?.shiftId && !getShift(a.shiftId)).length;
+                    if (!shifts.length) pushMaintenanceIssue(issues, 'warning', 'Master shift masih kosong.', 'Buat shift dari halaman Shift sebelum memakai absensi.');
+                    if (missingId) pushMaintenanceIssue(issues, 'warning', `${missingId} shift belum punya ID.`, 'Jalankan Repair modul Shift.');
+                    if (missingName) pushMaintenanceIssue(issues, 'error', `${missingName} shift belum memiliki nama.`, 'Lengkapi nama shift di halaman Shift.');
+                    if (invalidTime) pushMaintenanceIssue(issues, 'error', `${invalidTime} shift memiliki jam tidak valid.`, 'Edit jam shift di halaman Shift.');
+                    if (orphanEmployee) pushMaintenanceIssue(issues, 'warning', `${orphanEmployee} assignment shift mengarah ke karyawan yang tidak ada.`, 'Cek assignment shift terkait.');
+                    if (orphanShift) pushMaintenanceIssue(issues, 'warning', `${orphanShift} assignment shift mengarah ke shift yang tidak ada.`, 'Cek assignment shift terkait.');
+                }
+                if (moduleId === 'leaves') {
+                    const missingId = leaves.filter(l => !l?.id).length;
+                    const invalidDate = leaves.filter(l => !isValidDateKey(l?.startDate) || !isValidDateKey(l?.endDate)).length;
+                    const orphan = leaves.filter(l => l?.employeeId && !getEmployee(l.employeeId)).length;
+                    if (missingId) pushMaintenanceIssue(issues, 'warning', `${missingId} pengajuan belum punya ID.`, 'Jalankan Repair modul Cuti & Izin.');
+                    if (invalidDate) pushMaintenanceIssue(issues, 'error', `${invalidDate} pengajuan memiliki tanggal tidak valid.`, 'Cek tanggal mulai/selesai.');
+                    if (orphan) pushMaintenanceIssue(issues, 'warning', `${orphan} pengajuan tidak menemukan karyawan.`, 'Data tetap dipertahankan untuk histori.');
+                }
+                if (moduleId === 'payroll') {
+                    const noSalary = employees.filter(e => isEmployeeEligibleForOperations(e) && Number(e.salary || 0) <= 0).length;
+                    const openAttendance = attendance.filter(a => a.checkIn && !a.checkOut).length;
+                    if (noSalary) pushMaintenanceIssue(issues, 'warning', `${noSalary} karyawan operasional belum memiliki gaji pokok.`, 'Lengkapi gaji pokok agar payroll akurat.');
+                    if (openAttendance) pushMaintenanceIssue(issues, 'warning', `${openAttendance} log masuk belum memiliki jam pulang.`, 'Lengkapi jam pulang untuk catatan aktual jam kerja.');
+                    if (!employees.filter(isEmployeeEligibleForOperations).length) pushMaintenanceIssue(issues, 'warning', 'Belum ada karyawan aktif untuk payroll.', 'Tambah karyawan aktif terlebih dahulu.');
+                }
+                if (moduleId === 'offboarding') {
+                    const activeResign = resignRecords.filter(r => !r.revokedAt).length;
+                    const activeBlacklist = blacklistRecords.filter(r => !r.revokedAt).length;
+                    const resignMismatch = resignRecords.filter(r => !r.revokedAt && getEmployee(r.employeeId) && safeLower(getEmployee(r.employeeId).status) !== 'resign').length;
+                    const blacklistMismatch = blacklistRecords.filter(r => !r.revokedAt && getEmployee(r.employeeId) && safeLower(getEmployee(r.employeeId).status) !== 'blacklist').length;
+                    if (resignMismatch) pushMaintenanceIssue(issues, 'warning', `${resignMismatch} catatan resign aktif tidak sama dengan status karyawan.`, 'Jalankan Repair Resign & Blacklist.');
+                    if (blacklistMismatch) pushMaintenanceIssue(issues, 'warning', `${blacklistMismatch} catatan blacklist aktif tidak sama dengan status karyawan.`, 'Jalankan Repair Resign & Blacklist.');
+                    if (!activeResign && !activeBlacklist) pushMaintenanceIssue(issues, 'success', 'Belum ada catatan resign/blacklist aktif.', 'Tidak ada tindakan diperlukan.');
+                }
+                if (moduleId === 'mediaDrive') {
+                    const pending = getPendingDriveUploads().length;
+                    const localImages = employees.filter(emp => isDataUrl(emp.photo) || isDataUrl(emp.ktpImage)).length;
+                    if (pending) pushMaintenanceIssue(issues, 'warning', `${pending} file gambar belum memiliki link Google Drive.`, 'Jalankan Sync modul Foto, KTP & Drive atau tunggu auto-sync.');
+                    if (!localImages) pushMaintenanceIssue(issues, 'success', 'Tidak ada gambar lokal yang perlu diupload ke Drive.', 'Tidak ada tindakan diperlukan.');
+                }
+                if (moduleId === 'settingsMaster') {
+                    if (!getConfiguredSpreadsheetId()) pushMaintenanceIssue(issues, 'warning', 'Spreadsheet ID belum diisi.', 'Isi Spreadsheet ID di Pengaturan Integrasi.');
+                    if (!getDriveRootFolderName()) pushMaintenanceIssue(issues, 'warning', 'Nama folder Google Drive belum diisi.', 'Isi nama folder Drive di Pengaturan.');
+                    if (!getBranches().length) pushMaintenanceIssue(issues, 'warning', 'Master Cabang masih kosong.', 'Tambah Cabang dari Pengaturan.');
+                    if (!getEmployeeStatuses().length) pushMaintenanceIssue(issues, 'warning', 'Master Status masih kosong.', 'Tambah Status dari Pengaturan.');
+                }
+                if (moduleId === 'syncStorage') {
+                    const queue = getSyncQueue();
+                    const meta = getSyncMeta();
+                    const broken = Object.values(STORAGE_KEYS).filter(key => !readDirect(key).ok).length;
+                    if (broken) pushMaintenanceIssue(issues, 'error', `${broken} storage key tidak bisa dibaca.`, 'Gunakan backup/restore modul terkait.');
+                    if (queue.pending) pushMaintenanceIssue(issues, 'warning', 'Masih ada antrean auto-sync pending.', 'Klik Sync modul Sync & Storage atau tunggu auto-sync.');
+                    if (meta.status === 'error') pushMaintenanceIssue(issues, 'warning', `Sync terakhir error: ${meta.lastError || '-'}`, 'Cek Apps Script, deployment, koneksi internet, dan Spreadsheet ID.');
+                }
+                const hasError = issues.some(item => item.level === 'error');
+                const hasWarning = issues.some(item => item.level === 'warning');
+                const status = hasError ? 'error' : hasWarning ? 'warning' : 'success';
+                if (!issues.length) pushMaintenanceIssue(issues, 'success', 'Tidak ditemukan masalah pada modul ini.', 'Tidak ada tindakan diperlukan.');
+                return { moduleId, moduleLabel: module.label, status, issues, recordCount: Number(module.count() || 0), checkedAt: new Date().toISOString() };
+            }
+            function addMaintenanceLog(action, moduleId, result) {
+                const module = getMaintenanceModule(moduleId) || { label: moduleId };
+                const log = {
+                    id: Date.now(),
+                    action,
+                    moduleId,
+                    moduleLabel: module.label,
+                    status: result?.status || 'success',
+                    recordCount: Number(result?.recordCount || 0),
+                    issueCount: Array.isArray(result?.issues) ? result.issues.length : 0,
+                    errorCount: Array.isArray(result?.issues) ? result.issues.filter(i => i.level === 'error').length : 0,
+                    warningCount: Array.isArray(result?.issues) ? result.issues.filter(i => i.level === 'warning').length : 0,
+                    message: (result?.issues || [])[0]?.message || 'Maintenance selesai.',
+                    createdAt: new Date().toISOString()
+                };
+                maintenanceLogs.unshift(log);
+                maintenanceLogs = maintenanceLogs.slice(0, 300);
+                saveMaintenanceLogs(`Maintenance ${module.label} diproses`);
+                return log;
+            }
+            function getLastMaintenanceLog(moduleId = '') {
+                if (!Array.isArray(maintenanceLogs) || !maintenanceLogs.length) return null;
+                return moduleId ? maintenanceLogs.find(log => log.moduleId === moduleId) : maintenanceLogs[0];
+            }
+            function getMaintenanceLogSheetRows() {
+                return (maintenanceLogs || []).map(log => ({
+                    id: log.id,
+                    action: log.action,
+                    moduleId: log.moduleId,
+                    moduleLabel: log.moduleLabel,
+                    status: log.status,
+                    recordCount: log.recordCount,
+                    issueCount: log.issueCount,
+                    errorCount: log.errorCount,
+                    warningCount: log.warningCount,
+                    message: log.message,
+                    createdAt: log.createdAt
+                }));
+            }
+            function getMaintenanceReportRows() {
+                return getMaintenanceModules().map(module => {
+                    const result = analyzeMaintenanceModule(module.id);
+                    return {
+                        moduleId: module.id,
+                        moduleLabel: module.label,
+                        status: result.status,
+                        recordCount: result.recordCount,
+                        issueCount: result.issues.length,
+                        errorCount: result.issues.filter(item => item.level === 'error').length,
+                        warningCount: result.issues.filter(item => item.level === 'warning').length,
+                        checkedAt: result.checkedAt
+                    };
+                });
+            }
+            function getPayrollMaintenanceRows() {
+                const month = byId('payrollMonth')?.value || new Date().toISOString().slice(0, 7);
+                return employees.filter(isEmployeeEligibleForOperations).map(emp => {
+                    const summary = getEmployeeMonthlyWorkSummary(emp, month, 0, 0);
+                    return {
+                        month,
+                        employeeId: emp.id,
+                        nik: emp.nik || '',
+                        name: emp.name || '',
+                        workDays: summary.workDays,
+                        payrollHours: summary.payrollHours,
+                        payrollMinutes: summary.payrollMinutes,
+                        actualRecordedMinutes: summary.actualRecordedMinutes,
+                        baseSalary: summary.baseSalary,
+                        dailySalary: summary.dailySalary,
+                        proratedSalary: summary.proratedSalary,
+                        lateCount: summary.lateCount,
+                        lateMinutes: summary.lateMinutes
+                    };
+                });
+            }
+            function renderMaintenance() {
+                const reports = getMaintenanceReportRows();
+                const totalIssues = reports.reduce((sum, item) => sum + Number(item.issueCount || 0), 0);
+                const warnings = reports.reduce((sum, item) => sum + Number(item.warningCount || 0), 0);
+                const errors = reports.reduce((sum, item) => sum + Number(item.errorCount || 0), 0);
+                const cards = [
+                    { label: 'Modul', value: reports.length, icon: 'fa-layer-group', desc: 'Maintenance terpisah' },
+                    { label: 'Total Temuan', value: totalIssues, icon: 'fa-triangle-exclamation', desc: `${warnings} warning / ${errors} kritis` },
+                    { label: 'Log Maintenance', value: maintenanceLogs.length, icon: 'fa-clock-rotate-left', desc: 'Tersimpan lokal & Sheet' },
+                    { label: 'Pending Drive', value: getPendingDriveUploads().length, icon: 'fa-cloud-arrow-up', desc: 'Foto/KTP belum upload' }
+                ];
+                const summaryEl = byId('maintenanceSummaryCards');
+                if (summaryEl) summaryEl.innerHTML = cards.map((card, idx) => `<div class="premium-card premium-card-hover rounded-xl p-4 animate-fade-in" style="animation-delay:${idx * .03}s"><div class="flex items-start justify-between gap-3"><div><p class="text-[9px] text-gray-500 uppercase tracking-widest">${escapeHtml(card.label)}</p><h3 class="text-2xl font-serif font-bold text-white text-glow mt-2">${escapeHtml(card.value)}</h3><p class="text-[10px] text-gray-500 mt-1">${escapeHtml(card.desc)}</p></div><div class="w-10 h-10 rounded-full border border-gold-500/30 bg-gold-500/10 text-gold-500 flex items-center justify-center"><i class="fa-solid ${card.icon}"></i></div></div></div>`).join('');
+                const grid = byId('maintenanceModuleGrid');
+                if (grid) {
+                    grid.innerHTML = getMaintenanceModules().map(module => {
+                        const report = reports.find(item => item.moduleId === module.id) || analyzeMaintenanceModule(module.id);
+                        const lastLog = getLastMaintenanceLog(module.id);
+                        return `<div class="rounded-xl border border-white/5 bg-surface-100/60 p-4 hover:border-gold-500/30 transition-all">
+                            <div class="flex items-start justify-between gap-3 mb-3"><div class="flex items-center gap-3 min-w-0"><div class="w-9 h-9 rounded-full bg-gold-500/10 border border-gold-500/20 flex items-center justify-center ${module.color}"><i class="fa-solid ${module.icon}"></i></div><div class="min-w-0"><h4 class="text-white text-[12px] font-semibold truncate">${escapeHtml(module.label)}</h4><p class="text-gray-500 text-[9px]">${report.recordCount} record • ${module.sheetNames.length} sheet</p></div></div>${maintenanceLevelBadge(report.status)}</div>
+                            <p class="text-[10px] text-gray-500 mb-3">Terakhir: ${escapeHtml(lastLog ? new Date(lastLog.createdAt).toLocaleString('id-ID') : 'belum pernah')}</p>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" onclick="runMaintenanceCheck('${module.id}')" class="border border-white/10 text-gray-300 hover:text-white hover:border-gold-500/40 py-2 text-[9px] uppercase tracking-widest rounded-lg transition-all"><i class="fa-solid fa-magnifying-glass mr-1"></i>Cek</button>
+                                <button type="button" onclick="repairMaintenanceModule('${module.id}')" class="border border-gold-500/40 text-gold-500 hover:bg-gold-500 hover:text-surface-400 py-2 text-[9px] uppercase tracking-widest rounded-lg transition-all"><i class="fa-solid fa-screwdriver-wrench mr-1"></i>Repair</button>
+                                <button type="button" onclick="backupMaintenanceModule('${module.id}')" class="border border-white/10 text-gray-300 hover:text-white hover:border-gold-500/40 py-2 text-[9px] uppercase tracking-widest rounded-lg transition-all"><i class="fa-solid fa-download mr-1"></i>Backup</button>
+                                <button type="button" onclick="syncMaintenanceModule('${module.id}')" class="bg-gold-500/10 border border-gold-500/40 text-gold-500 hover:bg-gold-500 hover:text-surface-400 py-2 text-[9px] uppercase tracking-widest rounded-lg transition-all"><i class="fa-solid fa-cloud-arrow-up mr-1"></i>Sync</button>
+                            </div>
+                        </div>`;
+                    }).join('');
+                }
+                renderMaintenanceIssues(reports.flatMap(report => analyzeMaintenanceModule(report.moduleId).issues.map(issue => ({ ...issue, moduleLabel: report.moduleLabel }))));
+                renderMaintenanceLastResult();
+            }
+            function renderMaintenanceIssues(issues) {
+                const tbody = byId('maintenanceIssueTable');
+                if (!tbody) return;
+                const filtered = (issues || []).filter(issue => issue.level !== 'success');
+                tbody.innerHTML = filtered.map(issue => `<tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4 text-white text-[11px]">${escapeHtml(issue.moduleLabel || '-')}</td><td class="py-3 px-4">${maintenanceLevelBadge(issue.level)}</td><td class="py-3 px-4 text-gray-300 text-[10px] max-w-[320px] truncate" title="${escapeHtml(issue.message || '-')}">${escapeHtml(issue.message || '-')}</td><td class="py-3 px-4 text-gray-500 text-[10px] max-w-[320px] truncate" title="${escapeHtml(issue.suggestion || '-')}">${escapeHtml(issue.suggestion || '-')}</td></tr>`).join('') || `<tr><td colspan="4" class="py-10 text-center text-gray-500 italic text-xs">Tidak ada temuan warning/kritis.</td></tr>`;
+            }
+            function renderMaintenanceLastResult(result = null) {
+                const el = byId('maintenanceLastResult');
+                if (!el) return;
+                const log = result || getLastMaintenanceLog();
+                if (!log) {
+                    el.innerHTML = 'Belum ada proses maintenance.';
+                    return;
+                }
+                el.innerHTML = `<div class="space-y-2"><p class="text-white text-[11px] font-medium">${escapeHtml(log.moduleLabel || '-')}</p><p>Action: ${escapeHtml(log.action || '-')}</p><p>Status: ${escapeHtml(log.status || '-')}</p><p>Record: ${Number(log.recordCount || 0)} • Temuan: ${Number(log.issueCount || 0)}</p><p>Waktu: ${escapeHtml(log.createdAt ? new Date(log.createdAt).toLocaleString('id-ID') : '-')}</p><p class="text-gray-500">${escapeHtml(log.message || '')}</p></div>`;
+            }
+            function runMaintenanceCheck(moduleId) {
+                const result = analyzeMaintenanceModule(moduleId);
+                const log = addMaintenanceLog('check', moduleId, result);
+                renderMaintenance();
+                renderMaintenanceIssues(result.issues.map(issue => ({ ...issue, moduleLabel: result.moduleLabel })));
+                renderMaintenanceLastResult(log);
+                showToast(`Cek maintenance ${result.moduleLabel} selesai`, result.status === 'error' ? 'warning' : 'success');
+            }
+            function getNextNumericId(rows) {
+                const maxId = Math.max(0, ...rows.map(row => Number(row?.id || 0)).filter(Number.isFinite));
+                return maxId + 1;
+            }
+            function repairMaintenanceModule(moduleId) {
+                const module = getMaintenanceModule(moduleId);
+                if (!module) return;
+                showConfirm(`Jalankan repair aman untuk modul ${module.label}? Repair tidak menghapus data bisnis, hanya menormalkan struktur yang aman.`, () => {
+                    let changed = false;
+                    if (moduleId === 'employees') {
+                        let nextId = getNextNumericId(employees);
+                        employees = employees.map(emp => {
+                            const next = { ...(emp || {}) };
+                            if (!next.id) { next.id = nextId++; changed = true; }
+                            if (next.department && !next.branch) { next.branch = next.department; changed = true; }
+                            if ('department' in next) { delete next.department; changed = true; }
+                            if (!String(next.status || '').trim()) { next.status = getOperationalStatusFallback(); changed = true; }
+                            if (Number.isNaN(Number(next.salary || 0))) { next.salary = 0; changed = true; }
+                            if (next.photo === undefined || next.photo === null) { next.photo = ''; changed = true; }
+                            if (next.ktpImage === undefined || next.ktpImage === null) { next.ktpImage = ''; changed = true; }
+                            return next;
+                        });
+                        if (changed) saveEmployees();
+                    }
+                    if (moduleId === 'attendance') {
+                        let nextId = getNextNumericId(attendance);
+                        attendance = attendance.map(log => {
+                            const next = { ...(log || {}) };
+                            if (!next.id) { next.id = `ATT-${Date.now()}-${nextId++}`; changed = true; }
+                            if (!isValidDateKey(next.date)) { next.date = todayKey(); changed = true; }
+                            if ((next.employeeBranch === undefined || next.employeeBranch === '') && next.employeeDepartment) { next.employeeBranch = next.employeeDepartment; changed = true; }
+                            if ('employeeDepartment' in next) { delete next.employeeDepartment; changed = true; }
+                            const emp = getEmployee(next.employeeId);
+                            if (emp) {
+                                if (!next.employeeName) { next.employeeName = emp.name || ''; changed = true; }
+                                if (!next.employeeNik) { next.employeeNik = emp.nik || ''; changed = true; }
+                                if (!next.employeeBranch) { next.employeeBranch = emp.branch || ''; changed = true; }
+                                if (!next.employeePosition) { next.employeePosition = emp.position || ''; changed = true; }
+                            }
+                            const shift = next.shiftName ? { name: next.shiftName, startTime: next.shiftStart, endTime: next.shiftEnd, toleranceMinutes: next.toleranceMinutes } : getEmployeeShift(next.employeeId, next.date);
+                            if (shift) {
+                                if (!next.shiftName) { next.shiftName = shift.name || 'Standar'; changed = true; }
+                                if (!next.shiftStart) { next.shiftStart = shift.startTime || settings.standardStartTime || '08:00'; changed = true; }
+                                if (!next.shiftEnd) { next.shiftEnd = shift.endTime || ''; changed = true; }
+                                if (next.toleranceMinutes === undefined || next.toleranceMinutes === null || next.toleranceMinutes === '') { next.toleranceMinutes = Number(shift.toleranceMinutes || 0); changed = true; }
+                            }
+                            if (next.checkIn && (next.lateMinutes === undefined || next.lateMinutes === null || next.lateMinutes === '')) { next.lateMinutes = calculateLateMinutes(next.checkIn, { startTime: next.shiftStart, toleranceMinutes: next.toleranceMinutes }); changed = true; }
+                            if (next.checkIn && !next.status) { next.status = Number(next.lateMinutes || 0) > 0 ? 'Terlambat' : 'Hadir'; changed = true; }
+                            return next;
+                        });
+                        if (changed) saveAttendance();
+                    }
+                    if (moduleId === 'shifts') {
+                        let nextShiftId = getNextNumericId(shifts);
+                        let nextAssignId = getNextNumericId(shiftAssignments);
+                        shifts = shifts.map(shift => {
+                            const next = { ...(shift || {}) };
+                            if (!next.id) { next.id = nextShiftId++; changed = true; }
+                            if (!String(next.status || '').trim()) { next.status = 'Aktif'; changed = true; }
+                            if (next.toleranceMinutes === undefined || next.toleranceMinutes === null || next.toleranceMinutes === '') { next.toleranceMinutes = 0; changed = true; }
+                            return next;
+                        });
+                        shiftAssignments = shiftAssignments.map(item => {
+                            const next = { ...(item || {}) };
+                            if (!next.id) { next.id = nextAssignId++; changed = true; }
+                            if (!isValidDateKey(next.startDate)) { next.startDate = todayKey(); changed = true; }
+                            return next;
+                        });
+                        if (changed) { saveShifts(); saveShiftAssignments(); }
+                    }
+                    if (moduleId === 'leaves') {
+                        let nextId = getNextNumericId(leaves);
+                        leaves = leaves.map(item => {
+                            const next = { ...(item || {}) };
+                            if (!next.id) { next.id = nextId++; changed = true; }
+                            if (!next.status) { next.status = 'Pending'; changed = true; }
+                            if (isValidDateKey(next.startDate) && isValidDateKey(next.endDate) && next.startDate > next.endDate) { const tmp = next.startDate; next.startDate = next.endDate; next.endDate = tmp; changed = true; }
+                            return next;
+                        });
+                        if (changed) saveLeaves();
+                    }
+                    if (moduleId === 'offboarding') {
+                        resignRecords.filter(r => !r.revokedAt).forEach(r => {
+                            const emp = getEmployee(r.employeeId);
+                            if (emp && safeLower(emp.status) !== 'resign') { emp.status = 'Resign'; changed = true; }
+                        });
+                        blacklistRecords.filter(r => !r.revokedAt).forEach(r => {
+                            const emp = getEmployee(r.employeeId);
+                            if (emp && safeLower(emp.status) !== 'blacklist') { emp.status = 'Blacklist'; changed = true; }
+                        });
+                        if (changed) { saveEmployees(); saveResignRecords(); saveBlacklistRecords(); }
+                    }
+                    if (moduleId === 'settingsMaster') {
+                        normalizeMasterDropdowns();
+                        settings.autoSyncEnabled = settings.autoSyncEnabled !== false;
+                        settings.driveRootFolderName = String(settings.driveRootFolderName || 'LuxeHR Uploads').trim() || 'LuxeHR Uploads';
+                        changed = true;
+                        saveSettings();
+                    }
+                    if (moduleId === 'syncStorage') {
+                        const queue = getSyncQueue();
+                        if (!queue || typeof queue !== 'object') saveSyncQueue({ pending: false, lastReason: 'Queue dinormalisasi maintenance' });
+                        syncCoreSystemSheets();
+                        changed = true;
+                    }
+                    if (moduleId === 'mediaDrive') {
+                        requestAutoSyncAfterLocalSave('Maintenance meminta upload Drive pending');
+                        changed = true;
+                    }
+                    if (moduleId === 'payroll') {
+                        changed = false;
+                    }
+                    const result = analyzeMaintenanceModule(moduleId);
+                    const log = addMaintenanceLog(changed ? 'repair' : 'repair-check-only', moduleId, result);
+                    renderAllSelectors();
+                    renderActiveView();
+                    renderMaintenanceLastResult(log);
+                    showToast(changed ? `Repair ${module.label} selesai` : `Tidak ada perubahan aman untuk ${module.label}`, changed ? 'success' : 'warning');
+                });
+            }
+            function backupMaintenanceModule(moduleId) {
+                const module = getMaintenanceModule(moduleId);
+                if (!module) return;
+                const payload = {
+                    app: 'LuxeHR Premium',
+                    appVersion: APP_VERSION,
+                    moduleId: module.id,
+                    moduleLabel: module.label,
+                    exportedAt: new Date().toISOString(),
+                    storageKeys: module.storageKeys,
+                    sheetNames: module.sheetNames,
+                    data: module.data(),
+                    report: analyzeMaintenanceModule(moduleId)
+                };
+                downloadFile(`luxehr_maintenance_${module.id}_${todayKey()}.json`, JSON.stringify(payload, null, 2));
+                const log = addMaintenanceLog('backup', moduleId, payload.report);
+                renderMaintenance();
+                renderMaintenanceLastResult(log);
+                showToast(`Backup modul ${module.label} diunduh`, 'success');
+            }
+            async function syncMaintenanceModule(moduleId) {
+                const module = getMaintenanceModule(moduleId);
+                if (!module) return;
+                const report = analyzeMaintenanceModule(moduleId);
+                const log = addMaintenanceLog('sync-request', moduleId, report);
+                renderMaintenanceLastResult(log);
+                const jobs = getPrimaryCloudSyncJobs().filter(([sheetName]) => module.sheetNames.includes(sheetName));
+                if (!jobs.length) {
+                    showToast(`Tidak ada sheet khusus untuk ${module.label}`, 'warning');
+                    return;
+                }
+                let ok = 0;
+                let fail = 0;
+                for (const [sheetName, data] of jobs) {
+                    const result = await autoSyncToCloud(sheetName, data, true, { silent: false });
+                    if (result.ok) ok += 1;
+                    else fail += 1;
+                }
+                saveSyncMeta({ status: fail ? 'warning' : 'success', sheetName: module.label, mode: 'sectional-maintenance-sync', lastAttemptAt: new Date().toISOString(), lastSuccessAt: fail ? getSyncMeta().lastSuccessAt : new Date().toISOString(), lastError: fail ? `${fail} sheet gagal sync` : null, message: `Maintenance sync ${module.label}: ${ok} sukses, ${fail} gagal.` });
+                renderSyncStatus();
+                renderMaintenance();
+                showToast(`Sync ${module.label}: ${ok} sukses, ${fail} gagal`, fail ? 'warning' : 'success');
+            }
+            function exportMaintenanceReportCSV() {
+                const rows = [['Modul', 'Status', 'Record', 'Jumlah Temuan', 'Error', 'Warning', 'Dicek Pada'], ...getMaintenanceReportRows().map(item => [item.moduleLabel, item.status, item.recordCount, item.issueCount, item.errorCount, item.warningCount, item.checkedAt])];
+                downloadCSV(`maintenance_report_${todayKey()}.csv`, rows);
+                showToast('Report maintenance diunduh', 'success');
+            }
+            function exportMaintenanceLogCSV() {
+                const rows = [['ID', 'Action', 'Modul', 'Status', 'Record', 'Temuan', 'Error', 'Warning', 'Pesan', 'Waktu'], ...getMaintenanceLogSheetRows().map(log => [log.id, log.action, log.moduleLabel, log.status, log.recordCount, log.issueCount, log.errorCount, log.warningCount, log.message, log.createdAt])];
+                downloadCSV(`maintenance_log_${todayKey()}.csv`, rows);
+                showToast('Log maintenance diunduh', 'success');
+            }
+
+            function getAllLuxeHrLocalStorageKeys() {
+                const keys = [];
+                for (let i = 0; i < localStorage.length; i += 1) {
+                    const key = localStorage.key(i);
+                    if (!key) continue;
+                    if (key.startsWith('luxehr_') || key === META_KEY) keys.push(key);
+                }
+                return keys;
+            }
+            function resetLocalApplicationOnly() {
+                showConfirm('Restart ulang lokal akan menghapus seluruh data LuxeHR di browser ini dan reload aplikasi. Google Sheet tidak akan diubah. Lanjutkan?', () => {
+                    getAllLuxeHrLocalStorageKeys().forEach(key => localStorage.removeItem(key));
+                    showToast('Storage lokal dikosongkan. Aplikasi dimuat ulang.', 'warning');
+                    setTimeout(() => window.location.reload(), 700);
+                });
+            }
+            async function emptyAllApplicationData() {
+                showConfirm('Kosongkan seluruh data aplikasi? Data karyawan, absensi, cuti, shift, resign, blacklist, master, maintenance, dan pengaturan akan dikosongkan. Jika akses jaringan cloud aktif, Google Sheet juga akan ditimpa kosong. Lanjutkan?', async () => {
+                    const keepSheetId = settings.googleSheetId || '';
+                    const keepFolder = settings.driveRootFolderName || 'LuxeHR Uploads';
+                    const keepNetwork = settings.networkAccessEnabled === true;
+                    employees = [];
+                    attendance = [];
+                    leaves = [];
+                    shifts = [];
+                    shiftAssignments = [];
+                    resignRecords = [];
+                    blacklistRecords = [];
+                    maintenanceLogs = [];
+                    settings = {
+                        companyName: '',
+                        companyAddress: '',
+                        standardStartTime: '08:00',
+                        googleSheetId: keepSheetId,
+                        driveRootFolderName: keepFolder,
+                        branchOptions: [],
+                        employeeStatusOptions: [],
+                        offboardingFeatureInitialized: true,
+                        autoSyncEnabled: true,
+                        autoSyncIntervalSeconds: 60,
+                        networkAccessEnabled: keepNetwork,
+                        cloudFirstEnabled: true,
+                        realtimePullEnabled: true,
+                        realtimePullIntervalSeconds: REALTIME_PULL_DEFAULT_SECONDS
+                    };
+                    Object.values(STORAGE_KEYS).forEach(key => {
+                        try { localStorage.removeItem(key); localStorage.removeItem(getBackupKey(key)); } catch (error) {}
+                    });
+                    try { localStorage.removeItem(META_KEY); } catch (error) {}
+                    safeWrite(STORAGE_KEYS.employees, employees, Array.isArray);
+                    safeWrite(STORAGE_KEYS.attendance, attendance, Array.isArray);
+                    safeWrite(STORAGE_KEYS.leaves, leaves, Array.isArray);
+                    safeWrite(STORAGE_KEYS.shifts, shifts, Array.isArray);
+                    safeWrite(STORAGE_KEYS.shiftAssignments, shiftAssignments, Array.isArray);
+                    safeWrite(STORAGE_KEYS.resignRecords, resignRecords, Array.isArray);
+                    safeWrite(STORAGE_KEYS.blacklistRecords, blacklistRecords, Array.isArray);
+                    safeWrite(STORAGE_KEYS.maintenanceLogs, maintenanceLogs, Array.isArray);
+                    safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
+                    saveSyncQueue({ pending: false, nextRunAt: null, lastReason: 'Seluruh data dikosongkan', lastResult: 'reset-empty' });
+                    renderAllSelectors();
+                    renderActiveView();
+                    renderSettings();
+                    updateStorageStatus();
+                    if (isNetworkAccessEnabled()) {
+                        const result = await syncAllToCloud({ source: 'reset-empty', silent: false });
+                        if (result && result.ok) purgeSyncedLocalBusinessData({ silent: true, force: true });
+                    } else {
+                        showToast('Seluruh data lokal dikosongkan. Cloud tidak disentuh karena akses jaringan nonaktif.', 'warning');
+                    }
+                });
+            }
+
             function renderSettings() {
                 byId('companyName').value = settings.companyName || '';
                 byId('companyAddress').value = settings.companyAddress || '';
@@ -4150,8 +5362,19 @@ function setupLuxeHRSheets() {
                 byId('webAppUrl').value = GOOGLE_APPS_SCRIPT_URL;
                 const sheetInput = byId('googleSheetId');
                 if (sheetInput) sheetInput.value = settings.googleSheetId || '';
+                const driveInput = byId('driveRootFolderName');
+                if (driveInput) driveInput.value = settings.driveRootFolderName || 'LuxeHR Uploads';
+                const networkSelect = byId('networkAccessEnabled');
+                if (networkSelect) networkSelect.value = String(settings.networkAccessEnabled === true);
+                const cloudFirstSelect = byId('cloudFirstEnabled');
+                if (cloudFirstSelect) cloudFirstSelect.value = String(settings.cloudFirstEnabled !== false);
+                const realtimeSelect = byId('realtimePullEnabled');
+                if (realtimeSelect) realtimeSelect.value = String(settings.realtimePullEnabled !== false);
+                const intervalInput = byId('realtimePullIntervalSeconds');
+                if (intervalInput) intervalInput.value = Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS);
                 updateStorageStatus();
                 renderSyncStatus();
+                renderRealtimeStatus();
                 renderMasterDropdowns();
             }
             function handleSettingsSubmit(e) {
@@ -4161,11 +5384,16 @@ function setupLuxeHRSheets() {
                     companyAddress: byId('companyAddress').value.trim(),
                     standardStartTime: byId('standardStartTime').value || '08:00',
                     googleSheetId: byId('googleSheetId') ? byId('googleSheetId').value.trim() : (settings.googleSheetId || ''),
+                    driveRootFolderName: byId('driveRootFolderName') ? (byId('driveRootFolderName').value.trim() || 'LuxeHR Uploads') : (settings.driveRootFolderName || 'LuxeHR Uploads'),
                     branchOptions: settings.branchOptions || [],
                     employeeStatusOptions: Array.isArray(settings.employeeStatusOptions) ? settings.employeeStatusOptions : [],
                     offboardingFeatureInitialized: settings.offboardingFeatureInitialized || false,
                     autoSyncEnabled: settings.autoSyncEnabled !== false,
-                    autoSyncIntervalSeconds: Number(settings.autoSyncIntervalSeconds || 60)
+                    autoSyncIntervalSeconds: Number(settings.autoSyncIntervalSeconds || 60),
+                    networkAccessEnabled: byId('networkAccessEnabled') ? byId('networkAccessEnabled').value === 'true' : (settings.networkAccessEnabled === true),
+                    cloudFirstEnabled: byId('cloudFirstEnabled') ? byId('cloudFirstEnabled').value !== 'false' : (settings.cloudFirstEnabled !== false),
+                    realtimePullEnabled: byId('realtimePullEnabled') ? byId('realtimePullEnabled').value !== 'false' : (settings.realtimePullEnabled !== false),
+                    realtimePullIntervalSeconds: Number(byId('realtimePullIntervalSeconds')?.value || settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS)
                 };
                 saveSettings();
                 renderCompanyIdentity();
@@ -4175,9 +5403,20 @@ function setupLuxeHRSheets() {
             
             function saveIntegrationSettings() {
                 const sheetInput = byId('googleSheetId');
+                const driveInput = byId('driveRootFolderName');
+                const networkSelect = byId('networkAccessEnabled');
+                const cloudFirstSelect = byId('cloudFirstEnabled');
+                const realtimeSelect = byId('realtimePullEnabled');
+                const intervalInput = byId('realtimePullIntervalSeconds');
                 settings.googleSheetId = sheetInput ? sheetInput.value.trim() : '';
+                settings.driveRootFolderName = driveInput ? (driveInput.value.trim() || 'LuxeHR Uploads') : (settings.driveRootFolderName || 'LuxeHR Uploads');
+                settings.networkAccessEnabled = networkSelect ? networkSelect.value === 'true' : (settings.networkAccessEnabled === true);
+                settings.cloudFirstEnabled = cloudFirstSelect ? cloudFirstSelect.value !== 'false' : (settings.cloudFirstEnabled !== false);
+                settings.realtimePullEnabled = realtimeSelect ? realtimeSelect.value !== 'false' : (settings.realtimePullEnabled !== false);
+                settings.realtimePullIntervalSeconds = Math.max(REALTIME_PULL_MIN_SECONDS, Number(intervalInput?.value || settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS));
                 saveSettings();
-                showToast(settings.googleSheetId ? 'Spreadsheet ID berhasil disimpan dan dikirim ke Google Sheet' : 'Spreadsheet ID dikosongkan dan dikirim ke Google Sheet', settings.googleSheetId ? 'success' : 'warning');
+                startRealtimeCloudService();
+                showToast(settings.networkAccessEnabled === true ? 'Integrasi disimpan. Akses jaringan cloud aktif.' : 'Integrasi disimpan. Akses jaringan masih nonaktif agar Pratinjau tidak memunculkan izin jaringan.', settings.networkAccessEnabled === true ? 'success' : 'warning');
                 renderSettings();
             }
 
@@ -4259,6 +5498,7 @@ function setupLuxeHRSheets() {
                     shiftAssignments,
                     resignRecords,
                     blacklistRecords,
+                    maintenanceLogs,
                     settings,
                     masterDropdowns: {
                         branchOptions: settings.branchOptions || [],
@@ -4279,6 +5519,7 @@ function setupLuxeHRSheets() {
                 const shiftAssignmentBackup = readDirect(getBackupKey(STORAGE_KEYS.shiftAssignments));
                 const resignBackup = readDirect(getBackupKey(STORAGE_KEYS.resignRecords));
                 const blacklistBackup = readDirect(getBackupKey(STORAGE_KEYS.blacklistRecords));
+                const maintenanceBackup = readDirect(getBackupKey(STORAGE_KEYS.maintenanceLogs));
                 const settingsBackup = readDirect(getBackupKey(STORAGE_KEYS.settings));
                 if (!empBackup.ok || !empBackup.exists || !Array.isArray(empBackup.value)) {
                     showToast('Backup data karyawan belum tersedia', 'error');
@@ -4292,8 +5533,8 @@ function setupLuxeHRSheets() {
                     if (shiftAssignmentBackup.ok && Array.isArray(shiftAssignmentBackup.value)) shiftAssignments = shiftAssignmentBackup.value;
                     if (resignBackup.ok && Array.isArray(resignBackup.value)) resignRecords = resignBackup.value;
                     if (blacklistBackup.ok && Array.isArray(blacklistBackup.value)) blacklistRecords = blacklistBackup.value;
+                    if (maintenanceBackup.ok && Array.isArray(maintenanceBackup.value)) maintenanceLogs = maintenanceBackup.value;
                     if (settingsBackup.ok && settingsBackup.value && typeof settingsBackup.value === 'object') settings = settingsBackup.value;
-                    cleanLegacyDummyData({ persist: false });
                     migrateShiftData();
                     migrateOffboardingData();
                     normalizeMasterDropdowns();
@@ -4304,6 +5545,7 @@ function setupLuxeHRSheets() {
                     saveShiftAssignments();
                     saveResignRecords();
                     saveBlacklistRecords();
+                    saveMaintenanceLogs('Log maintenance direstore dari backup');
                     saveSettings();
                     renderCompanyIdentity();
                     renderAllSelectors();
@@ -4324,7 +5566,6 @@ function setupLuxeHRSheets() {
                 const shiftAssignmentMain = readDirect(STORAGE_KEYS.shiftAssignments);
                 const resignMain = readDirect(STORAGE_KEYS.resignRecords);
                 const blacklistMain = readDirect(STORAGE_KEYS.blacklistRecords);
-                const cleanupMeta = safeParse(localStorage.getItem(CLEANUP_META_KEY), null);
                 const mainStatus = empMain.ok && Array.isArray(empMain.value) ? `${empMain.value.length} karyawan` : 'data utama bermasalah';
                 const backupStatus = empBackup.ok && Array.isArray(empBackup.value) ? `${empBackup.value.length} karyawan` : 'backup belum tersedia';
                 const attendanceStatus = attMain.ok && Array.isArray(attMain.value) ? `${attMain.value.length} log absensi` : 'absensi bermasalah';
@@ -4333,6 +5574,8 @@ function setupLuxeHRSheets() {
                 const shiftAssignStatus = shiftAssignmentMain.ok && Array.isArray(shiftAssignmentMain.value) ? `${shiftAssignmentMain.value.length} assignment` : 'assignment shift bermasalah';
                 const resignStatus = resignMain.ok && Array.isArray(resignMain.value) ? `${resignMain.value.length} catatan resign` : 'resign bermasalah';
                 const blacklistStatus = blacklistMain.ok && Array.isArray(blacklistMain.value) ? `${blacklistMain.value.length} catatan blacklist` : 'blacklist bermasalah';
+                const maintenanceStatus = readDirect(STORAGE_KEYS.maintenanceLogs);
+                const maintenanceText = maintenanceStatus.ok && Array.isArray(maintenanceStatus.value) ? `${maintenanceStatus.value.length} log maintenance` : 'maintenance bermasalah';
                 const photoCount = employees.filter(emp => emp.photo).length;
                 const ktpCount = employees.filter(emp => emp.ktpImage).length;
                 const branchMasterCount = (settings.branchOptions || []).length;
@@ -4348,7 +5591,7 @@ function setupLuxeHRSheets() {
                         <p>Dokumen gambar: ${photoCount} foto / ${ktpCount} KTP</p>
                         <p>Backup terakhir: ${escapeHtml(backupStatus)}</p>
                         <p>Update lokal: ${escapeHtml(meta.updatedAt ? new Date(meta.updatedAt).toLocaleString('id-ID') : '-')}</p>
-                        <p>Pembersihan dummy: ${escapeHtml(cleanupMeta?.cleanedAt ? new Date(cleanupMeta.cleanedAt).toLocaleString('id-ID') : 'belum ada / tidak diperlukan')}</p>
+                        <p>Maintenance: ${escapeHtml(maintenanceText)}</p>
                         <p class="mt-1 ${storageRecovered ? 'text-yellow-400' : 'text-gray-500'}">${storageRecovered ? 'Sistem pernah memulihkan data dari backup.' : 'Storage lokal normal.'}</p>
                     </div></div>`;
                 renderSyncStatus();
@@ -4448,7 +5691,7 @@ function setupLuxeHRSheets() {
             }
 
             function runSelfTests() {
-                const requiredGlobals = ['openEmployeeModal', 'closeEmployeeModal', 'switchView', 'recordAttendance', 'setAttendanceDateToday', 'renderPayroll', 'copyAppScript', 'exportEmployeesCSV', 'downloadBackupJSON', 'restoreFromBackup', 'testGoogleSheetConnection', 'syncAllToCloud', 'runAutoSyncNow', 'copyWebAppUrl', 'openWebAppUrl', 'renderShiftView', 'resetShiftForm', 'exportShiftCSV', 'renderAttendanceHistory', 'exportAttendanceHistoryCSV', 'resetAttendanceHistoryFilters', 'deleteAttendanceHistory', 'cleanDummyDataManual', 'applyEmployeeImageFromUrl', 'clearEmployeeImage', 'openEmployeeDocuments', 'closeEmployeeDocumentsModal', 'resetBranchOptionForm', 'resetStatusOptionForm', 'editBranchOption', 'editStatusOption', 'deleteBranchOption', 'deleteStatusOption', 'openOffboardingModal', 'closeOffboardingModal', 'reactivateEmployee', 'deleteOffboardingRecord', 'renderOffboarding', 'exportOffboardingCSV'];
+                const requiredGlobals = ['openEmployeeModal', 'closeEmployeeModal', 'switchView', 'recordAttendance', 'setAttendanceDateToday', 'setAttendanceTimeNow', 'renderPayroll', 'copyAppScript', 'exportEmployeesCSV', 'downloadBackupJSON', 'restoreFromBackup', 'testGoogleSheetConnection', 'syncAllToCloud', 'runAutoSyncNow', 'copyWebAppUrl', 'openWebAppUrl', 'renderShiftView', 'resetShiftForm', 'openShiftManagementForEmployee', 'goToShiftManagementFromEmployeeModal', 'exportShiftCSV', 'renderAttendanceHistory', 'exportAttendanceHistoryCSV', 'resetAttendanceHistoryFilters', 'deleteAttendanceHistory', 'applyEmployeeImageFromUrl', 'clearEmployeeImage', 'openEmployeeDocuments', 'closeEmployeeDocumentsModal', 'resetBranchOptionForm', 'resetStatusOptionForm', 'editBranchOption', 'editStatusOption', 'deleteBranchOption', 'deleteStatusOption', 'openOffboardingModal', 'closeOffboardingModal', 'reactivateEmployee', 'deleteOffboardingRecord', 'renderOffboarding', 'exportOffboardingCSV', 'runMaintenanceCheck', 'repairMaintenanceModule', 'backupMaintenanceModule', 'syncMaintenanceModule', 'exportMaintenanceReportCSV', 'exportMaintenanceLogCSV'];
                 const missingGlobals = requiredGlobals.filter(name => typeof window[name] !== 'function');
                 console.assert(!missingGlobals.length, `Self-test failed: missing globals ${missingGlobals.join(', ')}`);
                 console.assert(Array.isArray(employees), 'Self-test failed: employees must be an array');
@@ -4491,7 +5734,7 @@ function setupLuxeHRSheets() {
                 });
                 if (suspiciousButtons.length) console.warn('Self-test warning: beberapa button tanpa id/onclick/submit terdeteksi', suspiciousButtons);
 
-                console.info(`LuxeHR ${APP_VERSION} self-tests completed. Premium dropdowns: ${selects.length}. Tombol dan handler utama terverifikasi.`);
+                console.info(`LuxeHR ${APP_VERSION} self-tests completed. Premium dropdowns: ${selects.length}. Tombol dan handler utama terverifikasi. Cloud-first: ${isCloudFirstEnabled()}.`);
             }
             function bindEvents() {
                 byId('toggleSidebarBtn').addEventListener('click', toggleSidebar);
@@ -4547,6 +5790,7 @@ function setupLuxeHRSheets() {
                     closeIdCardModal,
                     recordAttendance,
                     setAttendanceDateToday,
+                    setAttendanceTimeNow,
                     updateLeaveStatus,
                     deleteLeave,
                     renderPayroll,
@@ -4559,11 +5803,17 @@ function setupLuxeHRSheets() {
                     testGoogleSheetConnection,
                     syncAllToCloud,
                     runAutoSyncNow,
+                    pullCloudDataNow,
+                    purgeSyncedLocalBusinessData,
+                    resetLocalApplicationOnly,
+                    emptyAllApplicationData,
                     saveIntegrationSettings,
                     copyWebAppUrl,
                     openWebAppUrl,
                     renderShiftView,
                     resetShiftForm,
+                    openShiftManagementForEmployee,
+                    goToShiftManagementFromEmployeeModal,
                     editShift,
                     deleteShift,
                     deleteShiftAssignment,
@@ -4572,7 +5822,6 @@ function setupLuxeHRSheets() {
                     exportAttendanceHistoryCSV,
                     resetAttendanceHistoryFilters,
                     deleteAttendanceHistory,
-                    cleanDummyDataManual,
                     applyEmployeeImageFromUrl,
                     clearEmployeeImage,
                     openEmployeeDocuments,
@@ -4588,7 +5837,14 @@ function setupLuxeHRSheets() {
                     reactivateEmployee,
                     deleteOffboardingRecord,
                     renderOffboarding,
-                    exportOffboardingCSV
+                    exportOffboardingCSV,
+                    renderMaintenance,
+                    runMaintenanceCheck,
+                    repairMaintenanceModule,
+                    backupMaintenanceModule,
+                    syncMaintenanceModule,
+                    exportMaintenanceReportCSV,
+                    exportMaintenanceLogCSV
                 });
             }
 
@@ -4613,11 +5869,10 @@ function setupLuxeHRSheets() {
                 switchView('dashboard');
                 updateStorageStatus();
                 renderSyncStatus();
+                renderRealtimeStatus();
                 startAutoSyncService();
-                if (dummyCleanupPerformed) {
-                    const s = dummyCleanupSummary || {};
-                    showToast(`Data dummy dibersihkan: ${Number(s.removedEmployees || 0)} karyawan, ${Number(s.removedShifts || 0)} shift`, 'success');
-                } else if (storageRecovered) {
+                startRealtimeCloudService();
+                if (storageRecovered) {
                     showToast('Data dipulihkan dari backup lokal', 'success');
                 }
                 runSelfTests();
