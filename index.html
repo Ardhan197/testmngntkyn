@@ -2049,7 +2049,7 @@ function setupLuxeHRSheets() {
             // Masukkan URL Web App Google Apps Script Anda di dalam tanda kutip di bawah ini:
             const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUM-uaRnj_sftvEJKT6KSXM26x7dh_2rU9YaKRTlb18QHXMDkRg0nLwf4Z_R5k_Ipl-w/exec";
 
-            const APP_VERSION = '5.1.0-owner-custom-access-image-fix';
+            const APP_VERSION = '5.2.0-audit-sync-tombstone-localdate-image-fix';
             const PAYROLL_MONTH_DAYS = 30;
             const STANDARD_WORKDAY_HOURS = 12;
             const STANDARD_WORKDAY_MINUTES = STANDARD_WORKDAY_HOURS * 60;
@@ -3001,7 +3001,17 @@ function setupLuxeHRSheets() {
                 requestAutoSyncAfterLocalSave('Pengaturan aplikasi disimpan');
             }
 
-            function todayKey() { return new Date().toISOString().slice(0, 10); }
+            function localDateKey(date = new Date()) {
+                const d = date instanceof Date ? date : new Date(date);
+                if (!Number.isFinite(d.getTime())) return localDateKey(new Date());
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            }
+            function localMonthKey(date = new Date()) {
+                const d = date instanceof Date ? date : new Date(date);
+                if (!Number.isFinite(d.getTime())) return localMonthKey(new Date());
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            }
+            function todayKey() { return localDateKey(); }
             function isValidDateKey(value) { return /^\d{4}-\d{2}-\d{2}$/.test(String(value || '')); }
             function formatDateKeyLong(dateKey) {
                 const safeDate = isValidDateKey(dateKey) ? dateKey : todayKey();
@@ -3471,6 +3481,7 @@ function setupLuxeHRSheets() {
                 const preview = byId(isPhoto ? 'empPhotoPreview' : 'empKtpPreview');
                 if (!hidden || !preview) return;
                 hidden.value = isImagePlaceholder(value) ? '' : String(value || '');
+                delete preview.dataset.fallbackApplied;
                 preview.src = normalizeImageSource(value, isPhoto ? defaultPhoto : defaultKtpPreview, { size: isPhoto ? 900 : 1600 });
                 preview.dataset.imageKind = isPhoto ? 'photo' : 'ktp';
                 preview.alt = isPhoto ? 'Preview Foto Karyawan' : 'Preview Gambar KTP';
@@ -3488,6 +3499,9 @@ function setupLuxeHRSheets() {
                     const img = event.target;
                     if (img && img.tagName === 'IMG') handleImageLoadError(img);
                 }, true);
+            }
+            function runAuditPatchNotice() {
+                console.info(`[LuxeHR Audit] ${APP_VERSION}: local date, strict delete tombstone, employee timestamp, and image fallback guards active.`);
             }
             function clearEmployeeImage(type) {
                 const isPhoto = type === 'photo';
@@ -4207,9 +4221,14 @@ function setupLuxeHRSheets() {
                     const key = String(cloudSheetRecordKey(sheetName, row));
                     const marker = markerMap.get(key);
                     if (!marker) return true;
-                    const rowVersion = recordVersionTime(row);
                     const markerVersion = recordVersionTime(marker);
-                    return rowVersion > markerVersion;
+                    const restoreCandidates = [row.restoredAt, row.recoveredAt, row.recreatedAt, row.reactivatedAt].filter(Boolean);
+                    const restoreTime = restoreCandidates
+                        .map(item => new Date(item).getTime())
+                        .filter(Number.isFinite)
+                        .sort((a, b) => b - a)[0] || 0;
+                    if (restoreTime > markerVersion && row.isDeleted !== true && row.tombstone !== true) return true;
+                    return false;
                 });
             }
             function applyDeleteMarkersToMemory() {
@@ -5332,12 +5351,13 @@ function setupLuxeHRSheets() {
                     showToast('NIK sudah digunakan', 'error');
                     return;
                 }
+                const nowIso = new Date().toISOString();
                 if (id) {
-                    employees = employees.map(emp => String(emp.id) === String(id) ? { ...emp, ...data, id: emp.id } : emp);
+                    employees = employees.map(emp => String(emp.id) === String(id) ? { ...emp, ...data, id: emp.id, createdAt: emp.createdAt || nowIso, updatedAt: nowIso } : emp);
                     showToast('Data karyawan berhasil diperbarui', 'success');
                 } else {
                     newlyCreatedEmployeeId = Date.now();
-                    employees.unshift({ id: newlyCreatedEmployeeId, ...data });
+                    employees.unshift({ id: newlyCreatedEmployeeId, ...data, createdAt: nowIso, updatedAt: nowIso });
                     showToast('Karyawan baru berhasil ditambahkan. Silakan atur shift di halaman Shift.', 'success');
                 }
                 try {
@@ -5441,10 +5461,11 @@ function setupLuxeHRSheets() {
                 const record = buildOffboardingRecord(emp, type, effectiveDate, reason, level);
                 employees = employees.map(item => {
                     if (String(item.id) !== String(id)) return item;
+                    const nowIso = new Date().toISOString();
                     if (type === 'blacklist') {
-                        return { ...item, status: 'Blacklist', blacklistDate: effectiveDate, blacklistReason: reason, blacklistLevel: level };
+                        return { ...item, status: 'Blacklist', blacklistDate: effectiveDate, blacklistReason: reason, blacklistLevel: level, updatedAt: nowIso };
                     }
-                    return { ...item, status: 'Resign', resignDate: effectiveDate, resignReason: reason };
+                    return { ...item, status: 'Resign', resignDate: effectiveDate, resignReason: reason, updatedAt: nowIso };
                 });
                 if (type === 'blacklist') blacklistRecords.unshift(record);
                 else resignRecords.unshift(record);
@@ -7278,7 +7299,7 @@ function setupLuxeHRSheets() {
                 byId('leaveEnd').value = todayKey();
                 byId('shiftAssignStart').value = todayKey();
                 resetShiftForm();
-                byId('payrollMonth').value = new Date().toISOString().slice(0, 7);
+                byId('payrollMonth').value = localMonthKey();
                 setMoneyInputValue('deductionPerDay', parseMoneyValue(byId('deductionPerDay').value || 50000));
                 setMoneyInputValue('fixedAllowance', parseMoneyValue(byId('fixedAllowance').value || 0));
                 resetAttendanceHistoryFilters();
@@ -7293,6 +7314,7 @@ function setupLuxeHRSheets() {
                     showToast('Data dipulihkan dari backup lokal', 'success');
                 }
                 runSelfTests();
+                runAuditPatchNotice();
             });
         })();
     
