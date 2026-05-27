@@ -1043,7 +1043,7 @@
                     <p class="text-[10px] text-gray-500 mb-4">Script cerdas realtime cloud-first: mendukung full sync batch, read-all cloud pull, upload Google Drive, delete tombstone, serta mode multi-user berbasis Google Sheet sebagai sumber data utama.</p>
                     <textarea id="appScriptTemplate" class="field min-h-[420px] font-mono text-[10px] leading-relaxed resize-y bg-surface-100/80 cursor-text" readonly spellcheck="false">
 /**
- * LuxeHR Premium - Google Sheet + Google Drive Connector v2.13
+ * LuxeHR Premium - Google Sheet + Google Drive Connector v2.14
  *
  * WAJIB DIPAKAI untuk LuxeHR v5.0.0 ke atas.
  * Versi ini mendukung:
@@ -1080,7 +1080,7 @@
  */
 const DEFAULT_SPREADSHEET_ID = &#x27;GANTI_DENGAN_ID_SPREADSHEET_ANDA&#x27;;
 const DEFAULT_DRIVE_ROOT_FOLDER_NAME = &#x27;LuxeHR Uploads&#x27;;
-const LUXEHR_CONNECTOR_VERSION = &#x27;2.13.0-login-rbac-self-service&#x27;;
+const LUXEHR_CONNECTOR_VERSION = &#x27;2.14.0-owner-custom-access-image-fix&#x27;;
 const LUXEHR_HEADER_BG = &#x27;#D4AF37&#x27;;
 const LUXEHR_HEADER_FG = &#x27;#FFFFFF&#x27;;
 
@@ -1558,7 +1558,8 @@ function uploadOneDriveFile(rootFolder, upload) {
     sizeKb: Math.round(bytes.length / 1024),
     fileId: file.getId(),
     fileUrl: file.getUrl(),
-    downloadUrl: &#x27;https://drive.google.com/uc?id=&#x27; + file.getId(),
+    downloadUrl: &#x27;https://drive.google.com/uc?export=view&amp;id=&#x27; + file.getId(),
+    thumbnailUrl: &#x27;https://drive.google.com/thumbnail?id=&#x27; + file.getId() + &#x27;&amp;sz=w1600&#x27;,
     folderId: folder.getId(),
     folderName: subFolderName,
     rootFolderName: rootFolder.getName(),
@@ -1605,6 +1606,7 @@ function applyDriveUploadResultsToJobs(jobs, uploadResults) {
           row.photoDriveUrl = file.fileUrl;
           row.photoDriveFileId = file.fileId;
           row.photoDriveDownloadUrl = file.downloadUrl;
+          row.photoDriveThumbnailUrl = file.thumbnailUrl || file.downloadUrl;
           row.photoDriveHash = file.dataHash;
           row.photoDriveSyncedAt = file.uploadedAt;
           row.photo = file.fileUrl;
@@ -1613,6 +1615,7 @@ function applyDriveUploadResultsToJobs(jobs, uploadResults) {
           row.ktpDriveUrl = file.fileUrl;
           row.ktpDriveFileId = file.fileId;
           row.ktpDriveDownloadUrl = file.downloadUrl;
+          row.ktpDriveThumbnailUrl = file.thumbnailUrl || file.downloadUrl;
           row.ktpDriveHash = file.dataHash;
           row.ktpDriveSyncedAt = file.uploadedAt;
           row.ktpImage = file.fileUrl;
@@ -1723,7 +1726,7 @@ function doPost(e) {
     result.driveUploads = uploadResults;
     return jsonOutput(result);
   } catch (error) {
-    return jsonOutput({ status: &#x27;error&#x27;, message: error &amp;&amp; error.message ? error.message : String(error), hint: &#x27;Pastikan DEFAULT_SPREADSHEET_ID benar, deployment Web App sudah versi terbaru, akses Web App = Anyone, izin DriveApp sudah diberikan, dan Anda memakai template LuxeHR Connector v2.12.&#x27;, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: nowIso(), stack: error &amp;&amp; error.stack ? error.stack : &#x27;&#x27; });
+    return jsonOutput({ status: &#x27;error&#x27;, message: error &amp;&amp; error.message ? error.message : String(error), hint: &#x27;Pastikan DEFAULT_SPREADSHEET_ID benar, deployment Web App sudah versi terbaru, akses Web App = Anyone, izin DriveApp sudah diberikan, dan Anda memakai template LuxeHR Connector v2.14.&#x27;, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: nowIso(), stack: error &amp;&amp; error.stack ? error.stack : &#x27;&#x27; });
   }
 }
 
@@ -1784,7 +1787,7 @@ function setupLuxeHRSheets() {
                 <div>
                     <p class="text-[10px] uppercase tracking-[0.25em] text-gold-500 mb-1">Login & Role Based Access Control</p>
                     <h2 class="text-xl md:text-2xl font-serif font-bold text-white tracking-wide">Hak Akses Pengguna</h2>
-                    <p class="text-[10px] text-gray-500 mt-1 max-w-2xl">Owner dapat membuat akun, memilih role, menghubungkan akun karyawan ke data master, dan membatasi modul yang boleh dibuka. Role Karyawan otomatis hanya melihat data dirinya sendiri.</p>
+                    <p class="text-[10px] text-gray-500 mt-1 max-w-2xl">Owner dapat membuat akun, memilih role sebagai template awal, lalu menentukan sendiri fitur/aksi apa saja yang boleh dipakai setiap user. Role Karyawan tetap self-only sehingga hanya melihat data dirinya sendiri.</p>
                 </div>
                 <button type="button" onclick="resetAccountForm()" class="bg-gold-500 text-surface-400 hover:bg-gold-400 font-bold uppercase tracking-widest py-2.5 px-4 text-[10px] rounded-lg transition-all shadow-gold-glow"><i class="fa-solid fa-plus mr-1.5"></i> Akun Baru</button>
             </div>
@@ -1874,7 +1877,7 @@ function setupLuxeHRSheets() {
                             </div>
                             <div class="flex flex-col md:flex-row gap-3">
                                 <div class="w-full md:w-32 flex-shrink-0">
-                                    <img id="empPhotoPreview" src="" alt="Preview Foto Karyawan" class="w-full h-32 rounded-xl object-cover border border-gold-500/30 bg-surface-100">
+                                    <img id="empPhotoPreview" src="" data-image-kind="photo" alt="Preview Foto Karyawan" class="w-full h-32 rounded-xl object-cover border border-gold-500/30 bg-surface-100">
                                 </div>
                                 <div class="flex-1 space-y-2 min-w-0">
                                     <div>
@@ -1900,7 +1903,7 @@ function setupLuxeHRSheets() {
                             </div>
                             <div class="flex flex-col md:flex-row gap-3">
                                 <div class="w-full md:w-44 flex-shrink-0">
-                                    <img id="empKtpPreview" src="" alt="Preview Gambar KTP" class="w-full h-32 rounded-xl object-cover border border-gold-500/30 bg-surface-100">
+                                    <img id="empKtpPreview" src="" data-image-kind="ktp" alt="Preview Gambar KTP" class="w-full h-32 rounded-xl object-cover border border-gold-500/30 bg-surface-100">
                                 </div>
                                 <div class="flex-1 space-y-2 min-w-0">
                                     <div>
@@ -1939,7 +1942,7 @@ function setupLuxeHRSheets() {
                 <div class="w-full max-w-[280px] rounded-2xl overflow-hidden border border-gold-500/30 bg-gradient-to-br from-surface-100 to-surface-400 shadow-gold-glow">
                     <div class="p-4 border-b border-white/10 flex items-center justify-between"><div><p class="text-[9px] text-gold-500 uppercase tracking-[0.22em]">Employee Pass</p><h4 class="font-serif font-bold text-white text-lg">LuxeHR</h4></div><i class="fa-solid fa-crown text-gold-500 text-xl"></i></div>
                     <div class="p-5 text-center">
-                        <img id="idCardPhoto" src="" class="w-20 h-20 rounded-full mx-auto object-cover border-2 border-gold-500/60 mb-3" alt="Foto Karyawan">
+                        <img id="idCardPhoto" src="" data-image-kind="photo" class="w-20 h-20 rounded-full mx-auto object-cover border-2 border-gold-500/60 mb-3" alt="Foto Karyawan">
                         <h4 id="idCardName" class="font-serif font-bold text-white text-lg"></h4>
                         <p id="idCardPosition" class="text-gold-500 text-[10px] uppercase tracking-widest mt-1"></p>
                         <p id="idCardNik" class="text-gray-400 text-[10px] mt-1 font-mono"></p>
@@ -1964,11 +1967,11 @@ function setupLuxeHRSheets() {
             <div class="p-5 overflow-y-auto grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div class="premium-card rounded-xl p-4">
                     <div class="flex items-center justify-between mb-3"><h4 class="font-serif font-bold text-white text-base">Foto Karyawan</h4><i class="fa-solid fa-camera text-gold-500"></i></div>
-                    <img id="employeeDocumentsPhoto" src="" alt="Foto Karyawan" class="w-full max-h-[420px] rounded-xl object-contain border border-white/10 bg-surface-100">
+                    <img id="employeeDocumentsPhoto" src="" data-image-kind="photo" alt="Foto Karyawan" class="w-full max-h-[420px] rounded-xl object-contain border border-white/10 bg-surface-100">
                 </div>
                 <div class="premium-card rounded-xl p-4">
                     <div class="flex items-center justify-between mb-3"><h4 class="font-serif font-bold text-white text-base">Gambar Identitas KTP</h4><i class="fa-solid fa-address-card text-gold-500"></i></div>
-                    <img id="employeeDocumentsKtp" src="" alt="Gambar KTP" class="w-full max-h-[420px] rounded-xl object-contain border border-white/10 bg-surface-100">
+                    <img id="employeeDocumentsKtp" src="" data-image-kind="ktp" alt="Gambar KTP" class="w-full max-h-[420px] rounded-xl object-contain border border-white/10 bg-surface-100">
                     <p id="employeeDocumentsKtpNote" class="text-[10px] text-gray-500 mt-3 leading-relaxed"></p>
                 </div>
             </div>
@@ -2046,7 +2049,7 @@ function setupLuxeHRSheets() {
             // Masukkan URL Web App Google Apps Script Anda di dalam tanda kutip di bawah ini:
             const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUM-uaRnj_sftvEJKT6KSXM26x7dh_2rU9YaKRTlb18QHXMDkRg0nLwf4Z_R5k_Ipl-w/exec";
 
-            const APP_VERSION = '5.0.0-login-rbac-self-service';
+            const APP_VERSION = '5.1.0-owner-custom-access-image-fix';
             const PAYROLL_MONTH_DAYS = 30;
             const STANDARD_WORKDAY_HOURS = 12;
             const STANDARD_WORKDAY_MINUTES = STANDARD_WORKDAY_HOURS * 60;
@@ -2853,12 +2856,20 @@ function setupLuxeHRSheets() {
                 let changed = false;
                 employees = employees.map(emp => {
                     const next = { ...emp };
-                    if (typeof next.photo === 'undefined' || next.photo === null) {
+                    if (typeof next.photo === 'undefined' || next.photo === null || isImagePlaceholder(next.photo)) {
                         next.photo = '';
                         changed = true;
                     }
-                    if (typeof next.ktpImage === 'undefined' || next.ktpImage === null) {
+                    if (typeof next.ktpImage === 'undefined' || next.ktpImage === null || isImagePlaceholder(next.ktpImage)) {
                         next.ktpImage = '';
+                        changed = true;
+                    }
+                    if (!next.photoDriveThumbnailUrl && extractGoogleDriveFileId(next.photoDriveDownloadUrl || next.photoDriveUrl || next.photoDriveFileId)) {
+                        next.photoDriveThumbnailUrl = normalizeImageSource(next.photoDriveDownloadUrl || next.photoDriveUrl || next.photoDriveFileId, '');
+                        changed = true;
+                    }
+                    if (!next.ktpDriveThumbnailUrl && extractGoogleDriveFileId(next.ktpDriveDownloadUrl || next.ktpDriveUrl || next.ktpDriveFileId)) {
+                        next.ktpDriveThumbnailUrl = normalizeImageSource(next.ktpDriveDownloadUrl || next.ktpDriveUrl || next.ktpDriveFileId, '');
                         changed = true;
                     }
                     return next;
@@ -3029,32 +3040,44 @@ function setupLuxeHRSheets() {
 
             function passwordHash(password) { return `fnv1a:${hashString(`luxehr-password|${String(password || '')}`)}`; }
             function getDefaultAccessPermissions(role = 'employee') {
-                if (role === 'owner') return ['dashboard','employees','attendance','attendanceHistory','shift','leave','payroll','offboarding','maintenance','settings','access','manageEmployees','manageAttendance','manageShift','manageLeave','managePayroll','manageOffboarding','manageMaintenance','manageSettings','manageAccess','exportData','resetData'];
+                if (role === 'owner') return getPermissionCatalog().map(item => item.key);
                 if (role === 'admin') return ['dashboard','employees','attendance','attendanceHistory','shift','leave','payroll','offboarding','maintenance','settings','manageEmployees','manageAttendance','manageShift','manageLeave','managePayroll','manageOffboarding','manageMaintenance','manageSettings','exportData'];
                 if (role === 'supervisor') return ['dashboard','employees','attendance','attendanceHistory','shift','leave','payroll','manageAttendance','manageLeave','exportData'];
                 return ['dashboard','employees','attendance','attendanceHistory','leave','payroll','selfOnly'];
             }
             function getPermissionCatalog() {
                 return [
-                    { key: 'dashboard', label: 'Dashboard' },
-                    { key: 'employees', label: 'Data Karyawan' },
-                    { key: 'attendance', label: 'Absensi' },
-                    { key: 'attendanceHistory', label: 'Histori Absensi' },
-                    { key: 'shift', label: 'Shift' },
-                    { key: 'leave', label: 'Cuti/Izin' },
-                    { key: 'payroll', label: 'Payroll' },
-                    { key: 'offboarding', label: 'Resign/Blacklist' },
-                    { key: 'maintenance', label: 'Maintenance' },
-                    { key: 'settings', label: 'Pengaturan' },
-                    { key: 'access', label: 'Hak Akses' },
-                    { key: 'exportData', label: 'Export Data' },
-                    { key: 'resetData', label: 'Reset/Kosongkan Data' }
+                    { key: 'dashboard', label: 'Dashboard', group: 'Modul yang Bisa Dibuka', desc: 'Melihat ringkasan aplikasi.' },
+                    { key: 'employees', label: 'Data Karyawan', group: 'Modul yang Bisa Dibuka', desc: 'Membuka halaman data karyawan.' },
+                    { key: 'attendance', label: 'Absensi', group: 'Modul yang Bisa Dibuka', desc: 'Membuka halaman input absensi.' },
+                    { key: 'attendanceHistory', label: 'Histori Absensi', group: 'Modul yang Bisa Dibuka', desc: 'Membuka arsip absensi.' },
+                    { key: 'shift', label: 'Shift', group: 'Modul yang Bisa Dibuka', desc: 'Membuka manajemen shift.' },
+                    { key: 'leave', label: 'Cuti/Izin', group: 'Modul yang Bisa Dibuka', desc: 'Membuka pengajuan cuti/izin.' },
+                    { key: 'payroll', label: 'Payroll', group: 'Modul yang Bisa Dibuka', desc: 'Membuka slip/rekap payroll.' },
+                    { key: 'offboarding', label: 'Resign/Blacklist', group: 'Modul yang Bisa Dibuka', desc: 'Membuka catatan resign dan blacklist.' },
+                    { key: 'maintenance', label: 'Maintenance', group: 'Modul yang Bisa Dibuka', desc: 'Membuka pemeriksaan/perbaikan data.' },
+                    { key: 'settings', label: 'Pengaturan', group: 'Modul yang Bisa Dibuka', desc: 'Membuka pengaturan aplikasi dan integrasi.' },
+                    { key: 'access', label: 'Hak Akses', group: 'Modul yang Bisa Dibuka', desc: 'Membuka pengelolaan akun.' },
+                    { key: 'manageEmployees', label: 'Tambah/Edit/Hapus Karyawan', group: 'Aksi Pengelolaan', desc: 'Mengelola master data karyawan.' },
+                    { key: 'manageAttendance', label: 'Kelola Absensi', group: 'Aksi Pengelolaan', desc: 'Input, koreksi, dan hapus absensi.' },
+                    { key: 'manageShift', label: 'Kelola Shift', group: 'Aksi Pengelolaan', desc: 'Tambah/edit/hapus shift dan assignment.' },
+                    { key: 'manageLeave', label: 'Kelola Cuti/Izin', group: 'Aksi Pengelolaan', desc: 'Membuat, menyetujui, menolak, atau menghapus pengajuan.' },
+                    { key: 'managePayroll', label: 'Kelola Payroll', group: 'Aksi Pengelolaan', desc: 'Menghitung dan mengakses proses payroll.' },
+                    { key: 'manageOffboarding', label: 'Kelola Resign/Blacklist', group: 'Aksi Pengelolaan', desc: 'Memproses resign, blacklist, dan aktivasi ulang.' },
+                    { key: 'manageMaintenance', label: 'Kelola Maintenance', group: 'Aksi Pengelolaan', desc: 'Menjalankan check, backup, sync, dan repair modul.' },
+                    { key: 'manageSettings', label: 'Kelola Pengaturan', group: 'Aksi Pengelolaan', desc: 'Mengubah identitas perusahaan, integrasi, cabang, dan status.' },
+                    { key: 'manageAccess', label: 'Kelola Hak Akses', group: 'Aksi Pengelolaan', desc: 'Membuat akun dan menentukan fitur user.' },
+                    { key: 'exportData', label: 'Export Data', group: 'Aksi Data', desc: 'Mengunduh CSV/backup laporan.' },
+                    { key: 'resetData', label: 'Reset/Kosongkan Data', group: 'Aksi Data', desc: 'Reset lokal atau kosongkan seluruh data.' },
+                    { key: 'selfOnly', label: 'Hanya Data Diri Sendiri', group: 'Ruang Lingkup Data', desc: 'Wajib untuk role Karyawan; data lain otomatis disembunyikan.' }
                 ];
             }
             function normalizeAccount(account = {}) {
                 const role = ['owner','admin','supervisor','employee'].includes(String(account.role || '').toLowerCase()) ? String(account.role).toLowerCase() : 'employee';
                 const id = String(account.id || `usr_${Date.now()}_${Math.floor(Math.random() * 9999)}`);
-                const permissions = Array.isArray(account.permissions) && account.permissions.length ? account.permissions : getDefaultAccessPermissions(role);
+                let permissions = Array.isArray(account.permissions) && account.permissions.length ? account.permissions : getDefaultAccessPermissions(role);
+                if (role === 'owner') permissions = getDefaultAccessPermissions('owner');
+                if (role === 'employee') permissions = uniqueTextList([...permissions, 'selfOnly']);
                 return {
                     id,
                     username: String(account.username || '').trim(),
@@ -3202,17 +3225,38 @@ function setupLuxeHRSheets() {
                     const nav = byId(`nav-${view}`);
                     if (nav) nav.classList.toggle('hidden', !canAccessView(view));
                 });
+                document.querySelectorAll('[onclick="openEmployeeModal()"]').forEach(el => el.classList.toggle('hidden', !hasPermission('manageEmployees')));
+                document.querySelectorAll('[onclick*="export"]').forEach(el => el.classList.toggle('hidden', !hasPermission('exportData')));
+                document.querySelectorAll('[onclick*="emptyAllApplicationData"], [onclick*="resetLocalApplicationOnly"]').forEach(el => el.classList.toggle('hidden', !hasPermission('resetData')));
             }
             function renderAccountPermissionGrid(selected = []) {
                 const grid = byId('accountPermissionGrid');
                 if (!grid) return;
                 const role = byId('accountRole')?.value || 'employee';
-                const perms = selected.length ? selected : getDefaultAccessPermissions(role);
-                grid.innerHTML = getPermissionCatalog().map(item => {
-                    const checked = perms.includes(item.key) || role === 'owner' ? 'checked' : '';
-                    const disabled = role === 'owner' || role === 'employee' ? 'disabled' : '';
-                    return `<label class="flex items-center gap-2 p-2 rounded-lg bg-surface-100 border border-white/5 ${disabled ? 'opacity-70' : ''}"><input type="checkbox" class="account-permission" value="${escapeHtml(item.key)}" ${checked} ${disabled}> <span>${escapeHtml(item.label)}</span></label>`;
+                const basePerms = selected.length ? selected : getDefaultAccessPermissions(role);
+                const perms = role === 'employee' ? uniqueTextList([...basePerms, 'selfOnly']) : uniqueTextList(basePerms);
+                const catalog = getPermissionCatalog();
+                const groups = [...new Set(catalog.map(item => item.group || 'Hak Akses'))];
+                grid.innerHTML = groups.map(group => {
+                    const items = catalog.filter(item => (item.group || 'Hak Akses') === group);
+                    return `<div class="md:col-span-2 rounded-xl border border-white/5 bg-surface-100/50 p-3">
+                        <p class="text-[9px] uppercase tracking-[0.18em] text-gold-500 mb-2">${escapeHtml(group)}</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${items.map(item => {
+                            const isOwnerLock = role === 'owner';
+                            const isEmployeeSelfLock = role === 'employee' && item.key === 'selfOnly';
+                            const checked = perms.includes(item.key) || isOwnerLock || isEmployeeSelfLock ? 'checked' : '';
+                            const disabled = isOwnerLock || isEmployeeSelfLock ? 'disabled' : '';
+                            return `<label class="flex items-start gap-2 p-2 rounded-lg bg-surface-200 border border-white/5 ${disabled ? 'opacity-80' : 'hover:border-gold-500/30'} transition-all">
+                                <input type="checkbox" class="account-permission mt-0.5" value="${escapeHtml(item.key)}" ${checked} ${disabled}>
+                                <span><span class="block text-gray-200">${escapeHtml(item.label)}</span><small class="block text-gray-500 leading-relaxed mt-0.5">${escapeHtml(item.desc || '')}</small></span>
+                            </label>`;
+                        }).join('')}</div>
+                    </div>`;
                 }).join('');
+                const hint = document.createElement('div');
+                hint.className = 'md:col-span-2 p-3 rounded-lg bg-gold-500/10 border border-gold-500/20 text-gold-500 text-[10px] leading-relaxed';
+                hint.innerHTML = '<i class="fa-solid fa-key mr-1"></i>Role hanya template awal. Owner tetap bisa centang fitur satu per satu. Khusus Owner selalu semua akses, khusus Karyawan selalu self-only.';
+                grid.appendChild(hint);
             }
             function renderAccountEmployeeOptions() {
                 const select = byId('accountEmployeeId');
@@ -3235,8 +3279,9 @@ function setupLuxeHRSheets() {
             }
             function getAccountFormPermissions() {
                 const role = byId('accountRole')?.value || 'employee';
-                if (role === 'owner' || role === 'employee') return getDefaultAccessPermissions(role);
-                return [...document.querySelectorAll('.account-permission:checked')].map(el => el.value);
+                if (role === 'owner') return getDefaultAccessPermissions('owner');
+                const selected = [...document.querySelectorAll('.account-permission:checked')].map(el => el.value);
+                return role === 'employee' ? uniqueTextList([...selected, 'selfOnly']) : uniqueTextList(selected);
             }
             function handleAccountAccessSubmit(event) {
                 event.preventDefault();
@@ -3335,7 +3380,10 @@ function setupLuxeHRSheets() {
                 if (!table) return;
                 table.innerHTML = accounts.map(account => {
                     const emp = account.employeeId ? getEmployee(account.employeeId) : null;
-                    const perms = account.role === 'owner' ? 'Semua modul' : (account.role === 'employee' ? 'Self-service' : `${(account.permissions || []).filter(p => getPermissionCatalog().some(item => item.key === p)).length} modul`);
+                    const selectedPerms = (account.permissions || []).filter(p => getPermissionCatalog().some(item => item.key === p));
+                    const moduleCount = selectedPerms.filter(p => ['dashboard','employees','attendance','attendanceHistory','shift','leave','payroll','offboarding','maintenance','settings','access'].includes(p)).length;
+                    const actionCount = selectedPerms.length - moduleCount - (selectedPerms.includes('selfOnly') ? 1 : 0);
+                    const perms = account.role === 'owner' ? 'Semua fitur' : `${moduleCount} modul • ${actionCount} aksi${selectedPerms.includes('selfOnly') ? ' • Self-only' : ''}`;
                     return `<tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4"><p class="text-white text-[11px] font-medium">${escapeHtml(account.displayName || account.username)}</p><p class="text-gray-500 text-[9px] font-mono">${escapeHtml(account.username)}</p></td><td class="py-3 px-4 text-gold-500 text-[10px] uppercase tracking-widest">${escapeHtml(formatRoleLabel(account.role))}</td><td class="py-3 px-4 text-gray-400 text-[10px]">${emp ? `${escapeHtml(emp.name)}<br><span class="text-gray-600 font-mono">${escapeHtml(emp.nik)}</span>` : '-'}</td><td class="py-3 px-4">${getStatusBadge(account.isActive ? 'Aktif' : 'Nonaktif')}</td><td class="py-3 px-4 text-gray-400 text-[10px]">${escapeHtml(perms)}</td><td class="py-3 px-4 text-right"><div class="inline-flex gap-1"><button type="button" onclick="editUserAccount('${escapeHtml(account.id)}')" class="btn-icon hover:text-white hover:border-white/30" title="Edit"><i class="fa-solid fa-pen text-[10px]"></i></button><button type="button" onclick="toggleUserAccountStatus('${escapeHtml(account.id)}')" class="btn-icon hover:text-yellow-300 hover:border-yellow-500/30" title="Aktif/Nonaktif"><i class="fa-solid fa-power-off text-[10px]"></i></button><button type="button" onclick="deleteUserAccount('${escapeHtml(account.id)}')" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Hapus"><i class="fa-solid fa-trash-can text-[10px]"></i></button></div></td></tr>`;
                 }).join('') || `<tr><td colspan="6" class="py-10 text-center text-gray-500 italic">Belum ada akun.</td></tr>`;
                 setupPremiumSelects(byId('accessView'));
@@ -3344,6 +3392,41 @@ function setupLuxeHRSheets() {
 
 
             function isDataUrl(value) { return /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(String(value || '')); }
+            function isImagePlaceholder(value) {
+                const text = String(value || '').trim();
+                if (!text) return true;
+                if (/^\[(FOTO|KTP).*MENUNGGU UPLOAD GOOGLE DRIVE\]$/i.test(text)) return true;
+                return ['-', 'null', 'undefined', 'kosong'].includes(text.toLowerCase());
+            }
+            function extractGoogleDriveFileId(value) {
+                const text = String(value || '').trim();
+                if (!text) return '';
+                const decoded = (() => { try { return decodeURIComponent(text); } catch (error) { return text; } })();
+                const patterns = [
+                    /\/file\/d\/([a-zA-Z0-9_-]{20,})/,
+                    /[?&]id=([a-zA-Z0-9_-]{20,})/,
+                    /\/d\/([a-zA-Z0-9_-]{20,})/,
+                    /\/thumbnail\?id=([a-zA-Z0-9_-]{20,})/
+                ];
+                for (const pattern of patterns) {
+                    const match = decoded.match(pattern);
+                    if (match && match[1]) return match[1];
+                }
+                if (/^[a-zA-Z0-9_-]{20,}$/.test(decoded) && !decoded.includes('/') && !decoded.includes('.')) return decoded;
+                return '';
+            }
+            function buildGoogleDriveImageUrl(fileId, size = 1600) {
+                const id = String(fileId || '').trim();
+                return id ? `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w${Number(size) || 1600}` : '';
+            }
+            function normalizeImageSource(value, fallback = defaultPhoto, options = {}) {
+                if (isImagePlaceholder(value)) return fallback;
+                const text = String(value || '').trim();
+                if (isDataUrl(text)) return text;
+                const fileId = extractGoogleDriveFileId(text);
+                if (fileId) return buildGoogleDriveImageUrl(fileId, options.size || 1600);
+                return text || fallback;
+            }
             function imageSizeKb(value) {
                 const text = String(value || '');
                 if (!text) return 0;
@@ -3352,23 +3435,34 @@ function setupLuxeHRSheets() {
                 return Math.round((base64.length * 0.75) / 1024);
             }
             function getImageStorageType(value) {
-                if (!value) return 'Kosong';
+                if (isImagePlaceholder(value)) return 'Kosong';
                 if (isDataUrl(value)) return 'Upload lokal';
+                if (extractGoogleDriveFileId(value)) return 'Google Drive';
                 return 'URL';
             }
+            function firstUsableImage(candidates = [], fallback = defaultPhoto, options = {}) {
+                for (const item of candidates) {
+                    if (isImagePlaceholder(item)) continue;
+                    const src = normalizeImageSource(item, '', options);
+                    if (src) return src;
+                }
+                return fallback;
+            }
             function getEmployeePhotoSource(emp) {
-                return (emp && emp.photo) ? emp.photo : defaultPhoto;
+                if (!emp) return defaultPhoto;
+                return firstUsableImage([emp.photo, emp.photoDriveThumbnailUrl, emp.photoDriveDownloadUrl, emp.photoDriveUrl, emp.photoDriveFileId], defaultPhoto, { size: 900 });
             }
             function getEmployeeKtpSource(emp) {
-                return (emp && emp.ktpImage) ? emp.ktpImage : defaultKtpPreview;
+                if (!emp) return defaultKtpPreview;
+                return firstUsableImage([emp.ktpImage, emp.ktpDriveThumbnailUrl, emp.ktpDriveDownloadUrl, emp.ktpDriveUrl, emp.ktpDriveFileId], defaultKtpPreview, { size: 1600 });
             }
             function updateEmployeeDocumentStatus() {
                 const el = byId('employeeDocumentStatus');
                 if (!el) return;
                 const photo = byId('empPhotoData')?.value || '';
                 const ktp = byId('empKtpData')?.value || '';
-                const photoLabel = photo ? `Foto: ${getImageStorageType(photo)}${isDataUrl(photo) ? ` (${imageSizeKb(photo)} KB)` : ''}` : 'Foto: kosong';
-                const ktpLabel = ktp ? `KTP: ${getImageStorageType(ktp)}${isDataUrl(ktp) ? ` (${imageSizeKb(ktp)} KB)` : ''}` : 'KTP: kosong';
+                const photoLabel = !isImagePlaceholder(photo) ? `Foto: ${getImageStorageType(photo)}${isDataUrl(photo) ? ` (${imageSizeKb(photo)} KB)` : ''}` : 'Foto: kosong';
+                const ktpLabel = !isImagePlaceholder(ktp) ? `KTP: ${getImageStorageType(ktp)}${isDataUrl(ktp) ? ` (${imageSizeKb(ktp)} KB)` : ''}` : 'KTP: kosong';
                 el.innerHTML = `<span><i class="fa-solid fa-image text-gold-500 mr-1"></i>${escapeHtml(photoLabel)}<br><i class="fa-solid fa-id-card text-gold-500 mr-1"></i>${escapeHtml(ktpLabel)}</span>`;
             }
             function setEmployeeImageValue(type, value, sourceLabel = '') {
@@ -3376,11 +3470,24 @@ function setupLuxeHRSheets() {
                 const hidden = byId(isPhoto ? 'empPhotoData' : 'empKtpData');
                 const preview = byId(isPhoto ? 'empPhotoPreview' : 'empKtpPreview');
                 if (!hidden || !preview) return;
-                hidden.value = value || '';
-                preview.src = value || (isPhoto ? defaultPhoto : defaultKtpPreview);
+                hidden.value = isImagePlaceholder(value) ? '' : String(value || '');
+                preview.src = normalizeImageSource(value, isPhoto ? defaultPhoto : defaultKtpPreview, { size: isPhoto ? 900 : 1600 });
+                preview.dataset.imageKind = isPhoto ? 'photo' : 'ktp';
                 preview.alt = isPhoto ? 'Preview Foto Karyawan' : 'Preview Gambar KTP';
                 updateEmployeeDocumentStatus();
                 if (sourceLabel) console.info(`[LuxeHR Image] ${type} updated from ${sourceLabel}`);
+            }
+            function handleImageLoadError(imageEl) {
+                if (!imageEl || imageEl.dataset.fallbackApplied === 'true') return;
+                const kind = String(imageEl.dataset.imageKind || imageEl.getAttribute('alt') || imageEl.id || '').toLowerCase();
+                imageEl.dataset.fallbackApplied = 'true';
+                imageEl.src = kind.includes('ktp') || kind.includes('identitas') ? defaultKtpPreview : defaultPhoto;
+            }
+            function bindGlobalImageFallback() {
+                document.addEventListener('error', event => {
+                    const img = event.target;
+                    if (img && img.tagName === 'IMG') handleImageLoadError(img);
+                }, true);
             }
             function clearEmployeeImage(type) {
                 const isPhoto = type === 'photo';
@@ -3560,6 +3667,7 @@ function setupLuxeHRSheets() {
                             fileId: emp.photoDriveFileId || '',
                             fileUrl: emp.photoDriveUrl || '',
                             downloadUrl: emp.photoDriveDownloadUrl || '',
+                            thumbnailUrl: emp.photoDriveThumbnailUrl || '',
                             dataHash: emp.photoDriveHash || '',
                             syncedAt: emp.photoDriveSyncedAt || '',
                             updatedAt: new Date().toISOString()
@@ -3574,6 +3682,7 @@ function setupLuxeHRSheets() {
                             fileId: emp.ktpDriveFileId || '',
                             fileUrl: emp.ktpDriveUrl || '',
                             downloadUrl: emp.ktpDriveDownloadUrl || '',
+                            thumbnailUrl: emp.ktpDriveThumbnailUrl || '',
                             dataHash: emp.ktpDriveHash || '',
                             syncedAt: emp.ktpDriveSyncedAt || '',
                             updatedAt: new Date().toISOString()
@@ -3594,6 +3703,7 @@ function setupLuxeHRSheets() {
                         emp.photoDriveUrl = file.fileUrl || '';
                         emp.photoDriveFileId = file.fileId || '';
                         emp.photoDriveDownloadUrl = file.downloadUrl || '';
+                        emp.photoDriveThumbnailUrl = file.thumbnailUrl || file.downloadUrl || '';
                         emp.photoDriveHash = file.dataHash || '';
                         emp.photoDriveSyncedAt = file.uploadedAt || new Date().toISOString();
                         changed = true;
@@ -3602,6 +3712,7 @@ function setupLuxeHRSheets() {
                         emp.ktpDriveUrl = file.fileUrl || '';
                         emp.ktpDriveFileId = file.fileId || '';
                         emp.ktpDriveDownloadUrl = file.downloadUrl || '';
+                        emp.ktpDriveThumbnailUrl = file.thumbnailUrl || file.downloadUrl || '';
                         emp.ktpDriveHash = file.dataHash || '';
                         emp.ktpDriveSyncedAt = file.uploadedAt || new Date().toISOString();
                         changed = true;
@@ -3622,22 +3733,24 @@ function setupLuxeHRSheets() {
                 const ktpHash = isDataUrl(ktpImage) ? hashString(ktpImage) : '';
                 return {
                     ...emp,
-                    photo: isDataUrl(photo) ? (emp.photoDriveUrl || '[FOTO MENUNGGU UPLOAD GOOGLE DRIVE]') : photo,
+                    photo: isDataUrl(photo) ? (emp.photoDriveDownloadUrl || emp.photoDriveThumbnailUrl || emp.photoDriveUrl || '[FOTO MENUNGGU UPLOAD GOOGLE DRIVE]') : photo,
                     photoStorage: getImageStorageType(photo),
                     photoSizeKb: imageSizeKb(photo),
                     photoLocalHash: photoHash,
                     photoDriveUrl: emp.photoDriveUrl || '',
                     photoDriveFileId: emp.photoDriveFileId || '',
                     photoDriveDownloadUrl: emp.photoDriveDownloadUrl || '',
+                    photoDriveThumbnailUrl: emp.photoDriveThumbnailUrl || '',
                     photoDriveHash: emp.photoDriveHash || '',
                     photoDriveSyncedAt: emp.photoDriveSyncedAt || '',
-                    ktpImage: isDataUrl(ktpImage) ? (emp.ktpDriveUrl || '[KTP MENUNGGU UPLOAD GOOGLE DRIVE]') : ktpImage,
+                    ktpImage: isDataUrl(ktpImage) ? (emp.ktpDriveDownloadUrl || emp.ktpDriveThumbnailUrl || emp.ktpDriveUrl || '[KTP MENUNGGU UPLOAD GOOGLE DRIVE]') : ktpImage,
                     ktpStorage: getImageStorageType(ktpImage),
                     ktpSizeKb: imageSizeKb(ktpImage),
                     ktpLocalHash: ktpHash,
                     ktpDriveUrl: emp.ktpDriveUrl || '',
                     ktpDriveFileId: emp.ktpDriveFileId || '',
                     ktpDriveDownloadUrl: emp.ktpDriveDownloadUrl || '',
+                    ktpDriveThumbnailUrl: emp.ktpDriveThumbnailUrl || '',
                     ktpDriveHash: emp.ktpDriveHash || '',
                     ktpDriveSyncedAt: emp.ktpDriveSyncedAt || ''
                 };
@@ -5107,8 +5220,18 @@ function setupLuxeHRSheets() {
                     tbody.innerHTML = `<tr><td colspan="7" class="py-10 text-center text-gray-500 italic text-xs">Data karyawan tidak ditemukan. Cek kolom pencarian/filter atau restore backup di Pengaturan.</td></tr>`;
                     return;
                 }
-                tbody.innerHTML = filtered.map(emp => `
-                    <tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4"><div class="flex items-center gap-3"><img src="${escapeHtml(getEmployeePhotoSource(emp))}" class="w-9 h-9 rounded-full object-cover border border-gold-500/30" alt="${escapeHtml(emp.name)}"><div><p class="text-white text-[11px] font-medium">${escapeHtml(emp.name)}</p><p class="text-gray-500 text-[9px]">${escapeHtml(emp.email || '-')}</p></div></div></td><td class="py-3 px-4 text-gold-500 font-mono text-[10px]">${escapeHtml(emp.nik)}</td><td class="py-3 px-4 text-gray-400 text-[10px]">${escapeHtml(emp.branch)}</td><td class="py-3 px-4 text-gray-300 text-[10px]"><button type="button" onclick="openShiftManagementForEmployee(${Number(emp.id)})" class="inline-flex items-center gap-1.5 rounded-full border border-gold-500/25 bg-gold-500/10 px-2.5 py-1 text-[9px] uppercase tracking-widest text-gold-500 hover:bg-gold-500 hover:text-surface-400 transition-all" title="Atur shift di halaman Shift"><i class="fa-solid fa-user-clock"></i>${escapeHtml(getShiftDisplay(getEmployeeShift(emp.id, todayKey())))}</button></td><td class="py-3 px-4 text-gray-300 text-[10px]">${escapeHtml(emp.position)}</td><td class="py-3 px-4">${getStatusBadge(emp.status)}</td><td class="py-3 px-4 text-right"><div class="inline-flex gap-1"><button type="button" onclick="openIdCard(${Number(emp.id)})" class="btn-icon hover:text-gold-500 hover:border-gold-500/30" title="ID Card"><i class="fa-solid fa-id-card text-[10px]"></i></button><button type="button" onclick="openEmployeeDocuments(${Number(emp.id)})" class="btn-icon hover:text-gold-500 hover:border-gold-500/30" title="Foto & KTP"><i class="fa-solid fa-images text-[10px]"></i></button><button type="button" onclick="openEmployeeModal(${Number(emp.id)})" class="btn-icon hover:text-white hover:border-white/30" title="Edit"><i class="fa-solid fa-pen text-[10px]"></i></button>${!isOffboardingStatus(emp.status) ? `<button type="button" onclick="openOffboardingModal(${Number(emp.id)}, 'resign')" class="btn-icon hover:text-orange-300 hover:border-orange-500/30" title="Proses Resign"><i class="fa-solid fa-person-walking-arrow-right text-[10px]"></i></button><button type="button" onclick="openOffboardingModal(${Number(emp.id)}, 'blacklist')" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Blacklist"><i class="fa-solid fa-ban text-[10px]"></i></button>` : `<button type="button" onclick="reactivateEmployee(${Number(emp.id)})" class="btn-icon hover:text-green-400 hover:border-green-500/30" title="Pulihkan Status"><i class="fa-solid fa-user-check text-[10px]"></i></button>`}<button type="button" onclick="deleteEmployee(${Number(emp.id)})" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Hapus"><i class="fa-solid fa-trash-can text-[10px]"></i></button></div></td></tr>`).join('');
+                tbody.innerHTML = filtered.map(emp => {
+                    const canManageEmp = hasPermission('manageEmployees');
+                    const canManageShiftAccess = hasPermission('manageShift');
+                    const canManageExit = hasPermission('manageOffboarding');
+                    const shiftHtml = canManageShiftAccess
+                        ? `<button type="button" onclick="openShiftManagementForEmployee(${Number(emp.id)})" class="inline-flex items-center gap-1.5 rounded-full border border-gold-500/25 bg-gold-500/10 px-2.5 py-1 text-[9px] uppercase tracking-widest text-gold-500 hover:bg-gold-500 hover:text-surface-400 transition-all" title="Atur shift di halaman Shift"><i class="fa-solid fa-user-clock"></i>${escapeHtml(getShiftDisplay(getEmployeeShift(emp.id, todayKey())))}</button>`
+                        : `<span class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[9px] uppercase tracking-widest text-gray-400"><i class="fa-solid fa-user-clock"></i>${escapeHtml(getShiftDisplay(getEmployeeShift(emp.id, todayKey())))}</span>`;
+                    const editHtml = canManageEmp ? `<button type="button" onclick="openEmployeeModal(${Number(emp.id)})" class="btn-icon hover:text-white hover:border-white/30" title="Edit"><i class="fa-solid fa-pen text-[10px]"></i></button>` : '';
+                    const deleteHtml = canManageEmp ? `<button type="button" onclick="deleteEmployee(${Number(emp.id)})" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Hapus"><i class="fa-solid fa-trash-can text-[10px]"></i></button>` : '';
+                    const offboardingHtml = canManageExit ? (!isOffboardingStatus(emp.status) ? `<button type="button" onclick="openOffboardingModal(${Number(emp.id)}, 'resign')" class="btn-icon hover:text-orange-300 hover:border-orange-500/30" title="Proses Resign"><i class="fa-solid fa-person-walking-arrow-right text-[10px]"></i></button><button type="button" onclick="openOffboardingModal(${Number(emp.id)}, 'blacklist')" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Blacklist"><i class="fa-solid fa-ban text-[10px]"></i></button>` : `<button type="button" onclick="reactivateEmployee(${Number(emp.id)})" class="btn-icon hover:text-green-400 hover:border-green-500/30" title="Pulihkan Status"><i class="fa-solid fa-user-check text-[10px]"></i></button>`) : '';
+                    return `<tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4"><div class="flex items-center gap-3"><img src="${escapeHtml(getEmployeePhotoSource(emp))}" data-image-kind="photo" class="w-9 h-9 rounded-full object-cover border border-gold-500/30" alt="${escapeHtml(emp.name)}"><div><p class="text-white text-[11px] font-medium">${escapeHtml(emp.name)}</p><p class="text-gray-500 text-[9px]">${escapeHtml(emp.email || '-')}</p></div></div></td><td class="py-3 px-4 text-gold-500 font-mono text-[10px]">${escapeHtml(emp.nik)}</td><td class="py-3 px-4 text-gray-400 text-[10px]">${escapeHtml(emp.branch)}</td><td class="py-3 px-4 text-gray-300 text-[10px]">${shiftHtml}</td><td class="py-3 px-4 text-gray-300 text-[10px]">${escapeHtml(emp.position)}</td><td class="py-3 px-4">${getStatusBadge(emp.status)}</td><td class="py-3 px-4 text-right"><div class="inline-flex gap-1"><button type="button" onclick="openIdCard(${Number(emp.id)})" class="btn-icon hover:text-gold-500 hover:border-gold-500/30" title="ID Card"><i class="fa-solid fa-id-card text-[10px]"></i></button><button type="button" onclick="openEmployeeDocuments(${Number(emp.id)})" class="btn-icon hover:text-gold-500 hover:border-gold-500/30" title="Foto & KTP"><i class="fa-solid fa-images text-[10px]"></i></button>${editHtml}${offboardingHtml}${deleteHtml}</div></td></tr>`;
+                }).join('');
             }
 
             function openEmployeeModal(id = null) {
@@ -5139,10 +5262,10 @@ function setupLuxeHRSheets() {
                     byId('empPhone').value = emp.phone || '';
                     byId('empEmail').value = emp.email || '';
                     setMoneyInputValue('empSalary', emp.salary || 0);
-                    byId('empPhotoUrl').value = !isDataUrl(emp.photo) ? (emp.photo || '') : '';
-                    byId('empKtpUrl').value = !isDataUrl(emp.ktpImage) ? (emp.ktpImage || '') : '';
-                    setEmployeeImageValue('photo', emp.photo || '', 'open');
-                    setEmployeeImageValue('ktp', emp.ktpImage || '', 'open');
+                    byId('empPhotoUrl').value = !isDataUrl(emp.photo) && !isImagePlaceholder(emp.photo) ? (emp.photo || '') : (emp.photoDriveDownloadUrl || emp.photoDriveUrl || '');
+                    byId('empKtpUrl').value = !isDataUrl(emp.ktpImage) && !isImagePlaceholder(emp.ktpImage) ? (emp.ktpImage || '') : (emp.ktpDriveDownloadUrl || emp.ktpDriveUrl || '');
+                    setEmployeeImageValue('photo', emp.photo || emp.photoDriveThumbnailUrl || emp.photoDriveDownloadUrl || emp.photoDriveUrl || emp.photoDriveFileId || '', 'open');
+                    setEmployeeImageValue('ktp', emp.ktpImage || emp.ktpDriveThumbnailUrl || emp.ktpDriveDownloadUrl || emp.ktpDriveUrl || emp.ktpDriveFileId || '', 'open');
                     byId('empAddress').value = emp.address || '';
                 } else {
                     byId('empNik').value = '';
@@ -5407,7 +5530,8 @@ function setupLuxeHRSheets() {
             function openIdCard(id) {
                 const emp = getEmployee(id);
                 if (!emp) return;
-                byId('idCardPhoto').src = getEmployeePhotoSource(emp);
+                const idPhoto = byId('idCardPhoto');
+                if (idPhoto) { idPhoto.dataset.fallbackApplied = 'false'; idPhoto.src = getEmployeePhotoSource(emp); }
                 byId('idCardName').textContent = emp.name;
                 byId('idCardPosition').textContent = emp.position;
                 byId('idCardNik').textContent = emp.nik;
@@ -5439,8 +5563,10 @@ function setupLuxeHRSheets() {
                 if (!emp) return;
                 byId('employeeDocumentsTitle').textContent = `Dokumen ${emp.name || 'Karyawan'}`;
                 byId('employeeDocumentsSubtitle').textContent = `${emp.nik || '-'} • ${emp.branch || '-'} • ${emp.position || '-'}`;
-                byId('employeeDocumentsPhoto').src = getEmployeePhotoSource(emp);
-                byId('employeeDocumentsKtp').src = getEmployeeKtpSource(emp);
+                const docPhoto = byId('employeeDocumentsPhoto');
+                const docKtp = byId('employeeDocumentsKtp');
+                if (docPhoto) { docPhoto.dataset.fallbackApplied = 'false'; docPhoto.src = getEmployeePhotoSource(emp); }
+                if (docKtp) { docKtp.dataset.fallbackApplied = 'false'; docKtp.src = getEmployeeKtpSource(emp); }
                 byId('employeeDocumentsKtpNote').textContent = emp.ktpImage ? `Status KTP: ${getImageStorageType(emp.ktpImage)}${isDataUrl(emp.ktpImage) ? `, ${imageSizeKb(emp.ktpImage)} KB` : ''}` : 'Belum ada gambar KTP untuk karyawan ini.';
                 const modal = byId('employeeDocumentsModal');
                 const content = byId('employeeDocumentsContent');
@@ -7013,6 +7139,7 @@ function setupLuxeHRSheets() {
                 console.info(`LuxeHR ${APP_VERSION} self-tests completed. Premium dropdowns: ${selects.length}. Tombol dan handler utama terverifikasi. Cloud-first: ${isCloudFirstEnabled()}.`);
             }
             function bindEvents() {
+                bindGlobalImageFallback();
                 byId('toggleSidebarBtn').addEventListener('click', toggleSidebar);
                 byId('closeSidebarBtn').addEventListener('click', closeSidebar);
                 byId('sidebarBackdrop').addEventListener('click', closeSidebar);
