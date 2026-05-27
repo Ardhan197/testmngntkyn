@@ -368,6 +368,9 @@
                 <button type="button" onclick="switchView('settings')" id="nav-settings" class="nav-link flex items-center px-3 py-2 rounded-r-lg group transition-all border-l-2 text-left">
                     <i class="fa-solid fa-sliders w-5 text-center text-sm"></i><span class="ml-2 text-[11px] font-medium tracking-wide">Pengaturan</span>
                 </button>
+                <button type="button" onclick="switchView('access')" id="nav-access" class="nav-link flex items-center px-3 py-2 rounded-r-lg group transition-all border-l-2 text-left">
+                    <i class="fa-solid fa-user-lock w-5 text-center text-sm"></i><span class="ml-2 text-[11px] font-medium tracking-wide">Hak Akses</span>
+                </button>
             </nav>
         </div>
 
@@ -404,6 +407,15 @@
                 <span id="onlineStatusText" class="hidden md:inline text-[9px] uppercase tracking-widest text-gray-400 font-bold">Memeriksa</span>
                 <i id="onlineStatusIcon" class="fa-solid fa-wifi text-[10px] text-gray-500"></i>
             </button>
+
+            <div id="authHeaderBox" class="hidden sm:flex items-center gap-2 ml-2 shrink-0 px-2.5 py-1.5 rounded-full border border-gold-500/20 bg-gold-500/10">
+                <div class="w-6 h-6 rounded-full bg-gold-500/20 border border-gold-500/40 flex items-center justify-center text-gold-500"><i class="fa-solid fa-user-shield text-[10px]"></i></div>
+                <div class="leading-tight max-w-[150px]">
+                    <p id="authHeaderName" class="text-[10px] text-white truncate font-medium">-</p>
+                    <p id="authHeaderRole" class="text-[8px] text-gold-500 uppercase tracking-widest truncate">-</p>
+                </div>
+                <button type="button" onclick="logoutUser()" class="text-gray-400 hover:text-red-300 transition-colors" title="Logout"><i class="fa-solid fa-right-from-bracket text-[10px]"></i></button>
+            </div>
 
             <div class="hidden sm:flex items-center gap-2 ml-3 border-l border-white/10 pl-4">
                 <div class="text-right mr-2">
@@ -921,7 +933,7 @@
                         </div>
                         <div class="p-3 rounded-lg bg-surface-100 border border-gold-500/20 text-gray-400 text-[10px] leading-relaxed">
                             <p class="text-gold-500 uppercase tracking-widest text-[9px] mb-2"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Cakupan Full Sync Google Sheet</p>
-                            <p>Auto-sync dan realtime pull mencakup: Karyawan, Absensi, Cuti, Shift, Assignment Shift, Resign, Blacklist, Master Cabang, Master Status, Pengaturan, Integrasi, Metadata Aplikasi, Maintenance, dan Drive Files.</p>
+                            <p>Auto-sync dan realtime pull mencakup: Karyawan, Absensi, Cuti, Shift, Assignment Shift, Resign, Blacklist, Master Cabang, Master Status, Pengaturan, Hak Akses/Login, Integrasi, Metadata Aplikasi, Maintenance, dan Drive Files.</p>
                             <p class="mt-1 text-green-400"><i class="fa-solid fa-rotate mr-1"></i> Cloud-first aktif: perubahan dikirim otomatis ke Google Sheet, lalu data cloud ditarik berkala agar user/cabang lain melihat update terbaru.</p>
                             <p class="mt-1 text-green-400"><i class="fa-solid fa-folder-open mr-1"></i> Foto karyawan dan KTP akan otomatis dikirim ke Google Drive. Folder akan dibuat otomatis jika belum ada, lalu link Drive dikirim ke Google Sheet.</p>
                         </div>
@@ -1023,7 +1035,7 @@
                 <!-- NEW CARD: Google Apps Script Template -->
                 <div class="premium-card rounded-xl p-4 lg:col-span-2 mt-2">
                     <div class="flex justify-between items-center mb-1">
-                        <h3 class="font-serif font-bold text-white text-base">Google Apps Script Template (Realtime Cloud-First + Delete Lock Version)</h3>
+                        <h3 class="font-serif font-bold text-white text-base">Google Apps Script Template (Realtime Cloud-First + Delete Lock + Login Version)</h3>
                         <button type="button" onclick="copyAppScript()" class="border border-white/10 text-gray-300 hover:text-white hover:border-gold-500/40 py-1.5 px-3 text-[9px] uppercase tracking-widest rounded-lg transition-all flex items-center gap-1.5">
                             <i class="fa-solid fa-copy"></i> Salin Kode
                         </button>
@@ -1031,9 +1043,9 @@
                     <p class="text-[10px] text-gray-500 mb-4">Script cerdas realtime cloud-first: mendukung full sync batch, read-all cloud pull, upload Google Drive, delete tombstone, serta mode multi-user berbasis Google Sheet sebagai sumber data utama.</p>
                     <textarea id="appScriptTemplate" class="field min-h-[420px] font-mono text-[10px] leading-relaxed resize-y bg-surface-100/80 cursor-text" readonly spellcheck="false">
 /**
- * LuxeHR Premium - Google Sheet + Google Drive Connector v2.12
+ * LuxeHR Premium - Google Sheet + Google Drive Connector v2.13
  *
- * WAJIB DIPAKAI untuk LuxeHR v4.9.0 ke atas.
+ * WAJIB DIPAKAI untuk LuxeHR v5.0.0 ke atas.
  * Versi ini mendukung:
  * - Test koneksi / ping.
  * - Sync satu sheet.
@@ -1068,7 +1080,7 @@
  */
 const DEFAULT_SPREADSHEET_ID = &#x27;GANTI_DENGAN_ID_SPREADSHEET_ANDA&#x27;;
 const DEFAULT_DRIVE_ROOT_FOLDER_NAME = &#x27;LuxeHR Uploads&#x27;;
-const LUXEHR_CONNECTOR_VERSION = &#x27;2.12.0-delete-tombstone-sync&#x27;;
+const LUXEHR_CONNECTOR_VERSION = &#x27;2.13.0-login-rbac-self-service&#x27;;
 const LUXEHR_HEADER_BG = &#x27;#D4AF37&#x27;;
 const LUXEHR_HEADER_FG = &#x27;#FFFFFF&#x27;;
 
@@ -1766,6 +1778,67 @@ function setupLuxeHRSheets() {
         </section>
     </main>
 
+
+        <section id="accessView" class="view hidden flex-1 overflow-y-auto p-4 md:p-6 bg-surface-300 relative">
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-5">
+                <div>
+                    <p class="text-[10px] uppercase tracking-[0.25em] text-gold-500 mb-1">Login & Role Based Access Control</p>
+                    <h2 class="text-xl md:text-2xl font-serif font-bold text-white tracking-wide">Hak Akses Pengguna</h2>
+                    <p class="text-[10px] text-gray-500 mt-1 max-w-2xl">Owner dapat membuat akun, memilih role, menghubungkan akun karyawan ke data master, dan membatasi modul yang boleh dibuka. Role Karyawan otomatis hanya melihat data dirinya sendiri.</p>
+                </div>
+                <button type="button" onclick="resetAccountForm()" class="bg-gold-500 text-surface-400 hover:bg-gold-400 font-bold uppercase tracking-widest py-2.5 px-4 text-[10px] rounded-lg transition-all shadow-gold-glow"><i class="fa-solid fa-plus mr-1.5"></i> Akun Baru</button>
+            </div>
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+                <div class="premium-card rounded-xl p-4">
+                    <h3 class="font-serif font-bold text-white text-base mb-1">Form Akun</h3>
+                    <p class="text-[10px] text-gray-500 mb-4">Password tersimpan sebagai hash sederhana di pengaturan cloud. Untuk keamanan operasional, deploy aplikasi di akses internal/hosting yang dipercaya.</p>
+                    <form id="accountAccessForm" class="space-y-3">
+                        <input type="hidden" id="accountId">
+                        <div><label class="label-premium">Username Login</label><input type="text" id="accountUsername" class="field" required autocomplete="off" placeholder="contoh: andi01"></div>
+                        <div><label class="label-premium">Nama Tampilan</label><input type="text" id="accountDisplayName" class="field" required placeholder="Nama user"></div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div><label class="label-premium">Role</label><select id="accountRole" class="field"><option value="owner">Owner</option><option value="admin">Admin/HR</option><option value="supervisor">Supervisor</option><option value="employee">Karyawan</option></select></div>
+                            <div><label class="label-premium">Status</label><select id="accountActive" class="field"><option value="true">Aktif</option><option value="false">Nonaktif</option></select></div>
+                        </div>
+                        <div><label class="label-premium">Hubungkan ke Data Karyawan</label><select id="accountEmployeeId" class="field"></select><p class="dropdown-hint"><i class="fa-solid fa-circle-info"></i>Wajib untuk role Karyawan agar data yang tampil hanya data dirinya sendiri.</p></div>
+                        <div><label class="label-premium">Password Baru</label><input type="password" id="accountPassword" class="field" autocomplete="new-password" placeholder="Isi untuk akun baru / ganti password"><p class="dropdown-hint"><i class="fa-solid fa-key"></i>Untuk edit akun, kosongkan jika password tidak ingin diganti.</p></div>
+                        <div>
+                            <label class="label-premium">Akses Modul</label>
+                            <div id="accountPermissionGrid" class="grid grid-cols-2 gap-2 text-[10px]"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 pt-1">
+                            <button type="button" onclick="resetAccountForm()" class="border border-white/10 text-gray-300 hover:text-white hover:bg-white/5 py-3 text-[10px] uppercase tracking-widest rounded-lg transition-all">Reset</button>
+                            <button type="submit" class="bg-gold-500 text-surface-400 hover:bg-gold-400 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all shadow-gold-glow">Simpan Akun</button>
+                        </div>
+                    </form>
+                    <div class="mt-4 p-3 rounded-lg bg-surface-100 border border-yellow-500/20 text-gray-400 text-[10px] leading-relaxed">
+                        <i class="fa-solid fa-triangle-exclamation text-yellow-300 mr-1"></i> Login awal setelah update: <span class="text-white font-mono">owner</span> / <span class="text-white font-mono">owner123</span>. Segera ubah password dari halaman ini.
+                    </div>
+                </div>
+                <div class="premium-card rounded-xl overflow-hidden xl:col-span-2">
+                    <div class="p-4 border-b border-white/5 flex items-center justify-between gap-3">
+                        <div><h3 class="font-serif font-bold text-white text-base">Daftar Akun</h3><p id="accountAccessSummary" class="text-[10px] text-gray-500 mt-0.5">0 akun</p></div>
+                        <span class="px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/20 text-gold-500 text-[9px] uppercase tracking-widest"><i class="fa-solid fa-shield-halved mr-1"></i> RBAC Aktif</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left whitespace-nowrap">
+                            <thead class="bg-surface-100/50"><tr><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">User</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Role</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Karyawan</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Status</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Akses</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium text-right">Aksi</th></tr></thead>
+                            <tbody id="accountAccessTable" class="divide-y divide-white/5"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="premium-card rounded-xl p-4 xl:col-span-3">
+                    <h3 class="font-serif font-bold text-white text-base mb-2">Aturan Akses Data</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-[10px] text-gray-400 leading-relaxed">
+                        <div class="p-3 rounded-lg bg-surface-100 border border-white/5"><i class="fa-solid fa-crown text-gold-500 mr-1"></i><span class="text-white">Owner</span> memiliki akses penuh, termasuk membuat/menghapus akun dan mengubah password.</div>
+                        <div class="p-3 rounded-lg bg-surface-100 border border-white/5"><i class="fa-solid fa-user-tie text-blue-300 mr-1"></i><span class="text-white">Admin/HR/Supervisor</span> mengikuti checklist modul yang diberikan Owner.</div>
+                        <div class="p-3 rounded-lg bg-surface-100 border border-white/5"><i class="fa-solid fa-user text-green-300 mr-1"></i><span class="text-white">Karyawan</span> otomatis self-service: daftar karyawan, absensi, histori, cuti, dan payroll hanya menampilkan data akun tersebut.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
     <div id="employeeModal" class="modal-transition fixed inset-0 z-[70] flex items-center justify-center hidden">
         <div class="absolute inset-0 bg-black/85 backdrop-blur-md" id="employeeModalBackdrop"></div>
         <div class="bg-surface-200 border border-white/10 rounded-xl shadow-2xl w-full max-w-5xl mx-4 relative z-10 transform scale-95 opacity-0 transition-all duration-300 max-h-[92vh] overflow-hidden flex flex-col" id="employeeModalContent">
@@ -1937,6 +2010,29 @@ function setupLuxeHRSheets() {
         </div>
     </div>
 
+
+    <div id="loginOverlay" class="fixed inset-0 z-[140] bg-surface-400/95 backdrop-blur-xl flex items-center justify-center p-4">
+        <div class="absolute top-10 left-1/2 -translate-x-1/2 w-72 h-72 bg-gold-500/10 rounded-full blur-[90px] pointer-events-none"></div>
+        <div class="premium-card rounded-2xl w-full max-w-md p-6 relative overflow-hidden border-gold-500/20 shadow-gold-glow-lg">
+            <div class="absolute -top-20 -right-20 w-40 h-40 bg-gold-500/10 rounded-full blur-3xl"></div>
+            <div class="relative z-10 text-center mb-5">
+                <div class="w-14 h-14 mx-auto rounded-full bg-gold-500/10 border border-gold-500/40 text-gold-500 flex items-center justify-center mb-3"><i class="fa-solid fa-user-shield text-2xl"></i></div>
+                <p class="text-[10px] uppercase tracking-[0.28em] text-gold-500 mb-1">Secure Access</p>
+                <h2 class="font-serif text-2xl font-bold text-white">Luxe<span class="text-gold-500">HR</span> Login</h2>
+                <p class="text-[10px] text-gray-500 mt-2 leading-relaxed">Masuk sesuai akun dan hak akses yang diberikan Owner.</p>
+            </div>
+            <form id="loginForm" class="relative z-10 space-y-3">
+                <div><label class="label-premium">Username</label><input type="text" id="loginUsername" class="field" autocomplete="username" required placeholder="owner"></div>
+                <div><label class="label-premium">Password</label><input type="password" id="loginPassword" class="field" autocomplete="current-password" required placeholder="••••••••"></div>
+                <button type="submit" class="w-full bg-gold-500 text-surface-400 hover:bg-gold-400 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all shadow-gold-glow"><i class="fa-solid fa-right-to-bracket mr-1.5"></i> Login</button>
+            </form>
+            <div id="loginHint" class="relative z-10 mt-4 p-3 rounded-lg bg-surface-100 border border-gold-500/20 text-gray-400 text-[10px] leading-relaxed">
+                Login awal setelah update: <span class="text-white font-mono">owner</span> / <span class="text-white font-mono">owner123</span>. Segera ganti password melalui menu Hak Akses.
+            </div>
+        </div>
+    </div>
+
+
     <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-surface-100 border border-gold-500/30 text-white px-5 py-2.5 rounded-full shadow-2xl z-[100] transition-all duration-500 opacity-0 -translate-y-full flex items-center gap-3">
         <i class="fa-solid fa-check text-gold-500 text-sm border border-gold-500 rounded-full p-0.5"></i>
         <span id="toastMessage" class="font-medium tracking-wide text-xs">Berhasil.</span>
@@ -1950,7 +2046,7 @@ function setupLuxeHRSheets() {
             // Masukkan URL Web App Google Apps Script Anda di dalam tanda kutip di bawah ini:
             const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUM-uaRnj_sftvEJKT6KSXM26x7dh_2rU9YaKRTlb18QHXMDkRg0nLwf4Z_R5k_Ipl-w/exec";
 
-            const APP_VERSION = '4.9.0-delete-tombstone-sync';
+            const APP_VERSION = '5.0.0-login-rbac-self-service';
             const PAYROLL_MONTH_DAYS = 30;
             const STANDARD_WORKDAY_HOURS = 12;
             const STANDARD_WORKDAY_MINUTES = STANDARD_WORKDAY_HOURS * 60;
@@ -1966,7 +2062,8 @@ function setupLuxeHRSheets() {
                 settings: 'luxehr_settings',
                 syncMeta: 'luxehr_sync_meta',
                 syncQueue: 'luxehr_sync_queue',
-                deletedRecords: 'luxehr_deleted_records'
+                deletedRecords: 'luxehr_deleted_records',
+                authSession: 'luxehr_auth_session'
             };
             const BACKUP_SUFFIX = '_backup';
             const META_KEY = 'luxehr_storage_meta';
@@ -2798,7 +2895,9 @@ function setupLuxeHRSheets() {
                     previewNetworkGuardEnabled: true,
                     cloudFirstEnabled: true,
                     realtimePullEnabled: true,
-                    realtimePullIntervalSeconds: REALTIME_PULL_DEFAULT_SECONDS
+                    realtimePullIntervalSeconds: REALTIME_PULL_DEFAULT_SECONDS,
+                    accessControlEnabled: true,
+                    userAccounts: []
                 }, value => value && typeof value === 'object' && !Array.isArray(value));
 
                 if (!settings.driveRootFolderName) settings.driveRootFolderName = 'LuxeHR Uploads';
@@ -2808,6 +2907,7 @@ function setupLuxeHRSheets() {
                 settings.cloudFirstEnabled = settings.cloudFirstEnabled !== false;
                 settings.realtimePullEnabled = settings.realtimePullEnabled !== false;
                 settings.realtimePullIntervalSeconds = Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS);
+                ensureAuthSettings();
                 normalizeMasterDropdowns();
                 ensureOffboardingStatusesOnce();
                 migrateCabangTerminology();
@@ -2885,6 +2985,7 @@ function setupLuxeHRSheets() {
                 settings.realtimePullIntervalSeconds = Math.max(REALTIME_PULL_MIN_SECONDS, Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS));
                 settings.driveRootFolderName = String(settings.driveRootFolderName || 'LuxeHR Uploads').trim() || 'LuxeHR Uploads';
                 settings.spreadsheetTimeZone = String(settings.spreadsheetTimeZone || DEFAULT_SPREADSHEET_TIME_ZONE).trim() || DEFAULT_SPREADSHEET_TIME_ZONE;
+                ensureAuthSettings();
                 safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
                 requestAutoSyncAfterLocalSave('Pengaturan aplikasi disimpan');
             }
@@ -2925,6 +3026,322 @@ function setupLuxeHRSheets() {
             }
             function safeLower(v) { return String(v || '').toLowerCase(); }
             function getEmployee(id) { return employees.find(emp => String(emp.id) === String(id)); }
+
+            function passwordHash(password) { return `fnv1a:${hashString(`luxehr-password|${String(password || '')}`)}`; }
+            function getDefaultAccessPermissions(role = 'employee') {
+                if (role === 'owner') return ['dashboard','employees','attendance','attendanceHistory','shift','leave','payroll','offboarding','maintenance','settings','access','manageEmployees','manageAttendance','manageShift','manageLeave','managePayroll','manageOffboarding','manageMaintenance','manageSettings','manageAccess','exportData','resetData'];
+                if (role === 'admin') return ['dashboard','employees','attendance','attendanceHistory','shift','leave','payroll','offboarding','maintenance','settings','manageEmployees','manageAttendance','manageShift','manageLeave','managePayroll','manageOffboarding','manageMaintenance','manageSettings','exportData'];
+                if (role === 'supervisor') return ['dashboard','employees','attendance','attendanceHistory','shift','leave','payroll','manageAttendance','manageLeave','exportData'];
+                return ['dashboard','employees','attendance','attendanceHistory','leave','payroll','selfOnly'];
+            }
+            function getPermissionCatalog() {
+                return [
+                    { key: 'dashboard', label: 'Dashboard' },
+                    { key: 'employees', label: 'Data Karyawan' },
+                    { key: 'attendance', label: 'Absensi' },
+                    { key: 'attendanceHistory', label: 'Histori Absensi' },
+                    { key: 'shift', label: 'Shift' },
+                    { key: 'leave', label: 'Cuti/Izin' },
+                    { key: 'payroll', label: 'Payroll' },
+                    { key: 'offboarding', label: 'Resign/Blacklist' },
+                    { key: 'maintenance', label: 'Maintenance' },
+                    { key: 'settings', label: 'Pengaturan' },
+                    { key: 'access', label: 'Hak Akses' },
+                    { key: 'exportData', label: 'Export Data' },
+                    { key: 'resetData', label: 'Reset/Kosongkan Data' }
+                ];
+            }
+            function normalizeAccount(account = {}) {
+                const role = ['owner','admin','supervisor','employee'].includes(String(account.role || '').toLowerCase()) ? String(account.role).toLowerCase() : 'employee';
+                const id = String(account.id || `usr_${Date.now()}_${Math.floor(Math.random() * 9999)}`);
+                const permissions = Array.isArray(account.permissions) && account.permissions.length ? account.permissions : getDefaultAccessPermissions(role);
+                return {
+                    id,
+                    username: String(account.username || '').trim(),
+                    displayName: String(account.displayName || account.name || account.username || '').trim(),
+                    role,
+                    employeeId: account.employeeId === undefined || account.employeeId === null ? '' : String(account.employeeId),
+                    passwordHash: account.passwordHash || '',
+                    isActive: account.isActive !== false && String(account.status || '').toLowerCase() !== 'nonaktif',
+                    permissions: uniqueTextList(permissions),
+                    forceChangePassword: account.forceChangePassword === true,
+                    createdAt: account.createdAt || new Date().toISOString(),
+                    updatedAt: account.updatedAt || new Date().toISOString()
+                };
+            }
+            function ensureAuthSettings() {
+                if (!settings || typeof settings !== 'object') settings = {};
+                settings.accessControlEnabled = settings.accessControlEnabled !== false;
+                const accounts = Array.isArray(settings.userAccounts) ? settings.userAccounts.map(normalizeAccount).filter(acc => acc.username) : [];
+                const hasOwner = accounts.some(acc => acc.role === 'owner');
+                if (!hasOwner) {
+                    accounts.unshift(normalizeAccount({
+                        id: 'owner_default',
+                        username: 'owner',
+                        displayName: 'Owner LuxeHR',
+                        role: 'owner',
+                        employeeId: '',
+                        passwordHash: passwordHash('owner123'),
+                        isActive: true,
+                        permissions: getDefaultAccessPermissions('owner'),
+                        forceChangePassword: true
+                    }));
+                }
+                const seen = new Set();
+                settings.userAccounts = accounts.filter(acc => {
+                    const key = safeLower(acc.username);
+                    if (!key || seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+            }
+            function getUserAccounts() { ensureAuthSettings(); return settings.userAccounts || []; }
+            function getCurrentSession() { return safeParse(localStorage.getItem(STORAGE_KEYS.authSession), null); }
+            function getCurrentUser() {
+                const session = getCurrentSession();
+                if (!session || !session.username) return null;
+                const account = getUserAccounts().find(acc => safeLower(acc.username) === safeLower(session.username));
+                if (!account || !account.isActive) return null;
+                return account;
+            }
+            function setCurrentUser(account) {
+                localStorage.setItem(STORAGE_KEYS.authSession, JSON.stringify({ username: account.username, accountId: account.id, loggedInAt: new Date().toISOString() }));
+                updateAuthUI();
+            }
+            function clearCurrentUser() { try { localStorage.removeItem(STORAGE_KEYS.authSession); } catch (error) {} updateAuthUI(); }
+            function isOwnerUser(account = getCurrentUser()) { return account && account.role === 'owner'; }
+            function isEmployeeScoped(account = getCurrentUser()) { return !!account && (account.role === 'employee' || account.permissions?.includes('selfOnly')); }
+            function getCurrentEmployeeId() { const user = getCurrentUser(); return user?.employeeId ? String(user.employeeId) : ''; }
+            function hasPermission(permission, account = getCurrentUser()) {
+                if (!account) return false;
+                if (account.role === 'owner') return true;
+                return Array.isArray(account.permissions) && account.permissions.includes(permission);
+            }
+            function canAccessView(view) { return hasPermission(view); }
+            function requirePermission(permission, message = 'Akses ditolak. Hubungi Owner untuk meminta hak akses.') {
+                if (hasPermission(permission)) return true;
+                showToast(message, 'error');
+                return false;
+            }
+            function getVisibleEmployees() {
+                const user = getCurrentUser();
+                if (!user) return [];
+                if (isEmployeeScoped(user)) {
+                    const linkedId = String(user.employeeId || '');
+                    return employees.filter(emp => String(emp.id) === linkedId || (!!user.username && safeLower(emp.email) === safeLower(user.username)));
+                }
+                return employees;
+            }
+            function canSeeEmployee(employeeId) {
+                if (!getCurrentUser()) return false;
+                if (!isEmployeeScoped()) return true;
+                return getVisibleEmployees().some(emp => String(emp.id) === String(employeeId));
+            }
+            function getVisibleAttendance() {
+                if (!isEmployeeScoped()) return attendance;
+                const visibleIds = new Set(getVisibleEmployees().map(emp => String(emp.id)));
+                return attendance.filter(log => visibleIds.has(String(log.employeeId)));
+            }
+            function getVisibleLeaves() {
+                if (!isEmployeeScoped()) return leaves;
+                const visibleIds = new Set(getVisibleEmployees().map(emp => String(emp.id)));
+                return leaves.filter(item => visibleIds.has(String(item.employeeId)));
+            }
+            function getVisibleShiftAssignmentsScoped() {
+                const rows = getVisibleShiftAssignments();
+                if (!isEmployeeScoped()) return rows;
+                const visibleIds = new Set(getVisibleEmployees().map(emp => String(emp.id)));
+                return rows.filter(item => visibleIds.has(String(item.employeeId)));
+            }
+            function formatRoleLabel(role) {
+                const map = { owner: 'Owner', admin: 'Admin/HR', supervisor: 'Supervisor', employee: 'Karyawan' };
+                return map[role] || role || '-';
+            }
+            async function handleLoginSubmit(event) {
+                event.preventDefault();
+                ensureAuthSettings();
+                const username = byId('loginUsername')?.value.trim() || '';
+                const password = byId('loginPassword')?.value || '';
+                const account = getUserAccounts().find(acc => safeLower(acc.username) === safeLower(username));
+                if (!account || !account.isActive || account.passwordHash !== passwordHash(password)) {
+                    showToast('Username atau password salah / akun nonaktif', 'error');
+                    return;
+                }
+                if (account.role === 'employee' && !account.employeeId) {
+                    showToast('Akun karyawan belum dihubungkan ke data karyawan. Hubungi Owner.', 'error');
+                    return;
+                }
+                setCurrentUser(account);
+                showToast(`Selamat datang, ${account.displayName || account.username}`, 'success');
+                renderNavigationAccess();
+                switchView(canAccessView(activeView) ? activeView : 'dashboard');
+            }
+            function logoutUser() {
+                clearCurrentUser();
+                activeView = 'dashboard';
+                showToast('Anda sudah logout', 'success');
+            }
+            function updateAuthUI() {
+                ensureAuthSettings();
+                const user = getCurrentUser();
+                const overlay = byId('loginOverlay');
+                if (overlay) overlay.classList.toggle('hidden', !!user);
+                const box = byId('authHeaderBox');
+                if (box) box.classList.toggle('hidden', !user);
+                if (user) {
+                    const nameEl = byId('authHeaderName');
+                    const roleEl = byId('authHeaderRole');
+                    if (nameEl) nameEl.textContent = user.displayName || user.username;
+                    if (roleEl) roleEl.textContent = `${formatRoleLabel(user.role)}${isEmployeeScoped(user) ? ' • Self' : ''}`;
+                }
+                renderNavigationAccess();
+            }
+            function renderNavigationAccess() {
+                const views = ['dashboard', 'employees', 'attendance', 'attendanceHistory', 'shift', 'leave', 'payroll', 'offboarding', 'maintenance', 'settings', 'access'];
+                views.forEach(view => {
+                    const nav = byId(`nav-${view}`);
+                    if (nav) nav.classList.toggle('hidden', !canAccessView(view));
+                });
+            }
+            function renderAccountPermissionGrid(selected = []) {
+                const grid = byId('accountPermissionGrid');
+                if (!grid) return;
+                const role = byId('accountRole')?.value || 'employee';
+                const perms = selected.length ? selected : getDefaultAccessPermissions(role);
+                grid.innerHTML = getPermissionCatalog().map(item => {
+                    const checked = perms.includes(item.key) || role === 'owner' ? 'checked' : '';
+                    const disabled = role === 'owner' || role === 'employee' ? 'disabled' : '';
+                    return `<label class="flex items-center gap-2 p-2 rounded-lg bg-surface-100 border border-white/5 ${disabled ? 'opacity-70' : ''}"><input type="checkbox" class="account-permission" value="${escapeHtml(item.key)}" ${checked} ${disabled}> <span>${escapeHtml(item.label)}</span></label>`;
+                }).join('');
+            }
+            function renderAccountEmployeeOptions() {
+                const select = byId('accountEmployeeId');
+                if (!select) return;
+                const current = select.value || '';
+                select.innerHTML = `<option value="">Tidak ditautkan</option>` + employees.map(emp => `<option value="${Number(emp.id)}">${escapeHtml(emp.name)} - ${escapeHtml(emp.nik)}</option>`).join('');
+                select.value = [...select.options].some(opt => opt.value === current) ? current : '';
+                refreshPremiumSelect(select);
+            }
+            function resetAccountForm() {
+                if (!requirePermission('manageAccess')) return;
+                const form = byId('accountAccessForm');
+                if (form) form.reset();
+                if (byId('accountId')) byId('accountId').value = '';
+                if (byId('accountRole')) byId('accountRole').value = 'employee';
+                if (byId('accountActive')) byId('accountActive').value = 'true';
+                renderAccountEmployeeOptions();
+                renderAccountPermissionGrid(getDefaultAccessPermissions('employee'));
+                refreshPremiumSelects(form || document);
+            }
+            function getAccountFormPermissions() {
+                const role = byId('accountRole')?.value || 'employee';
+                if (role === 'owner' || role === 'employee') return getDefaultAccessPermissions(role);
+                return [...document.querySelectorAll('.account-permission:checked')].map(el => el.value);
+            }
+            function handleAccountAccessSubmit(event) {
+                event.preventDefault();
+                if (!requirePermission('manageAccess')) return;
+                ensureAuthSettings();
+                const id = byId('accountId').value || `usr_${Date.now()}`;
+                const username = byId('accountUsername').value.trim();
+                const displayName = byId('accountDisplayName').value.trim();
+                const role = byId('accountRole').value;
+                const employeeId = byId('accountEmployeeId').value || '';
+                const isActive = byId('accountActive').value === 'true';
+                const password = byId('accountPassword').value;
+                if (!username || !displayName) return showToast('Username dan nama tampilan wajib diisi', 'error');
+                if (role === 'employee' && !employeeId) return showToast('Role Karyawan wajib dihubungkan ke data karyawan', 'error');
+                const duplicate = getUserAccounts().some(acc => safeLower(acc.username) === safeLower(username) && String(acc.id) !== String(id));
+                if (duplicate) return showToast('Username sudah digunakan', 'error');
+                const old = getUserAccounts().find(acc => String(acc.id) === String(id));
+                if (!old && !password) return showToast('Password wajib diisi untuk akun baru', 'error');
+                if (old?.role === 'owner' && role !== 'owner' && getUserAccounts().filter(acc => acc.role === 'owner' && acc.isActive).length <= 1) return showToast('Minimal harus ada 1 Owner aktif', 'error');
+                const next = normalizeAccount({
+                    ...(old || {}),
+                    id,
+                    username,
+                    displayName,
+                    role,
+                    employeeId,
+                    isActive,
+                    permissions: getAccountFormPermissions(),
+                    passwordHash: password ? passwordHash(password) : old?.passwordHash,
+                    forceChangePassword: old?.forceChangePassword && !password,
+                    updatedAt: new Date().toISOString()
+                });
+                settings.userAccounts = old ? getUserAccounts().map(acc => String(acc.id) === String(id) ? next : acc) : [next, ...getUserAccounts()];
+                saveSettings();
+                renderAccessManagement();
+                updateAuthUI();
+                showToast('Akun dan hak akses berhasil disimpan', 'success');
+            }
+            function editUserAccount(id) {
+                if (!requirePermission('manageAccess')) return;
+                const account = getUserAccounts().find(acc => String(acc.id) === String(id));
+                if (!account) return;
+                byId('accountId').value = account.id;
+                byId('accountUsername').value = account.username || '';
+                byId('accountDisplayName').value = account.displayName || '';
+                byId('accountRole').value = account.role || 'employee';
+                byId('accountActive').value = account.isActive ? 'true' : 'false';
+                renderAccountEmployeeOptions();
+                byId('accountEmployeeId').value = account.employeeId || '';
+                byId('accountPassword').value = '';
+                renderAccountPermissionGrid(account.permissions || []);
+                setupPremiumSelects(byId('accountAccessForm'));
+                refreshPremiumSelects(byId('accountAccessForm'));
+            }
+            function deleteUserAccount(id) {
+                if (!requirePermission('manageAccess')) return;
+                const account = getUserAccounts().find(acc => String(acc.id) === String(id));
+                if (!account) return;
+                const current = getCurrentUser();
+                if (current && String(current.id) === String(account.id)) return showToast('Akun yang sedang login tidak bisa dihapus', 'error');
+                if (account.role === 'owner' && getUserAccounts().filter(acc => acc.role === 'owner' && acc.isActive).length <= 1) return showToast('Minimal harus ada 1 Owner aktif', 'error');
+                showConfirm(`Hapus akun ${account.username}?`, () => {
+                    settings.userAccounts = getUserAccounts().filter(acc => String(acc.id) !== String(id));
+                    saveSettings();
+                    renderAccessManagement();
+                    updateAuthUI();
+                    showToast('Akun berhasil dihapus', 'success');
+                });
+            }
+            function toggleUserAccountStatus(id) {
+                if (!requirePermission('manageAccess')) return;
+                const account = getUserAccounts().find(acc => String(acc.id) === String(id));
+                if (!account) return;
+                const current = getCurrentUser();
+                if (current && String(current.id) === String(account.id)) return showToast('Akun yang sedang login tidak bisa dinonaktifkan', 'error');
+                if (account.role === 'owner' && account.isActive && getUserAccounts().filter(acc => acc.role === 'owner' && acc.isActive).length <= 1) return showToast('Minimal harus ada 1 Owner aktif', 'error');
+                settings.userAccounts = getUserAccounts().map(acc => String(acc.id) === String(id) ? { ...acc, isActive: !acc.isActive, updatedAt: new Date().toISOString() } : acc);
+                saveSettings();
+                renderAccessManagement();
+                updateAuthUI();
+                showToast('Status akun diperbarui', 'success');
+            }
+            function renderAccessManagement() {
+                if (!hasPermission('manageAccess')) {
+                    const table = byId('accountAccessTable');
+                    if (table) table.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-gray-500 italic">Anda tidak memiliki akses mengelola user.</td></tr>`;
+                    return;
+                }
+                ensureAuthSettings();
+                renderAccountEmployeeOptions();
+                if (!byId('accountId')?.value) renderAccountPermissionGrid(getDefaultAccessPermissions(byId('accountRole')?.value || 'employee'));
+                const accounts = getUserAccounts();
+                const table = byId('accountAccessTable');
+                const summary = byId('accountAccessSummary');
+                if (summary) summary.textContent = `${accounts.length} akun • ${accounts.filter(acc => acc.isActive).length} aktif`;
+                if (!table) return;
+                table.innerHTML = accounts.map(account => {
+                    const emp = account.employeeId ? getEmployee(account.employeeId) : null;
+                    const perms = account.role === 'owner' ? 'Semua modul' : (account.role === 'employee' ? 'Self-service' : `${(account.permissions || []).filter(p => getPermissionCatalog().some(item => item.key === p)).length} modul`);
+                    return `<tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4"><p class="text-white text-[11px] font-medium">${escapeHtml(account.displayName || account.username)}</p><p class="text-gray-500 text-[9px] font-mono">${escapeHtml(account.username)}</p></td><td class="py-3 px-4 text-gold-500 text-[10px] uppercase tracking-widest">${escapeHtml(formatRoleLabel(account.role))}</td><td class="py-3 px-4 text-gray-400 text-[10px]">${emp ? `${escapeHtml(emp.name)}<br><span class="text-gray-600 font-mono">${escapeHtml(emp.nik)}</span>` : '-'}</td><td class="py-3 px-4">${getStatusBadge(account.isActive ? 'Aktif' : 'Nonaktif')}</td><td class="py-3 px-4 text-gray-400 text-[10px]">${escapeHtml(perms)}</td><td class="py-3 px-4 text-right"><div class="inline-flex gap-1"><button type="button" onclick="editUserAccount('${escapeHtml(account.id)}')" class="btn-icon hover:text-white hover:border-white/30" title="Edit"><i class="fa-solid fa-pen text-[10px]"></i></button><button type="button" onclick="toggleUserAccountStatus('${escapeHtml(account.id)}')" class="btn-icon hover:text-yellow-300 hover:border-yellow-500/30" title="Aktif/Nonaktif"><i class="fa-solid fa-power-off text-[10px]"></i></button><button type="button" onclick="deleteUserAccount('${escapeHtml(account.id)}')" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Hapus"><i class="fa-solid fa-trash-can text-[10px]"></i></button></div></td></tr>`;
+                }).join('') || `<tr><td colspan="6" class="py-10 text-center text-gray-500 italic">Belum ada akun.</td></tr>`;
+                setupPremiumSelects(byId('accessView'));
+                refreshPremiumSelects(byId('accessView'));
+            }
+
 
             function isDataUrl(value) { return /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(String(value || '')); }
             function imageSizeKb(value) {
@@ -3822,6 +4239,8 @@ function setupLuxeHRSheets() {
                         cloudFirstEnabled: true,
                         realtimePullEnabled: true,
                         realtimePullIntervalSeconds: REALTIME_PULL_DEFAULT_SECONDS,
+                        accessControlEnabled: true,
+                        userAccounts: [],
                         spreadsheetTimeZone: DEFAULT_SPREADSHEET_TIME_ZONE
                     }, cloudSettings || {});
                     deletedRecords = normalizeDeleteLog([...(deletedRecords || []), ...cleanCloudRows(sheets.Data_Delete_Log || [], ['sheetName', 'recordKey', 'deletedAt'])]);
@@ -3845,6 +4264,7 @@ function setupLuxeHRSheets() {
                     settings.realtimePullEnabled = settings.realtimePullEnabled !== false;
                     settings.realtimePullIntervalSeconds = Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS);
                     if (!settings.driveRootFolderName) settings.driveRootFolderName = 'LuxeHR Uploads';
+                    ensureAuthSettings();
                     normalizeMasterDropdowns();
                     migrateCabangTerminology();
                     migrateEmployeeImages();
@@ -4576,8 +4996,13 @@ function setupLuxeHRSheets() {
             function toggleSidebar() { isSidebarOpen ? closeSidebar() : openSidebar(); }
 
             function switchView(view) {
-                const views = ['dashboard', 'employees', 'attendance', 'attendanceHistory', 'shift', 'leave', 'payroll', 'offboarding', 'maintenance', 'settings'];
+                const views = ['dashboard', 'employees', 'attendance', 'attendanceHistory', 'shift', 'leave', 'payroll', 'offboarding', 'maintenance', 'settings', 'access'];
                 if (!views.includes(view)) view = 'dashboard';
+                if (!canAccessView(view)) {
+                    const fallback = views.find(name => canAccessView(name)) || 'dashboard';
+                    showToast('Akses modul dibatasi oleh Owner', 'error');
+                    view = fallback;
+                }
                 activeView = view;
                 views.forEach(name => {
                     byId(`${name}View`).classList.toggle('hidden', name !== view);
@@ -4586,6 +5011,7 @@ function setupLuxeHRSheets() {
                     nav.classList.add('border-transparent', 'text-gray-400', 'hover:text-white', 'hover:bg-white/5');
                 });
                 const activeNav = byId(`nav-${view}`);
+                if (!activeNav) return renderActiveView();
                 activeNav.classList.add('bg-gradient-to-r', 'from-gold-500/10', 'to-transparent', 'border-gold-500', 'text-gold-500');
                 activeNav.classList.remove('border-transparent', 'text-gray-400', 'hover:text-white', 'hover:bg-white/5');
                 closeSidebar();
@@ -4603,20 +5029,24 @@ function setupLuxeHRSheets() {
                 if (activeView === 'offboarding') renderOffboarding();
                 if (activeView === 'maintenance') renderMaintenance();
                 if (activeView === 'settings') renderSettings();
+                if (activeView === 'access') renderAccessManagement();
             }
 
             function renderDashboard() {
-                const activeEmployees = employees.filter(isEmployeeEligibleForOperations).length;
-                const contractEmployees = employees.filter(e => e.status === 'Kontrak').length;
-                const resignCount = employees.filter(e => safeLower(e.status) === 'resign').length;
-                const blacklistCount = employees.filter(e => safeLower(e.status) === 'blacklist').length;
+                const visibleEmployees = getVisibleEmployees();
+                const visibleAttendance = getVisibleAttendance();
+                const visibleLeaves = getVisibleLeaves();
+                const activeEmployees = visibleEmployees.filter(isEmployeeEligibleForOperations).length;
+                const contractEmployees = visibleEmployees.filter(e => e.status === 'Kontrak').length;
+                const resignCount = visibleEmployees.filter(e => safeLower(e.status) === 'resign').length;
+                const blacklistCount = visibleEmployees.filter(e => safeLower(e.status) === 'blacklist').length;
                 const today = todayKey();
-                const todayAttendance = attendance.filter(a => a.date === today);
+                const todayAttendance = visibleAttendance.filter(a => a.date === today);
                 const presentToday = todayAttendance.filter(a => a.checkIn).length;
-                const pendingLeaves = leaves.filter(l => l.status === 'Pending').length;
+                const pendingLeaves = visibleLeaves.filter(l => l.status === 'Pending').length;
                 const activeShiftCount = getActiveShifts().length;
                 const cards = [
-                    { label: 'Total Karyawan', value: employees.length, icon: 'fa-users', desc: 'Semua data karyawan' },
+                    { label: isEmployeeScoped() ? 'Profil Saya' : 'Total Karyawan', value: visibleEmployees.length, icon: 'fa-users', desc: isEmployeeScoped() ? 'Data pribadi' : 'Semua data karyawan' },
                     { label: 'Operasional', value: activeEmployees, icon: 'fa-user-check', desc: `${contractEmployees} kontrak aktif` },
                     { label: 'Resign', value: resignCount, icon: 'fa-person-walking-arrow-right', desc: `${resignRecords.length} catatan resign` },
                     { label: 'Blacklist', value: blacklistCount, icon: 'fa-ban', desc: `${blacklistRecords.length} catatan blacklist` },
@@ -4631,7 +5061,7 @@ function setupLuxeHRSheets() {
                             <div class="w-10 h-10 rounded-full border border-gold-500/30 bg-gold-500/10 text-gold-500 flex items-center justify-center"><i class="fa-solid ${card.icon}"></i></div>
                         </div>
                     </div>`).join('');
-                const recent = [...employees].sort((a, b) => new Date(b.joinDate) - new Date(a.joinDate)).slice(0, 5);
+                const recent = [...visibleEmployees].sort((a, b) => new Date(b.joinDate) - new Date(a.joinDate)).slice(0, 5);
                 byId('recentEmployeeTable').innerHTML = recent.map(emp => `
                     <tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4"><div class="flex items-center gap-3"><img src="${escapeHtml(getEmployeePhotoSource(emp))}" class="w-8 h-8 rounded-full object-cover border border-gold-500/30" alt="${escapeHtml(emp.name)}"><div><p class="text-white text-[11px] font-medium">${escapeHtml(emp.name)}</p><p class="text-gray-500 text-[9px] font-mono">${escapeHtml(emp.nik)}</p></div></div></td><td class="py-3 px-4 text-gray-400 text-[10px]">${escapeHtml(emp.position)}</td><td class="py-3 px-4">${getStatusBadge(emp.status)}</td></tr>`).join('') || `<tr><td colspan="3" class="py-8 text-center text-gray-500 italic">Belum ada karyawan.</td></tr>`;
                 byId('todayAttendanceMini').innerHTML = todayAttendance.slice(0, 6).map(log => {
@@ -4661,7 +5091,7 @@ function setupLuxeHRSheets() {
                 const branch = byId('branchFilter')?.value || 'all';
                 const status = byId('statusFilter')?.value || 'all';
                 const q = safeLower(`${globalSearch} ${localSearch}`.trim());
-                return employees.filter(emp => {
+                return getVisibleEmployees().filter(emp => {
                     const matchQ = !q || [emp.name, emp.nik, emp.branch, emp.position, emp.email, emp.phone].some(v => safeLower(v).includes(q));
                     const matchBranch = branch === 'all' || emp.branch === branch;
                     const matchStatus = status === 'all' || emp.status === status;
@@ -4682,6 +5112,9 @@ function setupLuxeHRSheets() {
             }
 
             function openEmployeeModal(id = null) {
+                if (id && !canSeeEmployee(id)) return showToast('Akses data karyawan dibatasi', 'error');
+                if (!id && !requirePermission('manageEmployees')) return;
+                if (id && isEmployeeScoped() && !hasPermission('manageEmployees')) return showToast('Karyawan hanya dapat melihat data sendiri, bukan mengedit master', 'error');
                 const modal = byId('employeeModal');
                 const content = byId('employeeModalContent');
                 const form = byId('employeeForm');
@@ -4802,6 +5235,7 @@ function setupLuxeHRSheets() {
                 }
             }
             function deleteEmployee(id) {
+                if (!requirePermission('manageEmployees')) return;
                 const emp = getEmployee(id);
                 if (!emp) return;
                 showConfirm(`Hapus data karyawan ${emp.name}? Data absensi dan cuti yang sudah tercatat tidak akan ikut terhapus.`, () => {
@@ -5027,7 +5461,7 @@ function setupLuxeHRSheets() {
             function renderAttendance() {
                 const selectedDate = getSelectedAttendanceDate();
                 byId('attendanceDateLabel').textContent = formatDateKeyLong(selectedDate);
-                const activeEmployees = employees.filter(isEmployeeEligibleForOperations);
+                const activeEmployees = getVisibleEmployees().filter(isEmployeeEligibleForOperations);
                 byId('attendanceTable').innerHTML = activeEmployees.map(emp => {
                     const log = attendance.find(a => String(a.employeeId) === String(emp.id) && a.date === selectedDate);
                     const shift = log ? null : getEmployeeShift(emp.id, selectedDate);
@@ -5066,6 +5500,7 @@ function setupLuxeHRSheets() {
                 const time = normalizeTimeToHHMM(getSelectedAttendanceTime(), '');
                 if (!time) return showToast('Format jam absensi tidak valid', 'error');
                 const shift = getEmployeeShift(emp.id, date);
+                if (!canSeeEmployee(empId)) return showToast('Akun ini hanya boleh memproses data dirinya sendiri', 'error');
                 let log = attendance.find(a => String(a.employeeId) === String(empId) && a.date === date);
                 const dateLabel = formatDateKeyLong(date);
                 if (type === 'in') {
@@ -5183,6 +5618,7 @@ function setupLuxeHRSheets() {
                 byId('shiftStatus').value = 'Aktif';
             }
             function handleShiftSubmit(e) {
+                if (!requirePermission('manageShift')) return;
                 e.preventDefault();
                 const id = byId('shiftId').value;
                 const data = {
@@ -5221,6 +5657,7 @@ function setupLuxeHRSheets() {
                 showToast('Mode edit shift aktif', 'info');
             }
             function deleteShift(id) {
+                if (!requirePermission('manageShift')) return;
                 const shift = getShift(id, { includeDeleted: true });
                 if (!shift || isDeletedRecord(shift)) return showToast('Shift tidak ditemukan atau sudah dihapus', 'warning');
                 const usedByEmployee = employees.some(emp => String(emp.defaultShiftId) === String(id));
@@ -5259,6 +5696,7 @@ function setupLuxeHRSheets() {
                 });
             }
             function handleShiftAssignmentSubmit(e) {
+                if (!requirePermission('manageShift')) return;
                 e.preventDefault();
                 const employeeId = Number(byId('shiftEmployee').value || 0);
                 const shiftId = Number(byId('shiftAssignSelect').value || 0);
@@ -5276,6 +5714,7 @@ function setupLuxeHRSheets() {
                 showToast('Assignment shift berhasil ditambahkan', 'success');
             }
             function deleteShiftAssignment(id) {
+                if (!requirePermission('manageShift')) return;
                 showConfirm('Hapus assignment shift ini?', () => {
                     const now = new Date().toISOString();
                     const item = shiftAssignments.find(row => Number(row.id) === Number(id));
@@ -5296,8 +5735,8 @@ function setupLuxeHRSheets() {
                 if (empSelect) {
                     const current = empSelect.value || 'all';
                     const seen = new Map();
-                    employees.forEach(emp => seen.set(String(emp.id), `${emp.name} - ${emp.nik}`));
-                    attendance.forEach(log => {
+                    getVisibleEmployees().forEach(emp => seen.set(String(emp.id), `${emp.name} - ${emp.nik}`));
+                    getVisibleAttendance().forEach(log => {
                         const key = String(log.employeeId || log.employeeNik || log.employeeName || 'unknown');
                         if (!seen.has(key)) seen.set(key, `${attendanceEmployeeName(log)} - ${attendanceEmployeeNik(log)}`);
                     });
@@ -5307,7 +5746,7 @@ function setupLuxeHRSheets() {
                 }
                 if (shiftSelect) {
                     const current = shiftSelect.value || 'all';
-                    const names = [...new Set([...shifts.map(s => s.name), ...attendance.map(a => a.shiftName)].filter(Boolean))].sort((a, b) => a.localeCompare(b));
+                    const names = [...new Set([...shifts.map(s => s.name), ...getVisibleAttendance().map(a => a.shiftName)].filter(Boolean))].sort((a, b) => a.localeCompare(b));
                     shiftSelect.innerHTML = `<option value="all">Semua Shift</option>` + names.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
                     shiftSelect.value = [...shiftSelect.options].some(o => o.value === current) ? current : 'all';
                     refreshPremiumSelect(shiftSelect);
@@ -5315,7 +5754,7 @@ function setupLuxeHRSheets() {
                 const statusSelect = byId('historyStatusFilter');
                 if (statusSelect) {
                     const current = statusSelect.value || 'all';
-                    const statusNames = uniqueTextList([...getEmployeeStatuses(), 'Hadir', 'Terlambat', 'Belum Pulang', ...attendance.map(a => a.status)]);
+                    const statusNames = uniqueTextList([...getEmployeeStatuses(), 'Hadir', 'Terlambat', 'Belum Pulang', ...getVisibleAttendance().map(a => a.status)]);
                     statusSelect.innerHTML = `<option value="all">Semua Status</option>` + statusNames.map(status => `<option value="${escapeHtml(status)}">${escapeHtml(status)}</option>`).join('');
                     statusSelect.value = [...statusSelect.options].some(o => o.value === current) ? current : 'all';
                     refreshPremiumSelect(statusSelect);
@@ -5328,7 +5767,7 @@ function setupLuxeHRSheets() {
                 const shift = byId('historyShiftFilter')?.value || 'all';
                 const status = byId('historyStatusFilter')?.value || 'all';
                 const query = safeLower(byId('historySearchInput')?.value || '');
-                return [...attendance].filter(log => {
+                return [...getVisibleAttendance()].filter(log => {
                     const matchStart = !startDate || String(log.date || '') >= startDate;
                     const matchEnd = !endDate || String(log.date || '') <= endDate;
                     const matchEmployee = employee === 'all' || String(log.employeeId) === String(employee) || String(log.employeeNik) === String(employee) || String(log.employeeName) === String(employee);
@@ -5402,11 +5841,12 @@ function setupLuxeHRSheets() {
 
             function renderLeaves() {
                 const tbody = byId('leaveTable');
-                if (!leaves.length) {
+                const visibleLeaves = getVisibleLeaves();
+                if (!visibleLeaves.length) {
                     tbody.innerHTML = `<tr><td colspan="5" class="py-10 text-center text-gray-500 italic">Belum ada pengajuan cuti atau izin.</td></tr>`;
                     return;
                 }
-                tbody.innerHTML = leaves.map(item => {
+                tbody.innerHTML = visibleLeaves.map(item => {
                     const emp = getEmployee(item.employeeId);
                     return `<tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4"><p class="text-white text-[11px]">${escapeHtml(emp?.name || 'Karyawan Terhapus')}</p><p class="text-gray-500 text-[9px]">${escapeHtml(emp?.branch || '-')}</p></td><td class="py-3 px-4 text-gray-300 text-[10px]">${escapeHtml(item.type)}</td><td class="py-3 px-4 text-gray-400 text-[10px]">${formatDate(item.startDate)} - ${formatDate(item.endDate)}</td><td class="py-3 px-4">${getStatusBadge(item.status)}</td><td class="py-3 px-4 text-right"><div class="inline-flex gap-1"><button type="button" onclick="updateLeaveStatus(${Number(item.id)}, 'Disetujui')" class="btn-icon hover:text-green-400 hover:border-green-500/30" title="Setujui"><i class="fa-solid fa-check text-[10px]"></i></button><button type="button" onclick="updateLeaveStatus(${Number(item.id)}, 'Ditolak')" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Tolak"><i class="fa-solid fa-xmark text-[10px]"></i></button><button type="button" onclick="deleteLeave(${Number(item.id)})" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Hapus"><i class="fa-solid fa-trash-can text-[10px]"></i></button></div></td></tr>`;
                 }).join('');
@@ -5414,6 +5854,7 @@ function setupLuxeHRSheets() {
             function handleLeaveSubmit(e) {
                 e.preventDefault();
                 const employeeId = Number(byId('leaveEmployee').value);
+                if (!canSeeEmployee(employeeId)) return showToast('Akun ini hanya boleh mengajukan data dirinya sendiri', 'error');
                 const startDate = byId('leaveStart').value;
                 const endDate = byId('leaveEnd').value;
                 if (!employeeId) return showToast('Pilih karyawan terlebih dahulu', 'error');
@@ -5430,6 +5871,7 @@ function setupLuxeHRSheets() {
                 showToast('Pengajuan berhasil ditambahkan', 'success');
             }
             function updateLeaveStatus(id, status) {
+                if (!requirePermission('manageLeave')) return;
                 leaves = leaves.map(item => Number(item.id) === Number(id) ? { ...item, status } : item);
                 saveLeaves();
                 renderLeaves();
@@ -5438,6 +5880,7 @@ function setupLuxeHRSheets() {
                 showToast(`Pengajuan ${status.toLowerCase()}`, 'success');
             }
             function deleteLeave(id) {
+                if (!requirePermission('manageLeave')) return;
                 showConfirm('Hapus pengajuan ini?', () => {
                     const item = leaves.find(row => Number(row.id) === Number(id));
                     if (item) addDeleteMarker('leaves', item);
@@ -5509,7 +5952,7 @@ function setupLuxeHRSheets() {
                 const month = byId('payrollMonth').value || new Date().toISOString().slice(0, 7);
                 const deductionPerDay = parseMoneyValue(byId('deductionPerDay').value);
                 const allowance = parseMoneyValue(byId('fixedAllowance').value);
-                const activeEmployees = employees.filter(isEmployeeEligibleForOperations);
+                const activeEmployees = getVisibleEmployees().filter(isEmployeeEligibleForOperations);
                 const summaries = activeEmployees.map(emp => ({ emp, summary: getEmployeeMonthlyWorkSummary(emp, month, deductionPerDay, allowance) }));
                 const totalWorkDays = summaries.reduce((sum, item) => sum + item.summary.workDays, 0);
                 const totalPayrollMinutes = summaries.reduce((sum, item) => sum + item.summary.payrollMinutes, 0);
@@ -6115,6 +6558,7 @@ function setupLuxeHRSheets() {
                 return keys;
             }
             function resetLocalApplicationOnly() {
+                if (!requirePermission('resetData')) return;
                 showConfirm('Restart ulang lokal akan menghapus seluruh data LuxeHR di browser ini dan reload aplikasi. Google Sheet tidak akan diubah. Lanjutkan?', () => {
                     getAllLuxeHrLocalStorageKeys().forEach(key => localStorage.removeItem(key));
                     showToast('Storage lokal dikosongkan. Aplikasi dimuat ulang.', 'warning');
@@ -6122,6 +6566,7 @@ function setupLuxeHRSheets() {
                 });
             }
             async function emptyAllApplicationData() {
+                if (!requirePermission('resetData')) return;
                 showConfirm('Kosongkan seluruh data aplikasi? Data karyawan, absensi, cuti, shift, resign, blacklist, master, maintenance, dan pengaturan akan dikosongkan. Jika akses jaringan cloud aktif, Google Sheet juga akan ditimpa kosong. Lanjutkan?', async () => {
                     const keepSheetId = settings.googleSheetId || '';
                     const keepFolder = settings.driveRootFolderName || 'LuxeHR Uploads';
@@ -6205,6 +6650,7 @@ function setupLuxeHRSheets() {
             }
             function handleSettingsSubmit(e) {
                 e.preventDefault();
+                if (!requirePermission('manageSettings')) return;
                 settings = {
                     companyName: byId('companyName').value.trim(),
                     companyAddress: byId('companyAddress').value.trim(),
@@ -6294,9 +6740,9 @@ function setupLuxeHRSheets() {
                 window.open(GOOGLE_APPS_SCRIPT_URL, '_blank', 'noopener,noreferrer');
             }
 
-            function renderCompanyIdentity() { byId('sidebarCompany').textContent = settings.companyName || 'LuxeHR'; }
+            function renderCompanyIdentity() { byId('sidebarCompany').textContent = settings.companyName || 'LuxeHR'; updateAuthUI(); }
             function renderAllSelectors() {
-                const activeEmployees = employees.filter(isEmployeeEligibleForOperations);
+                const activeEmployees = getVisibleEmployees().filter(isEmployeeEligibleForOperations);
                 const employeeOptions = activeEmployees.map(emp => `<option value="${Number(emp.id)}">${escapeHtml(emp.name)} - ${escapeHtml(emp.nik)}</option>`).join('');
                 byId('attendanceEmployeeSelect').innerHTML = employeeOptions || `<option value="">Belum ada karyawan aktif</option>`;
                 byId('leaveEmployee').innerHTML = employeeOptions || `<option value="">Belum ada karyawan aktif</option>`;
@@ -6521,7 +6967,7 @@ function setupLuxeHRSheets() {
             }
 
             function runSelfTests() {
-                const requiredGlobals = ['openEmployeeModal', 'closeEmployeeModal', 'switchView', 'recordAttendance', 'setAttendanceDateToday', 'setAttendanceTimeNow', 'renderPayroll', 'copyAppScript', 'exportEmployeesCSV', 'downloadBackupJSON', 'restoreFromBackup', 'testGoogleSheetConnection', 'syncAllToCloud', 'runAutoSyncNow', 'copyWebAppUrl', 'openWebAppUrl', 'renderShiftView', 'resetShiftForm', 'openShiftManagementForEmployee', 'goToShiftManagementFromEmployeeModal', 'exportShiftCSV', 'renderAttendanceHistory', 'exportAttendanceHistoryCSV', 'resetAttendanceHistoryFilters', 'deleteAttendanceHistory', 'applyEmployeeImageFromUrl', 'clearEmployeeImage', 'openEmployeeDocuments', 'closeEmployeeDocumentsModal', 'resetBranchOptionForm', 'resetStatusOptionForm', 'editBranchOption', 'editStatusOption', 'deleteBranchOption', 'deleteStatusOption', 'openOffboardingModal', 'closeOffboardingModal', 'reactivateEmployee', 'deleteOffboardingRecord', 'renderOffboarding', 'exportOffboardingCSV', 'runMaintenanceCheck', 'repairMaintenanceModule', 'backupMaintenanceModule', 'syncMaintenanceModule', 'exportMaintenanceReportCSV', 'exportMaintenanceLogCSV', 'showConnectivityDetails'];
+                const requiredGlobals = ['openEmployeeModal', 'closeEmployeeModal', 'switchView', 'recordAttendance', 'setAttendanceDateToday', 'setAttendanceTimeNow', 'renderPayroll', 'copyAppScript', 'exportEmployeesCSV', 'downloadBackupJSON', 'restoreFromBackup', 'testGoogleSheetConnection', 'syncAllToCloud', 'runAutoSyncNow', 'copyWebAppUrl', 'openWebAppUrl', 'renderShiftView', 'resetShiftForm', 'openShiftManagementForEmployee', 'goToShiftManagementFromEmployeeModal', 'exportShiftCSV', 'renderAttendanceHistory', 'exportAttendanceHistoryCSV', 'resetAttendanceHistoryFilters', 'deleteAttendanceHistory', 'applyEmployeeImageFromUrl', 'clearEmployeeImage', 'openEmployeeDocuments', 'closeEmployeeDocumentsModal', 'resetBranchOptionForm', 'resetStatusOptionForm', 'editBranchOption', 'editStatusOption', 'deleteBranchOption', 'deleteStatusOption', 'openOffboardingModal', 'closeOffboardingModal', 'reactivateEmployee', 'deleteOffboardingRecord', 'renderOffboarding', 'exportOffboardingCSV', 'runMaintenanceCheck', 'repairMaintenanceModule', 'backupMaintenanceModule', 'syncMaintenanceModule', 'exportMaintenanceReportCSV', 'exportMaintenanceLogCSV', 'showConnectivityDetails', 'logoutUser', 'resetAccountForm', 'editUserAccount', 'deleteUserAccount', 'toggleUserAccountStatus'];
                 const missingGlobals = requiredGlobals.filter(name => typeof window[name] !== 'function');
                 console.assert(!missingGlobals.length, `Self-test failed: missing globals ${missingGlobals.join(', ')}`);
                 console.assert(Array.isArray(employees), 'Self-test failed: employees must be an array');
@@ -6596,6 +7042,9 @@ function setupLuxeHRSheets() {
                 byId('shiftAssignmentForm').addEventListener('submit', handleShiftAssignmentSubmit);
                 byId('leaveForm').addEventListener('submit', handleLeaveSubmit);
                 byId('settingsForm').addEventListener('submit', handleSettingsSubmit);
+                if (byId('loginForm')) byId('loginForm').addEventListener('submit', handleLoginSubmit);
+                if (byId('accountAccessForm')) byId('accountAccessForm').addEventListener('submit', handleAccountAccessSubmit);
+                if (byId('accountRole')) byId('accountRole').addEventListener('change', () => renderAccountPermissionGrid(getDefaultAccessPermissions(byId('accountRole').value)));
                 byId('offboardingForm').addEventListener('submit', handleOffboardingSubmit);
                 if (byId('branchOptionForm')) byId('branchOptionForm').addEventListener('submit', handleBranchOptionSubmit);
                 if (byId('statusOptionForm')) byId('statusOptionForm').addEventListener('submit', handleStatusOptionSubmit);
@@ -6676,18 +7125,25 @@ function setupLuxeHRSheets() {
                     syncMaintenanceModule,
                     exportMaintenanceReportCSV,
                     exportMaintenanceLogCSV,
-                    showConnectivityDetails
+                    showConnectivityDetails,
+                    logoutUser,
+                    resetAccountForm,
+                    editUserAccount,
+                    deleteUserAccount,
+                    toggleUserAccountStatus
                 });
             }
 
             document.addEventListener('DOMContentLoaded', () => {
                 initStorage();
+                ensureAuthSettings();
                 exposeGlobals();
                 bindEvents();
                 startConnectivityStatusService();
                 updateDateTime();
                 setInterval(updateDateTime, 60000);
                 renderCompanyIdentity();
+                updateAuthUI();
                 renderAllSelectors();
                 setupPremiumSelects(document);
                 refreshPremiumSelects(document);
