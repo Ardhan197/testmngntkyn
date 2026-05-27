@@ -929,7 +929,7 @@
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                             <button type="button" onclick="pullCloudDataNow()" class="border border-purple-500/40 text-purple-300 hover:bg-purple-500 hover:text-white font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-cloud-arrow-down mr-1.5"></i> Tarik Data Cloud</button>
-                            <button type="button" onclick="purgeSyncedLocalBusinessData()" class="border border-red-500/40 text-red-300 hover:bg-red-500 hover:text-white font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-broom mr-1.5"></i> Bersihkan Cache Tersync</button>
+                            <button type="button" onclick="purgeSyncedLocalBusinessData()" class="border border-red-500/40 text-red-300 hover:bg-red-500 hover:text-white font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-screwdriver-wrench mr-1.5"></i> Repair Cache Lokal</button>
                         </div>
                         <div class="p-3 rounded-lg bg-surface-100 border border-gold-500/20 text-gray-400 text-[10px] leading-relaxed">
                             <p class="text-gold-500 uppercase tracking-widest text-[9px] mb-2"><i class="fa-solid fa-cloud-arrow-up mr-1"></i> Cakupan Full Sync Google Sheet</p>
@@ -2049,7 +2049,7 @@ function setupLuxeHRSheets() {
             // Masukkan URL Web App Google Apps Script Anda di dalam tanda kutip di bawah ini:
             const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUM-uaRnj_sftvEJKT6KSXM26x7dh_2rU9YaKRTlb18QHXMDkRg0nLwf4Z_R5k_Ipl-w/exec";
 
-            const APP_VERSION = '5.2.0-audit-sync-tombstone-localdate-image-fix';
+            const APP_VERSION = '5.3.0-safe-local-mirror-cloud-hydration-fix';
             const PAYROLL_MONTH_DAYS = 30;
             const STANDARD_WORKDAY_HOURS = 12;
             const STANDARD_WORKDAY_MINUTES = STANDARD_WORKDAY_HOURS * 60;
@@ -2929,18 +2929,7 @@ function setupLuxeHRSheets() {
                 deletedRecords = normalizeDeleteLog(deletedRecords);
                 applyDeleteMarkersToMemory();
                 normalizeMasterDropdowns();
-                const shouldKeepBusinessLocal = !isCloudFirstEnabled() || !navigator.onLine || getSyncQueue().pending;
-                if (shouldKeepBusinessLocal) {
-                    if (!hasStorageValue(STORAGE_KEYS.employees)) safeWrite(STORAGE_KEYS.employees, employees, Array.isArray);
-                    if (!hasStorageValue(STORAGE_KEYS.attendance)) safeWrite(STORAGE_KEYS.attendance, attendance, Array.isArray);
-                    if (!hasStorageValue(STORAGE_KEYS.leaves)) safeWrite(STORAGE_KEYS.leaves, leaves, Array.isArray);
-                    if (!hasStorageValue(STORAGE_KEYS.shifts)) safeWrite(STORAGE_KEYS.shifts, shifts, Array.isArray);
-                    if (!hasStorageValue(STORAGE_KEYS.shiftAssignments)) safeWrite(STORAGE_KEYS.shiftAssignments, shiftAssignments, Array.isArray);
-                    if (!hasStorageValue(STORAGE_KEYS.resignRecords)) safeWrite(STORAGE_KEYS.resignRecords, resignRecords, Array.isArray);
-                    if (!hasStorageValue(STORAGE_KEYS.blacklistRecords)) safeWrite(STORAGE_KEYS.blacklistRecords, blacklistRecords, Array.isArray);
-                    if (!hasStorageValue(STORAGE_KEYS.maintenanceLogs)) safeWrite(STORAGE_KEYS.maintenanceLogs, maintenanceLogs, Array.isArray);
-                    if (!hasStorageValue(STORAGE_KEYS.deletedRecords)) safeWrite(STORAGE_KEYS.deletedRecords, deletedRecords, Array.isArray);
-                }
+                repairLocalStorageMirror({ silent: true, reason: 'startup-init' });
                 safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
             }
             
@@ -4017,10 +4006,18 @@ function setupLuxeHRSheets() {
             function hasUnsyncedOfflineData() { return Boolean(getSyncQueue().pending); }
             function purgeSyncedLocalBusinessData(options = {}) {
                 const force = options.force === true;
+                const hard = options.hard === true;
                 const silent = options.silent === true;
                 if (!force && hasUnsyncedOfflineData()) {
                     if (!silent) showToast('Cache belum dibersihkan karena masih ada antrean sync', 'warning');
                     return { ok: false, skipped: true, reason: 'pending-sync' };
+                }
+                if (!hard) {
+                    const repaired = repairLocalStorageMirror({ silent: true, reason: 'safe-cache-repair' });
+                    updateStorageStatus();
+                    renderRealtimeStatus();
+                    if (!silent) showToast(`Cache lokal diperbaiki sebagai mirror aman (${repaired.written} key). Data karyawan tidak dihapus.`, 'success');
+                    return { ok: true, removed: 0, mirrored: true, repaired };
                 }
                 let removed = 0;
                 getBusinessStorageKeys().forEach(key => {
@@ -4032,9 +4029,10 @@ function setupLuxeHRSheets() {
                     });
                 });
                 try { localStorage.removeItem(META_KEY); } catch (error) {}
+                repairLocalStorageMirror({ silent: true, reason: 'post-hard-purge-reseed' });
                 updateStorageStatus();
                 renderRealtimeStatus();
-                if (!silent) showToast(`Cache data bisnis tersync dibersihkan (${removed} item)`, 'success');
+                if (!silent) showToast(`Cache data bisnis dibersihkan lalu mirror lokal dibuat ulang (${removed} item lama)`, 'success');
                 return { ok: true, removed };
             }
             function parseCloudValue(value) {
@@ -4327,6 +4325,55 @@ function setupLuxeHRSheets() {
                     return false;
                 }
             }
+
+            function storageKeyNeedsRepair(key, validator) {
+                const main = readDirect(key);
+                return !main.exists || !main.ok || !validator(main.value);
+            }
+            function repairLocalStorageMirror(options = {}) {
+                const silent = options.silent === true;
+                let written = 0;
+                let failed = 0;
+                try { normalizeLocalBusinessData({ write: false }); } catch (error) { console.warn('Normalisasi mirror lokal gagal', error); }
+                const jobs = [
+                    { key: STORAGE_KEYS.employees, value: employees, validator: Array.isArray },
+                    { key: STORAGE_KEYS.attendance, value: attendance, validator: Array.isArray },
+                    { key: STORAGE_KEYS.leaves, value: leaves, validator: Array.isArray },
+                    { key: STORAGE_KEYS.shifts, value: shifts, validator: Array.isArray },
+                    { key: STORAGE_KEYS.shiftAssignments, value: shiftAssignments, validator: Array.isArray },
+                    { key: STORAGE_KEYS.resignRecords, value: resignRecords, validator: Array.isArray },
+                    { key: STORAGE_KEYS.blacklistRecords, value: blacklistRecords, validator: Array.isArray },
+                    { key: STORAGE_KEYS.maintenanceLogs, value: maintenanceLogs, validator: Array.isArray },
+                    { key: STORAGE_KEYS.deletedRecords, value: deletedRecords, validator: Array.isArray },
+                    { key: STORAGE_KEYS.settings, value: settings, validator: value => value && typeof value === 'object' && !Array.isArray(value) }
+                ];
+                jobs.forEach(job => {
+                    try {
+                        const safeValue = job.validator(job.value) ? job.value : (job.key === STORAGE_KEYS.settings ? {} : []);
+                        if (storageKeyNeedsRepair(job.key, job.validator)) {
+                            writeDirect(job.key, safeValue);
+                            written += 1;
+                        }
+                    } catch (error) {
+                        failed += 1;
+                        console.warn(`Repair mirror lokal gagal untuk ${job.key}`, error);
+                    }
+                });
+                try { markMeta(); } catch (error) { console.warn('Meta mirror lokal gagal diperbarui', error); }
+                if (!silent) showToast(failed ? `Mirror lokal diperbaiki sebagian: ${written} berhasil, ${failed} gagal` : `Mirror lokal aman (${written} key diperbaiki)`, failed ? 'warning' : 'success');
+                return { written, failed };
+            }
+            function getCloudSheetRows(sheets, sheetName) {
+                if (!sheets || typeof sheets !== 'object') return null;
+                if (!Object.prototype.hasOwnProperty.call(sheets, sheetName)) return null;
+                return Array.isArray(sheets[sheetName]) ? sheets[sheetName] : [];
+            }
+            function hydrateRowsFromCloud(sheets, sheetName, currentRows, requiredFields) {
+                const rows = getCloudSheetRows(sheets, sheetName);
+                if (rows === null) return Array.isArray(currentRows) ? currentRows : [];
+                if (!rows.length && Array.isArray(currentRows) && currentRows.length) return currentRows;
+                return applyDeleteMarkersToRows(sheetName, cleanCloudRows(rows, requiredFields), deletedRecords);
+            }
             async function startCloudFirstStartupSync() {
                 if (!isNetworkAccessEnabled() || !isCloudFirstEnabled() || !navigator.onLine) return;
                 const pendingBeforePull = hasUnsyncedOfflineData();
@@ -4356,15 +4403,16 @@ function setupLuxeHRSheets() {
             function hydrateStateFromCloud(sheets = {}) {
                 cloudHydrationInProgress = true;
                 try {
-                    const cloudSettings = settingsFromCloudRows(sheets.Data_Pengaturan || []);
+                    const pengaturanRows = getCloudSheetRows(sheets, 'Data_Pengaturan');
+                    const cloudSettings = pengaturanRows === null ? {} : settingsFromCloudRows(pengaturanRows || []);
                     settings = Object.assign({
                         companyName: '',
                         companyAddress: '',
                         standardStartTime: '08:00',
                         googleSheetId: getConfiguredSpreadsheetId(),
                         driveRootFolderName: 'LuxeHR Uploads',
-                        branchOptions: [],
-                        employeeStatusOptions: [],
+                        branchOptions: Array.isArray(settings.branchOptions) ? settings.branchOptions : [],
+                        employeeStatusOptions: Array.isArray(settings.employeeStatusOptions) ? settings.employeeStatusOptions : [],
                         offboardingFeatureInitialized: true,
                         autoSyncEnabled: true,
                         autoSyncIntervalSeconds: 60,
@@ -4372,24 +4420,27 @@ function setupLuxeHRSheets() {
                         realtimePullEnabled: true,
                         realtimePullIntervalSeconds: REALTIME_PULL_DEFAULT_SECONDS,
                         accessControlEnabled: true,
-                        userAccounts: [],
+                        userAccounts: Array.isArray(settings.userAccounts) ? settings.userAccounts : [],
                         spreadsheetTimeZone: DEFAULT_SPREADSHEET_TIME_ZONE
-                    }, cloudSettings || {});
-                    deletedRecords = normalizeDeleteLog([...(deletedRecords || []), ...cleanCloudRows(sheets.Data_Delete_Log || [], ['sheetName', 'recordKey', 'deletedAt'])]);
+                    }, settings || {}, cloudSettings || {});
+                    const deleteRows = getCloudSheetRows(sheets, 'Data_Delete_Log');
+                    if (deleteRows !== null) deletedRecords = normalizeDeleteLog([...(deletedRecords || []), ...cleanCloudRows(deleteRows || [], ['sheetName', 'recordKey', 'deletedAt'])]);
                     settings.branchOptions = uniqueTextList(applyDeleteMarkersToRows('Data_Master_Cabang', (settings.branchOptions || []).map(name => ({ nama: name })), deletedRecords).map(row => row.nama));
                     settings.employeeStatusOptions = uniqueTextList(applyDeleteMarkersToRows('Data_Master_Status', (settings.employeeStatusOptions || []).map(name => ({ nama: name })), deletedRecords).map(row => row.nama));
-                    const cloudBranches = listFromMasterRows(applyDeleteMarkersToRows('Data_Master_Cabang', sheets.Data_Master_Cabang || [], deletedRecords));
-                    const cloudStatuses = listFromMasterRows(applyDeleteMarkersToRows('Data_Master_Status', sheets.Data_Master_Status || [], deletedRecords));
+                    const branchRows = getCloudSheetRows(sheets, 'Data_Master_Cabang');
+                    const statusRows = getCloudSheetRows(sheets, 'Data_Master_Status');
+                    const cloudBranches = branchRows === null ? [] : listFromMasterRows(applyDeleteMarkersToRows('Data_Master_Cabang', branchRows || [], deletedRecords));
+                    const cloudStatuses = statusRows === null ? [] : listFromMasterRows(applyDeleteMarkersToRows('Data_Master_Status', statusRows || [], deletedRecords));
                     if (cloudBranches.length) settings.branchOptions = cloudBranches;
                     if (cloudStatuses.length) settings.employeeStatusOptions = cloudStatuses;
-                    employees = applyDeleteMarkersToRows('Data_Karyawan', cleanCloudRows(sheets.Data_Karyawan || [], ['id', 'nik', 'name']), deletedRecords);
-                    attendance = applyDeleteMarkersToRows('Data_Absensi', cleanCloudRows(sheets.Data_Absensi || [], ['id', 'employeeId', 'date']), deletedRecords);
-                    leaves = applyDeleteMarkersToRows('Data_Cuti', cleanCloudRows(sheets.Data_Cuti || [], ['id', 'employeeId']), deletedRecords);
-                    shifts = applyDeleteMarkersToRows('Data_Shift', cleanCloudRows(sheets.Data_Shift || [], ['id', 'name']), deletedRecords);
-                    shiftAssignments = applyDeleteMarkersToRows('Data_Shift_Assignment', cleanCloudRows(sheets.Data_Shift_Assignment || [], ['id', 'employeeId', 'shiftId']), deletedRecords);
-                    resignRecords = applyDeleteMarkersToRows('Data_Resign', cleanCloudRows(sheets.Data_Resign || [], ['id', 'employeeId']), deletedRecords);
-                    blacklistRecords = applyDeleteMarkersToRows('Data_Blacklist', cleanCloudRows(sheets.Data_Blacklist || [], ['id', 'employeeId']), deletedRecords);
-                    maintenanceLogs = applyDeleteMarkersToRows('Data_Maintenance_Log', cleanCloudRows(sheets.Data_Maintenance_Log || [], ['id', 'moduleId', 'checkedAt']), deletedRecords);
+                    employees = hydrateRowsFromCloud(sheets, 'Data_Karyawan', employees, ['id', 'nik', 'name']);
+                    attendance = hydrateRowsFromCloud(sheets, 'Data_Absensi', attendance, ['id', 'employeeId', 'date']);
+                    leaves = hydrateRowsFromCloud(sheets, 'Data_Cuti', leaves, ['id', 'employeeId']);
+                    shifts = hydrateRowsFromCloud(sheets, 'Data_Shift', shifts, ['id', 'name']);
+                    shiftAssignments = hydrateRowsFromCloud(sheets, 'Data_Shift_Assignment', shiftAssignments, ['id', 'employeeId', 'shiftId']);
+                    resignRecords = hydrateRowsFromCloud(sheets, 'Data_Resign', resignRecords, ['id', 'employeeId']);
+                    blacklistRecords = hydrateRowsFromCloud(sheets, 'Data_Blacklist', blacklistRecords, ['id', 'employeeId']);
+                    maintenanceLogs = hydrateRowsFromCloud(sheets, 'Data_Maintenance_Log', maintenanceLogs, ['id', 'moduleId', 'checkedAt']);
                     normalizeLocalBusinessData({ write: false });
 
                     settings.cloudFirstEnabled = settings.cloudFirstEnabled !== false;
@@ -4408,6 +4459,7 @@ function setupLuxeHRSheets() {
                     setupPremiumSelects(document);
                     refreshPremiumSelects(document);
                     renderActiveView();
+                    repairLocalStorageMirror({ silent: true, reason: 'cloud-hydration' });
                     updateStorageStatus();
                     renderRealtimeStatus();
                     writeCloudSnapshotToLocalStorage();
@@ -4415,6 +4467,7 @@ function setupLuxeHRSheets() {
                     cloudHydrationInProgress = false;
                 }
             }
+
             async function pullCloudDataNow(options = {}) {
                 const silent = options.silent === true;
                 const force = options.force === true || options.initial === true;
@@ -6979,29 +7032,30 @@ function setupLuxeHRSheets() {
             function updateStorageStatus() {
                 const el = byId('storageStatus');
                 if (!el) return;
+                repairLocalStorageMirror({ silent: true, reason: 'status-check' });
                 const meta = safeParse(localStorage.getItem(META_KEY), {});
-                const empMain = readDirect(STORAGE_KEYS.employees);
+                const arrayStatus = (key, memoryRows, label) => {
+                    const main = readDirect(key);
+                    const rows = Array.isArray(memoryRows) ? memoryRows : [];
+                    if (main.ok && main.exists && Array.isArray(main.value)) return `${main.value.length} ${label}`;
+                    if (!main.exists) return `${rows.length} ${label} (mirror dibuat ulang)`;
+                    return `${rows.length} ${label} (perlu repair mirror)`;
+                };
                 const empBackup = readDirect(getBackupKey(STORAGE_KEYS.employees));
-                const attMain = readDirect(STORAGE_KEYS.attendance);
-                const leaveMain = readDirect(STORAGE_KEYS.leaves);
-                const shiftMain = readDirect(STORAGE_KEYS.shifts);
-                const shiftAssignmentMain = readDirect(STORAGE_KEYS.shiftAssignments);
-                const resignMain = readDirect(STORAGE_KEYS.resignRecords);
-                const blacklistMain = readDirect(STORAGE_KEYS.blacklistRecords);
-                const mainStatus = empMain.ok && Array.isArray(empMain.value) ? `${empMain.value.length} karyawan` : 'data utama bermasalah';
+                const mainStatus = arrayStatus(STORAGE_KEYS.employees, employees, 'karyawan');
                 const backupStatus = empBackup.ok && Array.isArray(empBackup.value) ? `${empBackup.value.length} karyawan` : 'backup belum tersedia';
-                const attendanceStatus = attMain.ok && Array.isArray(attMain.value) ? `${attMain.value.length} log absensi` : 'absensi bermasalah';
-                const leaveStatus = leaveMain.ok && Array.isArray(leaveMain.value) ? `${leaveMain.value.length} pengajuan` : 'cuti bermasalah';
-                const shiftStatus = shiftMain.ok && Array.isArray(shiftMain.value) ? `${shiftMain.value.length} master shift` : 'shift bermasalah';
-                const shiftAssignStatus = shiftAssignmentMain.ok && Array.isArray(shiftAssignmentMain.value) ? `${shiftAssignmentMain.value.length} assignment` : 'assignment shift bermasalah';
-                const resignStatus = resignMain.ok && Array.isArray(resignMain.value) ? `${resignMain.value.length} catatan resign` : 'resign bermasalah';
-                const blacklistStatus = blacklistMain.ok && Array.isArray(blacklistMain.value) ? `${blacklistMain.value.length} catatan blacklist` : 'blacklist bermasalah';
-                const maintenanceStatus = readDirect(STORAGE_KEYS.maintenanceLogs);
-                const maintenanceText = maintenanceStatus.ok && Array.isArray(maintenanceStatus.value) ? `${maintenanceStatus.value.length} log maintenance` : 'maintenance bermasalah';
-                const photoCount = employees.filter(emp => emp.photo).length;
-                const ktpCount = employees.filter(emp => emp.ktpImage).length;
+                const attendanceStatus = arrayStatus(STORAGE_KEYS.attendance, attendance, 'log absensi');
+                const leaveStatus = arrayStatus(STORAGE_KEYS.leaves, leaves, 'pengajuan');
+                const shiftStatus = arrayStatus(STORAGE_KEYS.shifts, shifts, 'master shift');
+                const shiftAssignStatus = arrayStatus(STORAGE_KEYS.shiftAssignments, shiftAssignments, 'assignment');
+                const resignStatus = arrayStatus(STORAGE_KEYS.resignRecords, resignRecords, 'catatan resign');
+                const blacklistStatus = arrayStatus(STORAGE_KEYS.blacklistRecords, blacklistRecords, 'catatan blacklist');
+                const maintenanceText = arrayStatus(STORAGE_KEYS.maintenanceLogs, maintenanceLogs, 'log maintenance');
+                const photoCount = (employees || []).filter(emp => emp.photo || emp.photoDriveThumbnailUrl || emp.photoDriveDownloadUrl || emp.photoDriveUrl).length;
+                const ktpCount = (employees || []).filter(emp => emp.ktpImage || emp.ktpDriveThumbnailUrl || emp.ktpDriveDownloadUrl || emp.ktpDriveUrl).length;
                 const branchMasterCount = (settings.branchOptions || []).length;
                 const statusMasterCount = (settings.employeeStatusOptions || []).length;
+                const updatedLabel = meta.updatedAt ? new Date(meta.updatedAt).toLocaleString('id-ID') : '-';
                 el.innerHTML = `
                     <div class="flex items-start gap-2"><i class="fa-solid fa-shield-halved text-gold-500 mt-0.5"></i><div>
                         <p class="text-white text-[11px]">Data utama: ${escapeHtml(mainStatus)}</p>
@@ -7012,9 +7066,9 @@ function setupLuxeHRSheets() {
                         <p>Master dropdown: ${branchMasterCount} cabang / ${statusMasterCount} status</p>
                         <p>Dokumen gambar: ${photoCount} foto / ${ktpCount} KTP</p>
                         <p>Backup terakhir: ${escapeHtml(backupStatus)}</p>
-                        <p>Update lokal: ${escapeHtml(meta.updatedAt ? new Date(meta.updatedAt).toLocaleString('id-ID') : '-')}</p>
+                        <p>Update lokal: ${escapeHtml(updatedLabel)}</p>
                         <p>Maintenance: ${escapeHtml(maintenanceText)}</p>
-                        <p class="mt-1 ${storageRecovered ? 'text-yellow-400' : 'text-gray-500'}">${storageRecovered ? 'Sistem pernah memulihkan data dari backup.' : 'Storage lokal normal.'}</p>
+                        <p class="mt-1 ${storageRecovered ? 'text-yellow-400' : 'text-green-400'}">${storageRecovered ? 'Sistem pernah memulihkan data dari backup lokal.' : 'Storage lokal/mirror cloud aman.'}</p>
                     </div></div>`;
                 renderSyncStatus();
             }
