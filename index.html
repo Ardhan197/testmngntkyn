@@ -557,7 +557,7 @@
                             <button type="button" onclick="recordAttendance('in')" class="bg-gold-500/10 border border-gold-500/50 text-gold-500 hover:bg-gold-500 hover:text-surface-400 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-right-to-bracket mr-1"></i> Masuk</button>
                             <button type="button" onclick="recordAttendance('out')" class="bg-white/5 border border-white/10 text-gray-300 hover:border-gold-500/50 hover:text-gold-500 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-right-from-bracket mr-1"></i> Pulang</button>
                         </div>
-                        <div class="p-3 rounded-lg bg-surface-100 border border-white/5 text-gray-400 text-[10px] leading-relaxed"><i class="fa-solid fa-circle-info text-gold-500 mr-1"></i> Data tersimpan lokal dengan backup otomatis. Tanggal dan jam absensi bisa disesuaikan manual; shift tetap disimpan sebagai snapshot sehingga histori lama tidak berubah saat master shift diganti.</div>
+                        <div class="p-3 rounded-lg bg-surface-100 border border-white/5 text-gray-400 text-[10px] leading-relaxed"><i class="fa-solid fa-circle-info text-gold-500 mr-1"></i> Mode cloud-first aktif. Data ditarik dari cloud saat aplikasi dibuka, perubahan disimpan sebagai antrean offline bila koneksi putus, lalu otomatis sync kembali saat online. Tanggal dan jam absensi bisa disesuaikan manual; shift tetap disimpan sebagai snapshot.</div>
                     </div>
                 </div>
                 <div class="premium-card rounded-xl overflow-hidden lg:col-span-2">
@@ -878,7 +878,7 @@
                     </form>
                 </div>
                 <div class="premium-card rounded-xl p-4">
-                    <h3 class="font-serif font-bold text-white text-base mb-1">Backup & Integrasi Google Sheet</h3><p class="text-[10px] text-gray-500 mb-4">Mode cloud-first: Google Sheet menjadi sumber data utama untuk multi user/multi cabang. Browser hanya menyimpan antrean offline/cache sementara; setelah berhasil sync, data bisnis lokal dibersihkan otomatis.</p>
+                    <h3 class="font-serif font-bold text-white text-base mb-1">Backup & Integrasi Google Sheet</h3><p class="text-[10px] text-gray-500 mb-4">Mode cloud-first: Google Sheet menjadi sumber data utama untuk multi user/multi cabang. Browser hanya menyimpan mirror cloud dan antrean offline sementara agar aplikasi tetap aman saat koneksi putus.</p>
                     <div class="space-y-3">
                         <div><label class="label-premium">Status Storage Lokal</label><div id="storageStatus" class="p-3 rounded-lg bg-surface-100 border border-white/5 text-gray-400 text-[10px] leading-relaxed">Memeriksa data...</div></div>
                         <div><label class="label-premium">Status Google Sheet Sync</label><div id="syncStatus" class="p-3 rounded-lg bg-surface-100 border border-white/5 text-gray-400 text-[10px] leading-relaxed">Belum ada aktivitas sync.</div></div>
@@ -1023,23 +1023,23 @@
                 <!-- NEW CARD: Google Apps Script Template -->
                 <div class="premium-card rounded-xl p-4 lg:col-span-2 mt-2">
                     <div class="flex justify-between items-center mb-1">
-                        <h3 class="font-serif font-bold text-white text-base">Google Apps Script Template (Realtime Cloud-First Version)</h3>
+                        <h3 class="font-serif font-bold text-white text-base">Google Apps Script Template (Realtime Cloud-First + Delete Lock Version)</h3>
                         <button type="button" onclick="copyAppScript()" class="border border-white/10 text-gray-300 hover:text-white hover:border-gold-500/40 py-1.5 px-3 text-[9px] uppercase tracking-widest rounded-lg transition-all flex items-center gap-1.5">
                             <i class="fa-solid fa-copy"></i> Salin Kode
                         </button>
                     </div>
-                    <p class="text-[10px] text-gray-500 mb-4">Script cerdas realtime cloud-first: mendukung full sync batch, read-all cloud pull, upload Google Drive, serta mode multi-user berbasis Google Sheet sebagai sumber data utama.</p>
+                    <p class="text-[10px] text-gray-500 mb-4">Script cerdas realtime cloud-first: mendukung full sync batch, read-all cloud pull, upload Google Drive, delete tombstone, serta mode multi-user berbasis Google Sheet sebagai sumber data utama.</p>
                     <textarea id="appScriptTemplate" class="field min-h-[420px] font-mono text-[10px] leading-relaxed resize-y bg-surface-100/80 cursor-text" readonly spellcheck="false">
 /**
- * LuxeHR Premium - Google Sheet + Google Drive Connector v2.9
+ * LuxeHR Premium - Google Sheet + Google Drive Connector v2.12
  *
- * WAJIB DIPAKAI untuk LuxeHR v4.2.0 ke atas.
+ * WAJIB DIPAKAI untuk LuxeHR v4.9.0 ke atas.
  * Versi ini mendukung:
  * - Test koneksi / ping.
  * - Sync satu sheet.
  * - Full sync banyak sheet dalam 1 request batch.
  * - Read-all cloud pull untuk mode realtime cloud-first multi user.
- * - Safe merge sync agar data antar cabang/perangkat tidak saling menimpa.
+ * - Safe merge sync dan delete tombstone agar data antar cabang/perangkat tidak saling menimpa atau hidup kembali setelah dihapus.
  * - Normalisasi jam shift/absensi menjadi format 24 jam HH:mm.
  * - Auto-sync dari aplikasi tanpa harus selalu klik Sync Manual.
  * - Upload gambar Foto Karyawan dan KTP ke Google Drive.
@@ -1068,7 +1068,7 @@
  */
 const DEFAULT_SPREADSHEET_ID = &#x27;GANTI_DENGAN_ID_SPREADSHEET_ANDA&#x27;;
 const DEFAULT_DRIVE_ROOT_FOLDER_NAME = &#x27;LuxeHR Uploads&#x27;;
-const LUXEHR_CONNECTOR_VERSION = &#x27;2.10.0-shift-time-safe-merge&#x27;;
+const LUXEHR_CONNECTOR_VERSION = &#x27;2.12.0-delete-tombstone-sync&#x27;;
 const LUXEHR_HEADER_BG = &#x27;#D4AF37&#x27;;
 const LUXEHR_HEADER_FG = &#x27;#FFFFFF&#x27;;
 
@@ -1277,6 +1277,7 @@ function processReadAll(ss, request) {
     &#x27;Data_Drive_Files&#x27;,
     &#x27;Data_Maintenance_Log&#x27;,
     &#x27;Data_Maintenance_Report&#x27;,
+    &#x27;Data_Delete_Log&#x27;,
     &#x27;Data_Sync_Manifest&#x27;
   ];
   const requestedSheets = Array.isArray(request.sheets) &amp;&amp; request.sheets.length ? request.sheets : defaultSheets;
@@ -1319,11 +1320,23 @@ function writeRealtimeState(ss, request, batchResult) {
 
 function getMergeKey(sheetName, record) {
   const safeName = sanitizeSheetName(sheetName);
-  if (safeName === &#x27;Data_Absensi&#x27;) return String(record.id || ((record.employeeId || &#x27;&#x27;) + &#x27;|&#x27; + (record.date || &#x27;&#x27;)));
-  if (safeName === &#x27;Data_Shift_Assignment&#x27;) return String(record.id || ((record.employeeId || &#x27;&#x27;) + &#x27;|&#x27; + (record.shiftId || &#x27;&#x27;) + &#x27;|&#x27; + (record.startDate || &#x27;&#x27;)));
+  record = record || {};
+  if (safeName === &#x27;Data_Absensi&#x27;) {
+    const employeeKey = record.employeeId || record.employeeNik || record.nik || &#x27;&#x27;;
+    const dateKey = record.date || record.tanggal || &#x27;&#x27;;
+    return String(employeeKey &amp;&amp; dateKey ? (employeeKey + &#x27;|&#x27; + dateKey) : (record.id || JSON.stringify(record)));
+  }
+  if (safeName === &#x27;Data_Shift_Assignment&#x27;) {
+    const employeeKey = record.employeeId || record.employeeNik || record.nik || &#x27;&#x27;;
+    const startKey = record.startDate || record.mulai || &#x27;&#x27;;
+    const shiftKey = record.shiftId || record.shiftName || record.shift || &#x27;&#x27;;
+    return String(employeeKey &amp;&amp; startKey ? (employeeKey + &#x27;|&#x27; + shiftKey + &#x27;|&#x27; + startKey) : (record.id || JSON.stringify(record)));
+  }
   if (safeName === &#x27;Data_Pengaturan&#x27;) return String(record.settingKey || record.key || record.id || JSON.stringify(record));
   if (safeName === &#x27;Data_Integrasi&#x27;) return String(record.key || record.id || JSON.stringify(record));
   if (safeName === &#x27;Data_Master_Cabang&#x27; || safeName === &#x27;Data_Master_Status&#x27;) return String(record.nama || record.name || record.id || JSON.stringify(record));
+  if (safeName === &#x27;Data_Master_Dropdown&#x27;) return String((record.tipe || record.type || &#x27;&#x27;) + &#x27;|&#x27; + (record.nama || record.name || record.id || JSON.stringify(record)));
+  if (safeName === &#x27;Data_Delete_Log&#x27;) return String(record.id || ((record.sheetName || &#x27;&#x27;) + &#x27;|&#x27; + (record.recordKey || &#x27;&#x27;) + &#x27;|&#x27; + (record.deletedAt || &#x27;&#x27;)));
   if (safeName === &#x27;Data_Drive_Files&#x27;) return String(record.fileId || ((record.employeeId || &#x27;&#x27;) + &#x27;|&#x27; + (record.type || &#x27;&#x27;) + &#x27;|&#x27; + (record.dataHash || &#x27;&#x27;)));
   if (safeName === &#x27;Data_App_Metadata&#x27; || safeName === &#x27;Data_Realtime_State&#x27;) return String(record.deviceId || record.app || &#x27;singleton&#x27;);
   return String(record.id || record.employeeId || record.key || record.settingKey || record.nama || record.name || JSON.stringify(record));
@@ -1353,6 +1366,81 @@ function mergeRecordsByKey(sheetName, existingRecords, incomingRecords) {
   return Object.keys(map).map(function(key) { return map[key]; });
 }
 
+function normalizeDeleteLog(records) {
+  const rows = normalizeRecords(records).map(prepareRecord);
+  const map = {};
+  rows.forEach(function(row) {
+    const sheetName = row.sheetName || row.targetSheet || &#x27;&#x27;;
+    const recordKey = row.recordKey || row.key || &#x27;&#x27;;
+    if (!sheetName || !recordKey || recordKey === &#x27;empty&#x27;) return;
+    row.sheetName = sanitizeSheetName(sheetName);
+    row.recordKey = String(recordKey);
+    row.deletedAt = row.deletedAt || row.updatedAt || row.timestamp || nowIso();
+    row.updatedAt = row.updatedAt || row.deletedAt;
+    row.tombstone = true;
+    row.id = row.id || (&#x27;del_&#x27; + Utilities.getUuid());
+    const key = row.sheetName + &#x27;|&#x27; + row.recordKey;
+    if (!map[key] || recordVersionMillis(row) &gt;= recordVersionMillis(map[key])) map[key] = row;
+  });
+  return Object.keys(map).map(function(key) { return map[key]; });
+}
+
+function deleteLogForSheet(deleteLog, sheetName) {
+  const safeName = sanitizeSheetName(sheetName);
+  return normalizeDeleteLog(deleteLog).filter(function(marker) { return sanitizeSheetName(marker.sheetName) === safeName; });
+}
+
+function applyDeleteLogToRecords(sheetName, records, deleteLog) {
+  const safeName = sanitizeSheetName(sheetName);
+  if (safeName === &#x27;Data_Delete_Log&#x27;) return normalizeRecords(records);
+  const markers = deleteLogForSheet(deleteLog, safeName);
+  if (!markers.length) return normalizeRecords(records);
+  const markerMap = {};
+  markers.forEach(function(marker) { markerMap[String(marker.recordKey)] = marker; });
+  return normalizeRecords(records).filter(function(row) {
+    const key = String(getMergeKey(safeName, row));
+    const marker = markerMap[key];
+    if (!marker) return true;
+    return recordVersionMillis(row) &gt; recordVersionMillis(marker);
+  });
+}
+
+function getMergedDeleteLog(ss, incomingDeleteLog) {
+  const existing = readSheetRecords(ss, &#x27;Data_Delete_Log&#x27;).map(prepareRecord);
+  return normalizeDeleteLog(mergeRecordsByKey(&#x27;Data_Delete_Log&#x27;, existing, normalizeDeleteLog(incomingDeleteLog)));
+}
+
+function applyDeleteLogToSpreadsheet(ss, deleteLog) {
+  const targetSheets = [
+    &#x27;Data_Karyawan&#x27;,
+    &#x27;Data_Absensi&#x27;,
+    &#x27;Data_Cuti&#x27;,
+    &#x27;Data_Shift&#x27;,
+    &#x27;Data_Shift_Assignment&#x27;,
+    &#x27;Data_Resign&#x27;,
+    &#x27;Data_Blacklist&#x27;,
+    &#x27;Data_Master_Cabang&#x27;,
+    &#x27;Data_Master_Status&#x27;,
+    &#x27;Data_Master_Dropdown&#x27;,
+    &#x27;Data_Maintenance_Log&#x27;
+  ];
+  const results = [];
+  targetSheets.forEach(function(sheetName) {
+    try {
+      const before = readSheetRecords(ss, sheetName);
+      if (!before.length) return;
+      const after = applyDeleteLogToRecords(sheetName, before, deleteLog);
+      if (after.length !== before.length) {
+        writeRecords(ss, { sheetName: sheetName, data: after, overwrite: true, mergeStrategy: &#x27;replace-all&#x27; });
+        results.push({ sheetName: sheetName, removed: before.length - after.length });
+      }
+    } catch (error) {
+      results.push({ sheetName: sheetName, removed: 0, error: error &amp;&amp; error.message ? error.message : String(error) });
+    }
+  });
+  return results;
+}
+
 function setTimeColumnsAsText(sheet, headers, rowCount) {
   try {
     headers.forEach(function(header, index) {
@@ -1364,6 +1452,9 @@ function setTimeColumnsAsText(sheet, headers, rowCount) {
 function writeRecords(ss, request) {
   const sheetName = sanitizeSheetName(request.sheetName || &#x27;Log_Umum&#x27;);
   let records = normalizeRecords(request.data).map(prepareRecord);
+  if (sheetName !== &#x27;Data_Delete_Log&#x27;) {
+    records = applyDeleteLogToRecords(sheetName, records, readSheetRecords(ss, &#x27;Data_Delete_Log&#x27;)).map(prepareRecord);
+  }
   const overwrite = request.overwrite === true || request.overwrite === &#x27;true&#x27; || request.mergeStrategy === &#x27;replace-all&#x27;;
   const mergeStrategy = String(request.mergeStrategy || &#x27;&#x27;).toLowerCase();
   let sheet = ss.getSheetByName(sheetName);
@@ -1528,13 +1619,27 @@ function buildPingData(request) {
 }
 
 function processBatchSync(ss, request) {
-  const jobs = Array.isArray(request.jobs) ? request.jobs : [];
+  let jobs = Array.isArray(request.jobs) ? request.jobs : [];
   if (!jobs.length) throw new Error(&#x27;Payload batch kosong. Aplikasi harus mengirim field jobs berisi daftar sheet.&#x27;);
 
   const driveUploads = processDriveUploads(request);
   applyDriveUploadResultsToJobs(jobs, driveUploads);
   if (driveUploads.length) {
     jobs.push({ sheetName: &#x27;Data_Drive_Files&#x27;, overwrite: true, data: driveUploads });
+  }
+
+  let incomingDeleteLog = [];
+  jobs.forEach(function(job) {
+    if (job &amp;&amp; sanitizeSheetName(job.sheetName) === &#x27;Data_Delete_Log&#x27;) incomingDeleteLog = incomingDeleteLog.concat(normalizeRecords(job.data));
+  });
+  let mergedDeleteLog = getMergedDeleteLog(ss, incomingDeleteLog);
+  if (mergedDeleteLog.length) {
+    jobs = jobs.filter(function(job) { return sanitizeSheetName(job.sheetName) !== &#x27;Data_Delete_Log&#x27;; });
+    jobs = jobs.map(function(job) {
+      const cleanData = applyDeleteLogToRecords(job.sheetName, job.data, mergedDeleteLog);
+      return Object.assign({}, job, { data: cleanData });
+    });
+    jobs.push({ sheetName: &#x27;Data_Delete_Log&#x27;, overwrite: false, mergeStrategy: &#x27;upsert-newer-by-key&#x27;, data: mergedDeleteLog });
   }
 
   const results = [];
@@ -1553,16 +1658,19 @@ function processBatchSync(ss, request) {
       results.push({ index: index + 1, status: &#x27;error&#x27;, sheetName: job &amp;&amp; job.sheetName ? sanitizeSheetName(job.sheetName) : &#x27;Tidak diketahui&#x27;, message: jobError &amp;&amp; jobError.message ? jobError.message : String(jobError) });
     }
   });
+  const deleteCleanup = mergedDeleteLog.length ? applyDeleteLogToSpreadsheet(ss, mergedDeleteLog) : [];
+  const removedRows = deleteCleanup.reduce(function(total, item) { return total + Number(item.removed || 0); }, 0);
   const uploadErrorCount = driveUploads.filter(function(item) { return item.status === &#x27;error&#x27;; }).length;
   const uploadSuccessCount = driveUploads.filter(function(item) { return item.status === &#x27;success&#x27;; }).length;
   if (uploadErrorCount &gt; 0) failedCount += uploadErrorCount;
 
-  const summary = { totalJobs: jobs.length, successCount: successCount, failedCount: failedCount, totalRows: totalRows, driveUploadSuccessCount: uploadSuccessCount, driveUploadErrorCount: uploadErrorCount };
+  const summary = { totalJobs: jobs.length, successCount: successCount, failedCount: failedCount, totalRows: totalRows, driveUploadSuccessCount: uploadSuccessCount, driveUploadErrorCount: uploadErrorCount, deleteLogCount: mergedDeleteLog.length, deletedRowsRemoved: removedRows };
   return {
     status: failedCount &gt; 0 ? &#x27;error&#x27; : &#x27;success&#x27;,
-    message: failedCount &gt; 0 ? &#x27;Batch sync selesai dengan &#x27; + failedCount + &#x27; proses gagal.&#x27; : &#x27;Batch sync berhasil. &#x27; + successCount + &#x27; sheet diproses, total &#x27; + totalRows + &#x27; baris, &#x27; + uploadSuccessCount + &#x27; file Drive tersimpan.&#x27;,
+    message: failedCount &gt; 0 ? &#x27;Batch sync selesai dengan &#x27; + failedCount + &#x27; proses gagal.&#x27; : &#x27;Batch sync berhasil. &#x27; + successCount + &#x27; sheet diproses, total &#x27; + totalRows + &#x27; baris, &#x27; + uploadSuccessCount + &#x27; file Drive tersimpan, &#x27; + removedRows + &#x27; baris terhapus diamankan.&#x27;,
     summary: summary,
     driveUploads: driveUploads,
+    deleteCleanup: deleteCleanup,
     results: results
   };
 }
@@ -1603,7 +1711,7 @@ function doPost(e) {
     result.driveUploads = uploadResults;
     return jsonOutput(result);
   } catch (error) {
-    return jsonOutput({ status: &#x27;error&#x27;, message: error &amp;&amp; error.message ? error.message : String(error), hint: &#x27;Pastikan DEFAULT_SPREADSHEET_ID benar, deployment Web App sudah versi terbaru, akses Web App = Anyone, izin DriveApp sudah diberikan, dan Anda memakai template LuxeHR Connector v2.10.&#x27;, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: nowIso(), stack: error &amp;&amp; error.stack ? error.stack : &#x27;&#x27; });
+    return jsonOutput({ status: &#x27;error&#x27;, message: error &amp;&amp; error.message ? error.message : String(error), hint: &#x27;Pastikan DEFAULT_SPREADSHEET_ID benar, deployment Web App sudah versi terbaru, akses Web App = Anyone, izin DriveApp sudah diberikan, dan Anda memakai template LuxeHR Connector v2.12.&#x27;, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: nowIso(), stack: error &amp;&amp; error.stack ? error.stack : &#x27;&#x27; });
   }
 }
 
@@ -1640,6 +1748,7 @@ function setupLuxeHRSheets() {
     &#x27;Data_Drive_Files&#x27;,
     &#x27;Data_Maintenance_Log&#x27;,
     &#x27;Data_Maintenance_Report&#x27;,
+    &#x27;Data_Delete_Log&#x27;,
     &#x27;Data_Realtime_State&#x27;,
     &#x27;Data_Sync_Manifest&#x27;,
     &#x27;Ping&#x27;
@@ -1841,7 +1950,7 @@ function setupLuxeHRSheets() {
             // Masukkan URL Web App Google Apps Script Anda di dalam tanda kutip di bawah ini:
             const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUM-uaRnj_sftvEJKT6KSXM26x7dh_2rU9YaKRTlb18QHXMDkRg0nLwf4Z_R5k_Ipl-w/exec";
 
-            const APP_VERSION = '4.7.0-preview-network-guard';
+            const APP_VERSION = '4.9.0-delete-tombstone-sync';
             const PAYROLL_MONTH_DAYS = 30;
             const STANDARD_WORKDAY_HOURS = 12;
             const STANDARD_WORKDAY_MINUTES = STANDARD_WORKDAY_HOURS * 60;
@@ -1856,7 +1965,8 @@ function setupLuxeHRSheets() {
                 maintenanceLogs: 'luxehr_maintenance_logs',
                 settings: 'luxehr_settings',
                 syncMeta: 'luxehr_sync_meta',
-                syncQueue: 'luxehr_sync_queue'
+                syncQueue: 'luxehr_sync_queue',
+                deletedRecords: 'luxehr_deleted_records'
             };
             const BACKUP_SUFFIX = '_backup';
             const META_KEY = 'luxehr_storage_meta';
@@ -1900,6 +2010,7 @@ function setupLuxeHRSheets() {
             let resignRecords = [];
             let blacklistRecords = [];
             let maintenanceLogs = [];
+            let deletedRecords = [];
             let settings = {};
             let activeView = 'dashboard';
             let confirmCallback = null;
@@ -1915,6 +2026,7 @@ function setupLuxeHRSheets() {
             const REALTIME_PULL_DEFAULT_SECONDS = 15;
             const REALTIME_PULL_MIN_SECONDS = 5;
             const CLOUD_FIRST_PURGE_DELAY_MS = 350;
+            const DEFAULT_SPREADSHEET_TIME_ZONE = 'Asia/Jakarta';
             let realtimePullTimer = null;
             let realtimePullInProgress = false;
             let cloudHydrationInProgress = false;
@@ -1941,7 +2053,7 @@ function setupLuxeHRSheets() {
                 return true;
             }
             function markMeta() {
-                const meta = { appVersion: APP_VERSION, updatedAt: new Date().toISOString(), employeesCount: employees.length, attendanceCount: attendance.length, leavesCount: leaves.length, shiftsCount: shifts.length, shiftAssignmentsCount: shiftAssignments.length, resignCount: resignRecords.length, blacklistCount: blacklistRecords.length, maintenanceLogCount: maintenanceLogs.length };
+                const meta = { appVersion: APP_VERSION, updatedAt: new Date().toISOString(), employeesCount: employees.length, attendanceCount: attendance.length, leavesCount: leaves.length, shiftsCount: shifts.length, shiftAssignmentsCount: shiftAssignments.length, resignCount: resignRecords.length, blacklistCount: blacklistRecords.length, maintenanceLogCount: maintenanceLogs.length, deletedRecordCount: deletedRecords.length };
                 try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (error) { console.warn('Meta storage failed', error); }
             }
             function safeRead(key, fallback, validator) {
@@ -2428,8 +2540,9 @@ function setupLuxeHRSheets() {
                 const silent = options.silent !== false;
                 const allowFallback = options.allowFallback !== false;
                 if (!isNetworkAccessEnabled()) {
-                    if (!silent) showToast('Akses jaringan cloud masih nonaktif', 'warning');
-                    return getNetworkDisabledResult('sheet-sync-network-disabled');
+                    const result = getNetworkDisabledResult('sheet-sync-network-disabled');
+                    if (!silent) showToast(result.reason === 'preview-network-guard' ? 'Mode Pratinjau Aman aktif. Sync cloud ditunda.' : 'Akses jaringan cloud masih nonaktif', 'warning');
+                    return result;
                 }
                 if (!GOOGLE_APPS_SCRIPT_URL || GOOGLE_APPS_SCRIPT_URL.includes('GANTI_DENGAN')) {
                     saveSyncMeta({ status: 'error', sheetName, mode: 'not-configured', lastAttemptAt: new Date().toISOString(), lastError: 'GOOGLE_APPS_SCRIPT_URL belum diisi.', message: 'Google Sheet belum dikonfigurasi.' });
@@ -2490,8 +2603,9 @@ function setupLuxeHRSheets() {
                     return { ok: false, skipped: true, reason: 'sync-in-progress', verifiedCount: 0, fallbackCount: 0, failedCount: 0 };
                 }
                 if (!isNetworkAccessEnabled()) {
-                    if (!silent) showToast('Akses jaringan cloud masih nonaktif', 'warning');
-                    return getNetworkDisabledResult('batch-sync-network-disabled');
+                    const result = getNetworkDisabledResult('batch-sync-network-disabled');
+                    if (!silent) showToast(result.reason === 'preview-network-guard' ? 'Mode Pratinjau Aman aktif. Sync cloud ditunda.' : 'Akses jaringan cloud masih nonaktif', 'warning');
+                    return result;
                 }
                 if (!GOOGLE_APPS_SCRIPT_URL || GOOGLE_APPS_SCRIPT_URL.includes('GANTI_DENGAN')) {
                     saveSyncMeta({
@@ -2519,6 +2633,7 @@ function setupLuxeHRSheets() {
                 }
 
                 syncInProgress = true;
+                applyDeleteMarkersToMemory();
                 const jobs = getFullCloudSyncJobs();
                 const payload = buildBatchSyncPayload(jobs, 'batchSync', { overwrite: options.overwrite === true || options.source === 'reset-empty' });
                 saveSyncMeta({
@@ -2558,7 +2673,7 @@ function setupLuxeHRSheets() {
                         lastSuccessAt: new Date().toISOString(),
                         lastAttemptAt: new Date().toISOString(),
                         lastError: null,
-                        message: `${isAuto ? 'Auto-sync' : 'Sync manual'} batch berhasil. ${successCount} sheet, ${totalRows} baris, dan ${uploadedDriveFiles} file Drive tersinkron. Data lokal diperbarui sebagai mirror cloud.`
+                        message: `${isAuto ? 'Auto-sync' : 'Sync manual'} batch berhasil. ${successCount} sheet, ${totalRows} baris, dan ${uploadedDriveFiles} file Drive tersinkron. Data lokal diposisikan sebagai mirror cloud/offline cache.`
                     });
                     saveSyncQueue({ pending: false, nextRunAt: null, lastRunAt: new Date().toISOString(), retryCount: 0, lastResult: 'success' });
                     if (isCloudFirstEnabled()) {
@@ -2666,12 +2781,14 @@ function setupLuxeHRSheets() {
                 resignRecords = safeRead(STORAGE_KEYS.resignRecords, [], Array.isArray);
                 blacklistRecords = safeRead(STORAGE_KEYS.blacklistRecords, [], Array.isArray);
                 maintenanceLogs = safeRead(STORAGE_KEYS.maintenanceLogs, [], Array.isArray);
+                deletedRecords = safeRead(STORAGE_KEYS.deletedRecords, [], Array.isArray);
                 settings = safeRead(STORAGE_KEYS.settings, {
                     companyName: '',
                     companyAddress: '',
                     standardStartTime: '08:00',
                     googleSheetId: '',
                     driveRootFolderName: 'LuxeHR Uploads',
+                    spreadsheetTimeZone: DEFAULT_SPREADSHEET_TIME_ZONE,
                     branchOptions: [],
                     employeeStatusOptions: DEFAULT_EMPLOYEE_STATUSES,
                     offboardingFeatureInitialized: false,
@@ -2698,6 +2815,8 @@ function setupLuxeHRSheets() {
                 migrateShiftData();
                 normalizeLocalBusinessData({ write: false });
                 migrateOffboardingData();
+                deletedRecords = normalizeDeleteLog(deletedRecords);
+                applyDeleteMarkersToMemory();
                 normalizeMasterDropdowns();
                 const shouldKeepBusinessLocal = !isCloudFirstEnabled() || !navigator.onLine || getSyncQueue().pending;
                 if (shouldKeepBusinessLocal) {
@@ -2709,6 +2828,7 @@ function setupLuxeHRSheets() {
                     if (!hasStorageValue(STORAGE_KEYS.resignRecords)) safeWrite(STORAGE_KEYS.resignRecords, resignRecords, Array.isArray);
                     if (!hasStorageValue(STORAGE_KEYS.blacklistRecords)) safeWrite(STORAGE_KEYS.blacklistRecords, blacklistRecords, Array.isArray);
                     if (!hasStorageValue(STORAGE_KEYS.maintenanceLogs)) safeWrite(STORAGE_KEYS.maintenanceLogs, maintenanceLogs, Array.isArray);
+                    if (!hasStorageValue(STORAGE_KEYS.deletedRecords)) safeWrite(STORAGE_KEYS.deletedRecords, deletedRecords, Array.isArray);
                 }
                 safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
             }
@@ -2716,6 +2836,11 @@ function setupLuxeHRSheets() {
             // --- SAVE & AUTO-SYNC OTOMATIS ---
             // Setiap fungsi save menulis ke localStorage, lalu menandai antrean full auto-sync.
             // Auto-sync berjalan otomatis beberapa detik setelah perubahan, saat online kembali, dan saat antrean masih pending.
+            function saveDeletedRecords(options = {}) {
+                deletedRecords = normalizeDeleteLog(deletedRecords);
+                safeWrite(STORAGE_KEYS.deletedRecords, deletedRecords, Array.isArray);
+                if (options.queueSync !== false) requestAutoSyncAfterLocalSave(options.reason || 'Delete log disimpan');
+            }
             function saveEmployees() {
                 safeWrite(STORAGE_KEYS.employees, employees, Array.isArray);
                 requestAutoSyncAfterLocalSave('Data karyawan disimpan');
@@ -2759,6 +2884,7 @@ function setupLuxeHRSheets() {
                 settings.realtimePullEnabled = settings.realtimePullEnabled !== false;
                 settings.realtimePullIntervalSeconds = Math.max(REALTIME_PULL_MIN_SECONDS, Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS));
                 settings.driveRootFolderName = String(settings.driveRootFolderName || 'LuxeHR Uploads').trim() || 'LuxeHR Uploads';
+                settings.spreadsheetTimeZone = String(settings.spreadsheetTimeZone || DEFAULT_SPREADSHEET_TIME_ZONE).trim() || DEFAULT_SPREADSHEET_TIME_ZONE;
                 safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
                 requestAutoSyncAfterLocalSave('Pengaturan aplikasi disimpan');
             }
@@ -3214,6 +3340,7 @@ function setupLuxeHRSheets() {
                     ['Resign', STORAGE_KEYS.resignRecords, resignRecords.length],
                     ['Blacklist', STORAGE_KEYS.blacklistRecords, blacklistRecords.length],
                     ['Maintenance Log', STORAGE_KEYS.maintenanceLogs, maintenanceLogs.length],
+                    ['Delete Log / Tombstone', STORAGE_KEYS.deletedRecords, deletedRecords.length],
                     ['Pengaturan', STORAGE_KEYS.settings, settings && typeof settings === 'object' ? Object.keys(settings).length : 0],
                     ['Sync Meta', STORAGE_KEYS.syncMeta, getSyncMeta() ? 1 : 0],
                     ['Sync Queue', STORAGE_KEYS.syncQueue, getSyncQueue().pending ? 1 : 0],
@@ -3235,8 +3362,8 @@ function setupLuxeHRSheets() {
                     ['Data_Karyawan', employees],
                     ['Data_Absensi', attendance],
                     ['Data_Cuti', leaves],
-                    ['Data_Shift', shifts],
-                    ['Data_Shift_Assignment', shiftAssignments],
+                    ['Data_Shift', getVisibleShifts()],
+                    ['Data_Shift_Assignment', getVisibleShiftAssignments()],
                     ['Data_Resign', resignRecords],
                     ['Data_Blacklist', blacklistRecords],
                     ['Data_Master_Cabang', getBranchSheetRows()],
@@ -3248,7 +3375,8 @@ function setupLuxeHRSheets() {
                     ['Data_Storage_Index', getStorageIndexRows()],
                     ['Data_Drive_Files', getDriveFileSheetRows()],
                     ['Data_Maintenance_Log', getMaintenanceLogSheetRows()],
-                    ['Data_Maintenance_Report', getMaintenanceReportRows()]
+                    ['Data_Maintenance_Report', getMaintenanceReportRows()],
+                    ['Data_Delete_Log', getDeleteLogSheetRows()]
                 ];
             }
             function getSyncManifestRows(jobs) {
@@ -3277,8 +3405,10 @@ function setupLuxeHRSheets() {
                 try {
                     const host = String(window.location.hostname || '').toLowerCase();
                     const href = String(window.location.href || '').toLowerCase();
+                    const protocol = String(window.location.protocol || '').toLowerCase();
                     const embedded = window.self !== window.top;
-                    return embedded || host.includes('oaiusercontent') || host.includes('chatgpt') || host.includes('openai') || href.includes('pratinjau') || href.includes('preview');
+                    const previewHints = ['oaiusercontent', 'chatgpt', 'openai', 'sandbox', 'srcdoc', 'preview', 'pratinjau', 'blob:'];
+                    return embedded || previewHints.some(hint => host.includes(hint) || href.includes(hint) || protocol.includes(hint));
                 } catch (error) {
                     return true;
                 }
@@ -3286,12 +3416,14 @@ function setupLuxeHRSheets() {
             function isPreviewNetworkGuardActive() {
                 return settings && settings.previewNetworkGuardEnabled !== false && isLikelyPreviewRuntime();
             }
-            function isNetworkAccessEnabled() { return settings && settings.networkAccessEnabled === true && !isPreviewNetworkGuardActive(); }
+            function isNetworkAccessEnabled() {
+                return Boolean(settings && settings.networkAccessEnabled === true && !isPreviewNetworkGuardActive());
+            }
             function getNetworkDisabledResult(mode = 'network-disabled') {
                 const previewGuard = isPreviewNetworkGuardActive();
                 const message = previewGuard
-                    ? 'Mode Aman Pratinjau aktif: request ke script.google.com diblokir agar popup izin jaringan tidak muncul. Jalankan file dari browser/hosting normal untuk sync Google Sheet/Drive.'
-                    : 'Akses jaringan cloud sedang nonaktif. Ubah di Pengaturan jika ingin mengaktifkan sync Google Sheet/Drive.';
+                    ? 'Mode Aman Pratinjau aktif: request cloud diblokir di lingkungan preview agar popup izin jaringan tidak muncul. Jalankan file HTML langsung dari browser/hosting normal untuk sync Google Sheet/Drive.'
+                    : 'Akses jaringan cloud sedang nonaktif. Ubah ke Aktif / Izinkan Sync di Pengaturan jika ingin mengaktifkan sync Google Sheet/Drive.';
                 saveSyncMeta({
                     status: 'warning',
                     sheetName: 'Network Gate',
@@ -3300,12 +3432,12 @@ function setupLuxeHRSheets() {
                     lastError: null,
                     message
                 });
-                return { ok: false, skipped: true, reason: 'network-disabled', message };
+                return { ok: false, skipped: true, reason: previewGuard ? 'preview-network-guard' : 'network-disabled', message };
             }
             function requireNetworkAccess(mode = 'network-request') {
                 if (isNetworkAccessEnabled()) return true;
-                getNetworkDisabledResult(mode);
-                showToast('Akses jaringan cloud masih nonaktif', 'warning');
+                const result = getNetworkDisabledResult(mode);
+                showToast(result.reason === 'preview-network-guard' ? 'Mode Pratinjau Aman aktif. Sync cloud ditunda.' : 'Akses jaringan cloud masih nonaktif', 'warning');
                 return false;
             }
 
@@ -3334,7 +3466,8 @@ function setupLuxeHRSheets() {
                     STORAGE_KEYS.shiftAssignments,
                     STORAGE_KEYS.resignRecords,
                     STORAGE_KEYS.blacklistRecords,
-                    STORAGE_KEYS.maintenanceLogs
+                    STORAGE_KEYS.maintenanceLogs,
+                    STORAGE_KEYS.deletedRecords
                 ].filter(Boolean);
             }
             function hasUnsyncedOfflineData() { return Boolean(getSyncQueue().pending); }
@@ -3403,14 +3536,29 @@ function setupLuxeHRSheets() {
                     resignRecords: clone(resignRecords || []),
                     blacklistRecords: clone(blacklistRecords || []),
                     maintenanceLogs: clone(maintenanceLogs || []),
-                    settings: clone(settings || {})
+                    settings: clone(settings || {}),
+                    deletedRecords: clone(deletedRecords || [])
                 };
             }
             function recordIdentity(moduleName, record = {}) {
-                const id = record.id || record.employeeId || record.settingKey || record.key || record.nama || record.name;
+                const moduleKey = String(moduleName || '').toLowerCase();
+                if (moduleKey === 'attendance') {
+                    const employeeKey = record.employeeId || record.employeeNik || record.nik || '';
+                    const dateKey = record.date || record.tanggal || '';
+                    if (employeeKey && dateKey) return `${employeeKey}|${dateKey}`;
+                }
+                if (moduleKey === 'shiftassignments') {
+                    const employeeKey = record.employeeId || record.employeeNik || record.nik || '';
+                    const shiftKey = record.shiftId || record.shiftName || '';
+                    const startKey = record.startDate || record.mulai || '';
+                    if (employeeKey && startKey) return `${employeeKey}|${shiftKey}|${startKey}`;
+                }
+                if (moduleKey === 'settings') {
+                    const key = record.settingKey || record.key || record.name;
+                    if (key !== undefined && key !== null && key !== '') return String(key);
+                }
+                const id = record.id || record.employeeId || record.settingKey || record.key || record.nama || record.name || record.nik;
                 if (id !== undefined && id !== null && id !== '') return String(id);
-                if (moduleName === 'attendance') return `${record.employeeId || ''}|${record.date || ''}`;
-                if (moduleName === 'shiftAssignments') return `${record.employeeId || ''}|${record.shiftId || ''}|${record.startDate || ''}`;
                 return JSON.stringify(record);
             }
             function recordVersionTime(record = {}) {
@@ -3421,6 +3569,170 @@ function setupLuxeHRSheets() {
                     if (Number.isFinite(time)) return time;
                 }
                 return 0;
+            }
+            function cloudSheetRecordKey(sheetName, record = {}) {
+                const safeName = String(sheetName || '').trim();
+                const row = record || {};
+                if (safeName === 'Data_Absensi') {
+                    const employeeKey = row.employeeId || row.employeeNik || row.nik || '';
+                    const dateKey = row.date || row.tanggal || '';
+                    if (employeeKey && dateKey) return `${employeeKey}|${dateKey}`;
+                }
+                if (safeName === 'Data_Shift_Assignment') {
+                    const employeeKey = row.employeeId || row.employeeNik || row.nik || '';
+                    const shiftKey = row.shiftId || row.shiftName || row.shift || '';
+                    const startKey = row.startDate || row.mulai || '';
+                    if (employeeKey && startKey) return `${employeeKey}|${shiftKey}|${startKey}`;
+                }
+                if (safeName === 'Data_Pengaturan') return String(row.settingKey || row.key || row.id || '');
+                if (safeName === 'Data_Integrasi') return String(row.key || row.id || '');
+                if (safeName === 'Data_Master_Cabang' || safeName === 'Data_Master_Status') return String(row.nama || row.name || row.id || '');
+                if (safeName === 'Data_Master_Dropdown') return `${row.tipe || row.type || ''}|${row.nama || row.name || row.id || ''}`;
+                if (safeName === 'Data_Drive_Files') return String(row.fileId || `${row.employeeId || ''}|${row.type || ''}|${row.dataHash || ''}`);
+                if (safeName === 'Data_App_Metadata' || safeName === 'Data_Realtime_State') return String(row.deviceId || row.app || 'singleton');
+                if (safeName === 'Data_Delete_Log') return String(row.id || `${row.sheetName || ''}|${row.recordKey || ''}|${row.deletedAt || ''}`);
+                const id = row.id || row.employeeId || row.key || row.settingKey || row.nama || row.name || row.nik;
+                return id !== undefined && id !== null && id !== '' ? String(id) : JSON.stringify(row);
+            }
+            function moduleSheetName(moduleName) {
+                const map = {
+                    employees: 'Data_Karyawan',
+                    attendance: 'Data_Absensi',
+                    leaves: 'Data_Cuti',
+                    shifts: 'Data_Shift',
+                    shiftAssignments: 'Data_Shift_Assignment',
+                    resignRecords: 'Data_Resign',
+                    blacklistRecords: 'Data_Blacklist',
+                    maintenanceLogs: 'Data_Maintenance_Log',
+                    branchOptions: 'Data_Master_Cabang',
+                    statusOptions: 'Data_Master_Status',
+                    masterDropdown: 'Data_Master_Dropdown',
+                    deletedRecords: 'Data_Delete_Log'
+                };
+                return map[moduleName] || moduleName || '';
+            }
+            function normalizeDeleteLog(rows = []) {
+                const list = Array.isArray(rows) ? rows : [];
+                const map = new Map();
+                list.forEach(row => {
+                    if (!row) return;
+                    const sheetName = row.sheetName || row.targetSheet || '';
+                    const recordKey = row.recordKey || row.key || '';
+                    if (!sheetName || !recordKey) return;
+                    const deletedAt = row.deletedAt || row.updatedAt || row.timestamp || new Date().toISOString();
+                    const marker = {
+                        id: row.id || `del_${hashString(`${sheetName}|${recordKey}|${deletedAt}`).replace(/[^a-zA-Z0-9_]/g, '')}`,
+                        sheetName,
+                        moduleName: row.moduleName || row.module || '',
+                        recordKey: String(recordKey),
+                        recordId: row.recordId || '',
+                        recordLabel: row.recordLabel || row.label || '',
+                        deletedAt,
+                        deletedByDeviceId: row.deletedByDeviceId || getDeviceId(),
+                        reason: row.reason || 'user-delete',
+                        updatedAt: row.updatedAt || deletedAt,
+                        tombstone: true
+                    };
+                    const key = `${marker.sheetName}|${marker.recordKey}`;
+                    const existing = map.get(key);
+                    if (!existing || recordVersionTime(marker) >= recordVersionTime(existing)) map.set(key, marker);
+                });
+                return Array.from(map.values()).sort((a, b) => recordVersionTime(b) - recordVersionTime(a));
+            }
+            function addDeleteMarker(moduleName, record = {}, options = {}) {
+                const sheetName = options.sheetName || moduleSheetName(moduleName);
+                if (!sheetName || !record) return null;
+                const recordKey = options.recordKey || cloudSheetRecordKey(sheetName, record);
+                if (!recordKey) return null;
+                const deletedAt = options.deletedAt || new Date().toISOString();
+                const marker = {
+                    id: `del_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+                    sheetName,
+                    moduleName,
+                    recordKey: String(recordKey),
+                    recordId: record.id || record.employeeId || record.key || record.settingKey || '',
+                    recordLabel: options.recordLabel || record.name || record.nama || record.employeeName || record.nik || recordKey,
+                    deletedAt,
+                    deletedByDeviceId: getDeviceId(),
+                    reason: options.reason || 'user-delete',
+                    updatedAt: deletedAt,
+                    tombstone: true
+                };
+                deletedRecords = normalizeDeleteLog([...(deletedRecords || []), marker]);
+                return marker;
+            }
+            function addDeleteMarkers(moduleName, records = [], options = {}) {
+                (Array.isArray(records) ? records : []).forEach(record => addDeleteMarker(moduleName, record, options));
+                return deletedRecords;
+            }
+            function getDeleteLogSheetRows() {
+                deletedRecords = normalizeDeleteLog(deletedRecords);
+                return deletedRecords.length ? deletedRecords : [{ id: 'empty', sheetName: '', moduleName: '', recordKey: '', recordId: '', recordLabel: '', deletedAt: '', deletedByDeviceId: getDeviceId(), reason: 'empty', updatedAt: new Date().toISOString(), tombstone: true }];
+            }
+            function applyDeleteMarkersToRows(sheetName, rows = [], markers = deletedRecords) {
+                const normalizedMarkers = normalizeDeleteLog(markers).filter(marker => marker.sheetName === sheetName);
+                if (!normalizedMarkers.length) return Array.isArray(rows) ? rows : [];
+                const markerMap = new Map(normalizedMarkers.map(marker => [String(marker.recordKey), marker]));
+                return (Array.isArray(rows) ? rows : []).filter(row => {
+                    const key = String(cloudSheetRecordKey(sheetName, row));
+                    const marker = markerMap.get(key);
+                    if (!marker) return true;
+                    const rowVersion = recordVersionTime(row);
+                    const markerVersion = recordVersionTime(marker);
+                    return rowVersion > markerVersion;
+                });
+            }
+            function applyDeleteMarkersToMemory() {
+                deletedRecords = normalizeDeleteLog(deletedRecords);
+                employees = applyDeleteMarkersToRows('Data_Karyawan', employees, deletedRecords);
+                attendance = applyDeleteMarkersToRows('Data_Absensi', attendance, deletedRecords);
+                leaves = applyDeleteMarkersToRows('Data_Cuti', leaves, deletedRecords);
+                shifts = applyDeleteMarkersToRows('Data_Shift', shifts, deletedRecords).map(normalizeShiftRecord);
+                shiftAssignments = applyDeleteMarkersToRows('Data_Shift_Assignment', shiftAssignments, deletedRecords).map(normalizeShiftAssignmentRecord);
+                resignRecords = applyDeleteMarkersToRows('Data_Resign', resignRecords, deletedRecords);
+                blacklistRecords = applyDeleteMarkersToRows('Data_Blacklist', blacklistRecords, deletedRecords);
+                maintenanceLogs = applyDeleteMarkersToRows('Data_Maintenance_Log', maintenanceLogs, deletedRecords);
+                return true;
+            }
+            function buildDeleteMarkersForReset() {
+                const snapshotMarkers = [];
+                const collect = (moduleName, rows) => (Array.isArray(rows) ? rows : []).forEach(row => {
+                    const sheetName = moduleSheetName(moduleName);
+                    const recordKey = cloudSheetRecordKey(sheetName, row);
+                    if (!recordKey) return;
+                    snapshotMarkers.push({
+                        id: `del_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+                        sheetName,
+                        moduleName,
+                        recordKey: String(recordKey),
+                        recordId: row.id || row.employeeId || '',
+                        recordLabel: row.name || row.nama || row.employeeName || row.nik || recordKey,
+                        deletedAt: new Date().toISOString(),
+                        deletedByDeviceId: getDeviceId(),
+                        reason: 'reset-empty',
+                        updatedAt: new Date().toISOString(),
+                        tombstone: true
+                    });
+                });
+                collect('employees', employees);
+                collect('attendance', attendance);
+                collect('leaves', leaves);
+                collect('shifts', shifts);
+                collect('shiftAssignments', shiftAssignments);
+                collect('resignRecords', resignRecords);
+                collect('blacklistRecords', blacklistRecords);
+                collect('maintenanceLogs', maintenanceLogs);
+                (settings.branchOptions || []).forEach(name => {
+                    const base = { nama: name, name, tipe: 'Cabang' };
+                    snapshotMarkers.push({ id: `del_${Date.now()}_${Math.random().toString(16).slice(2)}`, sheetName: 'Data_Master_Cabang', moduleName: 'branchOptions', recordKey: String(name), recordLabel: String(name), deletedAt: new Date().toISOString(), deletedByDeviceId: getDeviceId(), reason: 'reset-empty', updatedAt: new Date().toISOString(), tombstone: true });
+                    snapshotMarkers.push({ id: `del_${Date.now()}_${Math.random().toString(16).slice(2)}`, sheetName: 'Data_Master_Dropdown', moduleName: 'masterDropdown', recordKey: cloudSheetRecordKey('Data_Master_Dropdown', base), recordLabel: String(name), deletedAt: new Date().toISOString(), deletedByDeviceId: getDeviceId(), reason: 'reset-empty', updatedAt: new Date().toISOString(), tombstone: true });
+                });
+                (settings.employeeStatusOptions || []).forEach(name => {
+                    const base = { nama: name, name, tipe: 'Status Karyawan' };
+                    snapshotMarkers.push({ id: `del_${Date.now()}_${Math.random().toString(16).slice(2)}`, sheetName: 'Data_Master_Status', moduleName: 'statusOptions', recordKey: String(name), recordLabel: String(name), deletedAt: new Date().toISOString(), deletedByDeviceId: getDeviceId(), reason: 'reset-empty', updatedAt: new Date().toISOString(), tombstone: true });
+                    snapshotMarkers.push({ id: `del_${Date.now()}_${Math.random().toString(16).slice(2)}`, sheetName: 'Data_Master_Dropdown', moduleName: 'masterDropdown', recordKey: cloudSheetRecordKey('Data_Master_Dropdown', base), recordLabel: String(name), deletedAt: new Date().toISOString(), deletedByDeviceId: getDeviceId(), reason: 'reset-empty', updatedAt: new Date().toISOString(), tombstone: true });
+                });
+                return normalizeDeleteLog([...(deletedRecords || []), ...snapshotMarkers]);
             }
             function mergeRecordArray(moduleName, baseRows = [], incomingRows = []) {
                 const map = new Map();
@@ -3434,15 +3746,17 @@ function setupLuxeHRSheets() {
             }
             function mergeBusinessStateIntoMemory(snapshot = {}) {
                 if (!snapshot) return;
+                deletedRecords = normalizeDeleteLog([...(deletedRecords || []), ...(snapshot.deletedRecords || [])]);
                 employees = mergeRecordArray('employees', employees, snapshot.employees);
                 attendance = mergeRecordArray('attendance', attendance, snapshot.attendance).map(normalizeAttendanceTimeFields);
                 leaves = mergeRecordArray('leaves', leaves, snapshot.leaves);
                 shifts = mergeRecordArray('shifts', shifts, snapshot.shifts).map(normalizeShiftRecord);
-                shiftAssignments = mergeRecordArray('shiftAssignments', shiftAssignments, snapshot.shiftAssignments);
+                shiftAssignments = mergeRecordArray('shiftAssignments', shiftAssignments, snapshot.shiftAssignments).map(normalizeShiftAssignmentRecord);
                 resignRecords = mergeRecordArray('resignRecords', resignRecords, snapshot.resignRecords);
                 blacklistRecords = mergeRecordArray('blacklistRecords', blacklistRecords, snapshot.blacklistRecords);
                 maintenanceLogs = mergeRecordArray('maintenanceLogs', maintenanceLogs, snapshot.maintenanceLogs);
                 settings = Object.assign({}, settings || {}, snapshot.settings || {});
+                applyDeleteMarkersToMemory();
                 normalizeLocalBusinessData({ write: false });
             }
             function writeCloudSnapshotToLocalStorage() {
@@ -3456,6 +3770,7 @@ function setupLuxeHRSheets() {
                     safeWrite(STORAGE_KEYS.resignRecords, resignRecords, Array.isArray);
                     safeWrite(STORAGE_KEYS.blacklistRecords, blacklistRecords, Array.isArray);
                     safeWrite(STORAGE_KEYS.maintenanceLogs, maintenanceLogs, Array.isArray);
+                    safeWrite(STORAGE_KEYS.deletedRecords, deletedRecords, Array.isArray);
                     safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
                     return true;
                 } catch (error) {
@@ -3506,21 +3821,24 @@ function setupLuxeHRSheets() {
                         autoSyncIntervalSeconds: 60,
                         cloudFirstEnabled: true,
                         realtimePullEnabled: true,
-                        realtimePullIntervalSeconds: REALTIME_PULL_DEFAULT_SECONDS
+                        realtimePullIntervalSeconds: REALTIME_PULL_DEFAULT_SECONDS,
+                        spreadsheetTimeZone: DEFAULT_SPREADSHEET_TIME_ZONE
                     }, cloudSettings || {});
-                    const cloudBranches = listFromMasterRows(sheets.Data_Master_Cabang || []);
-                    const cloudStatuses = listFromMasterRows(sheets.Data_Master_Status || []);
+                    deletedRecords = normalizeDeleteLog([...(deletedRecords || []), ...cleanCloudRows(sheets.Data_Delete_Log || [], ['sheetName', 'recordKey', 'deletedAt'])]);
+                    settings.branchOptions = uniqueTextList(applyDeleteMarkersToRows('Data_Master_Cabang', (settings.branchOptions || []).map(name => ({ nama: name })), deletedRecords).map(row => row.nama));
+                    settings.employeeStatusOptions = uniqueTextList(applyDeleteMarkersToRows('Data_Master_Status', (settings.employeeStatusOptions || []).map(name => ({ nama: name })), deletedRecords).map(row => row.nama));
+                    const cloudBranches = listFromMasterRows(applyDeleteMarkersToRows('Data_Master_Cabang', sheets.Data_Master_Cabang || [], deletedRecords));
+                    const cloudStatuses = listFromMasterRows(applyDeleteMarkersToRows('Data_Master_Status', sheets.Data_Master_Status || [], deletedRecords));
                     if (cloudBranches.length) settings.branchOptions = cloudBranches;
                     if (cloudStatuses.length) settings.employeeStatusOptions = cloudStatuses;
-
-                    employees = cleanCloudRows(sheets.Data_Karyawan || [], ['id', 'nik', 'name']);
-                    attendance = cleanCloudRows(sheets.Data_Absensi || [], ['id', 'employeeId', 'date']);
-                    leaves = cleanCloudRows(sheets.Data_Cuti || [], ['id', 'employeeId']);
-                    shifts = cleanCloudRows(sheets.Data_Shift || [], ['id', 'name']);
-                    shiftAssignments = cleanCloudRows(sheets.Data_Shift_Assignment || [], ['id', 'employeeId', 'shiftId']);
-                    resignRecords = cleanCloudRows(sheets.Data_Resign || [], ['id', 'employeeId']);
-                    blacklistRecords = cleanCloudRows(sheets.Data_Blacklist || [], ['id', 'employeeId']);
-                    maintenanceLogs = cleanCloudRows(sheets.Data_Maintenance_Log || [], ['id', 'moduleId', 'checkedAt']);
+                    employees = applyDeleteMarkersToRows('Data_Karyawan', cleanCloudRows(sheets.Data_Karyawan || [], ['id', 'nik', 'name']), deletedRecords);
+                    attendance = applyDeleteMarkersToRows('Data_Absensi', cleanCloudRows(sheets.Data_Absensi || [], ['id', 'employeeId', 'date']), deletedRecords);
+                    leaves = applyDeleteMarkersToRows('Data_Cuti', cleanCloudRows(sheets.Data_Cuti || [], ['id', 'employeeId']), deletedRecords);
+                    shifts = applyDeleteMarkersToRows('Data_Shift', cleanCloudRows(sheets.Data_Shift || [], ['id', 'name']), deletedRecords);
+                    shiftAssignments = applyDeleteMarkersToRows('Data_Shift_Assignment', cleanCloudRows(sheets.Data_Shift_Assignment || [], ['id', 'employeeId', 'shiftId']), deletedRecords);
+                    resignRecords = applyDeleteMarkersToRows('Data_Resign', cleanCloudRows(sheets.Data_Resign || [], ['id', 'employeeId']), deletedRecords);
+                    blacklistRecords = applyDeleteMarkersToRows('Data_Blacklist', cleanCloudRows(sheets.Data_Blacklist || [], ['id', 'employeeId']), deletedRecords);
+                    maintenanceLogs = applyDeleteMarkersToRows('Data_Maintenance_Log', cleanCloudRows(sheets.Data_Maintenance_Log || [], ['id', 'moduleId', 'checkedAt']), deletedRecords);
                     normalizeLocalBusinessData({ write: false });
 
                     settings.cloudFirstEnabled = settings.cloudFirstEnabled !== false;
@@ -3593,7 +3911,7 @@ function setupLuxeHRSheets() {
                     if (isCloudFirstEnabled()) writeCloudSnapshotToLocalStorage();
                     return { ok: true, changed, rows: result.totalRows || 0 };
                 } catch (error) {
-                    saveSyncMeta({ status: 'error', sheetName: 'Cloud Pull', mode: 'read-all-cloud-failed', lastAttemptAt: new Date().toISOString(), lastError: error.message || String(error), message: 'Gagal menarik data cloud. Cek Apps Script v2.9 dan koneksi.' });
+                    saveSyncMeta({ status: 'error', sheetName: 'Cloud Pull', mode: 'read-all-cloud-failed', lastAttemptAt: new Date().toISOString(), lastError: error.message || String(error), message: 'Gagal menarik data cloud. Cek Apps Script v2.12 dan koneksi.' });
                     if (!silent) showToast('Gagal menarik data cloud', 'error');
                     return { ok: false, error };
                 } finally {
@@ -3641,35 +3959,46 @@ function setupLuxeHRSheets() {
                 renderRealtimeStatus();
             }
 
+            function formatMinutesToHHMM(totalMinutes) {
+                const safeMinutes = ((Math.round(Number(totalMinutes || 0)) % 1440) + 1440) % 1440;
+                return `${String(Math.floor(safeMinutes / 60)).padStart(2, '0')}:${String(safeMinutes % 60).padStart(2, '0')}`;
+            }
+            function dateToHHMMInSpreadsheetTimeZone(date) {
+                if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+                try {
+                    const timeZone = String(settings?.spreadsheetTimeZone || DEFAULT_SPREADSHEET_TIME_ZONE);
+                    const parts = new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).formatToParts(date);
+                    const hour = Number(parts.find(part => part.type === 'hour')?.value || 0) % 24;
+                    const minute = Number(parts.find(part => part.type === 'minute')?.value || 0);
+                    const second = Number(parts.find(part => part.type === 'second')?.value || 0);
+                    return formatMinutesToHHMM(hour * 60 + minute + (second >= 30 ? 1 : 0));
+                } catch (error) {
+                    return formatMinutesToHHMM(date.getHours() * 60 + date.getMinutes() + (date.getSeconds() >= 30 ? 1 : 0));
+                }
+            }
             function normalizeTimeToHHMM(value, fallback = '') {
                 if (value === undefined || value === null || value === '') return fallback;
-                if (value instanceof Date && !Number.isNaN(value.getTime())) {
-                    const minutes = Math.round((value.getHours() * 60 + value.getMinutes()) + (value.getSeconds() >= 30 ? 1 : 0));
-                    return `${String(Math.floor((minutes % 1440) / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
-                }
+                if (value instanceof Date && !Number.isNaN(value.getTime())) return dateToHHMMInSpreadsheetTimeZone(value) || fallback;
                 if (typeof value === 'number' && Number.isFinite(value)) {
                     const fraction = value >= 1 ? value % 1 : value;
-                    const total = Math.round(fraction * 24 * 60) % 1440;
-                    return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+                    return formatMinutesToHHMM(fraction * 24 * 60);
                 }
                 const raw = String(value || '').trim();
                 if (!raw) return fallback;
                 const hhmm = raw.match(/^([0-1]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/);
-                if (hhmm) return `${String(Number(hhmm[1])).padStart(2, '0')}:${String(Number(hhmm[2])).padStart(2, '0')}`;
-                const dateLike = raw.match(/^(?:\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+                if (hhmm) return formatMinutesToHHMM(Number(hhmm[1]) * 60 + Number(hhmm[2]) + (Number(hhmm[3] || 0) >= 30 ? 1 : 0));
+                const dateLike = raw.match(/^(?:\d{4}-\d{2}-\d{2})[T\s](\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?$/);
                 if (dateLike) {
                     const parsed = new Date(raw);
-                    if (!Number.isNaN(parsed.getTime())) {
-                        const minutes = Math.round((parsed.getHours() * 60 + parsed.getMinutes()) + (parsed.getSeconds() >= 30 ? 1 : 0));
-                        return `${String(Math.floor((minutes % 1440) / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
-                    }
-                    return `${dateLike[1]}:${dateLike[2]}`;
+                    const fromDate = dateToHHMMInSpreadsheetTimeZone(parsed);
+                    if (fromDate) return fromDate;
+                    return formatMinutesToHHMM(Number(dateLike[1]) * 60 + Number(dateLike[2]) + (Number(dateLike[3] || 0) >= 30 ? 1 : 0));
                 }
                 const displayTime = raw.match(/(\d{1,2})[.:](\d{2})/);
                 if (displayTime) {
                     const h = Number(displayTime[1]);
                     const m = Number(displayTime[2]);
-                    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) return formatMinutesToHHMM(h * 60 + m);
                 }
                 return fallback || raw;
             }
@@ -4476,6 +4805,8 @@ function setupLuxeHRSheets() {
                 const emp = getEmployee(id);
                 if (!emp) return;
                 showConfirm(`Hapus data karyawan ${emp.name}? Data absensi dan cuti yang sudah tercatat tidak akan ikut terhapus.`, () => {
+                    addDeleteMarker('employees', emp);
+                    saveDeletedRecords({ queueSync: false });
                     employees = employees.filter(e => String(e.id) !== String(id));
                     saveEmployees();
                     renderAllSelectors();
@@ -4592,9 +4923,15 @@ function setupLuxeHRSheets() {
                 const isBlacklist = type === 'blacklist';
                 showConfirm('Hapus catatan ini? Status karyawan tidak otomatis berubah.', () => {
                     if (isBlacklist) {
+                        const record = blacklistRecords.find(item => String(item.id) === String(recordId));
+                        if (record) addDeleteMarker('blacklistRecords', record);
+                        saveDeletedRecords({ queueSync: false });
                         blacklistRecords = blacklistRecords.filter(record => String(record.id) !== String(recordId));
                         saveBlacklistRecords();
                     } else {
+                        const record = resignRecords.find(item => String(item.id) === String(recordId));
+                        if (record) addDeleteMarker('resignRecords', record);
+                        saveDeletedRecords({ queueSync: false });
                         resignRecords = resignRecords.filter(record => String(record.id) !== String(recordId));
                         saveResignRecords();
                     }
@@ -4893,6 +5230,10 @@ function setupLuxeHRSheets() {
                     : `Hapus shift ${shift.name}?`;
                 showConfirm(msg, () => {
                     const now = new Date().toISOString();
+                    const affectedAssignments = getVisibleShiftAssignments().filter(item => String(item.shiftId) === String(id));
+                    addDeleteMarker('shifts', shift, { deletedAt: now });
+                    affectedAssignments.forEach(item => addDeleteMarker('shiftAssignments', item, { deletedAt: now, reason: 'shift-delete' }));
+                    saveDeletedRecords({ queueSync: false });
                     shifts = shifts.map(item => String(item.id) === String(id) ? {
                         ...item,
                         isDeleted: true,
@@ -4937,6 +5278,9 @@ function setupLuxeHRSheets() {
             function deleteShiftAssignment(id) {
                 showConfirm('Hapus assignment shift ini?', () => {
                     const now = new Date().toISOString();
+                    const item = shiftAssignments.find(row => Number(row.id) === Number(id));
+                    if (item) addDeleteMarker('shiftAssignments', item, { deletedAt: now });
+                    saveDeletedRecords({ queueSync: false });
                     shiftAssignments = shiftAssignments.map(item => Number(item.id) === Number(id) ? { ...item, isDeleted: true, deletedAt: now, updatedAt: now } : item);
                     saveShiftAssignments();
                     renderShiftView();
@@ -5027,6 +5371,8 @@ function setupLuxeHRSheets() {
                 if (!log) return showToast('Histori absensi tidak ditemukan atau sudah terhapus', 'error');
                 const employeeLabel = `${attendanceEmployeeName(log)} - ${formatDate(log.date)} ${log.checkIn || ''}`.trim();
                 showConfirm(`Hapus histori absensi ${employeeLabel}? Data ini akan dihapus dari aplikasi dan saat sync manual berikutnya akan ikut terhapus dari Google Sheet.`, () => {
+                    addDeleteMarker('attendance', log);
+                    saveDeletedRecords({ queueSync: false });
                     attendance = attendance.filter(item => String(item.id) !== String(id));
                     saveAttendance();
                     renderAttendanceHistory();
@@ -5093,6 +5439,9 @@ function setupLuxeHRSheets() {
             }
             function deleteLeave(id) {
                 showConfirm('Hapus pengajuan ini?', () => {
+                    const item = leaves.find(row => Number(row.id) === Number(id));
+                    if (item) addDeleteMarker('leaves', item);
+                    saveDeletedRecords({ queueSync: false });
                     leaves = leaves.filter(item => Number(item.id) !== Number(id));
                     saveLeaves();
                     renderLeaves();
@@ -5288,6 +5637,9 @@ function setupLuxeHRSheets() {
                 const used = employees.filter(emp => safeLower(emp.branch) === safeLower(name)).length;
                 if (used > 0) { showToast(`Cabang masih dipakai ${used} karyawan. Edit cabang atau ubah data karyawan dulu.`, 'warning'); return; }
                 showConfirm(`Hapus cabang ${name} dari master dropdown?`, () => {
+                    addDeleteMarker('branchOptions', { nama: name, name, tipe: 'Cabang' }, { sheetName: 'Data_Master_Cabang', recordLabel: name });
+                    addDeleteMarker('masterDropdown', { nama: name, name, tipe: 'Cabang' }, { sheetName: 'Data_Master_Dropdown', recordLabel: name });
+                    saveDeletedRecords({ queueSync: false });
                     settings.branchOptions = uniqueTextList((settings.branchOptions || []).filter(item => safeLower(item) !== safeLower(name)));
                     persistMasterDropdowns(true);
                     resetBranchOptionForm();
@@ -5301,6 +5653,9 @@ function setupLuxeHRSheets() {
                 const used = employees.filter(emp => safeLower(emp.status) === safeLower(name)).length;
                 if (used > 0) { showToast(`Status masih dipakai ${used} karyawan. Edit status atau ubah data karyawan dulu.`, 'warning'); return; }
                 showConfirm(`Hapus status ${name} dari master dropdown?`, () => {
+                    addDeleteMarker('statusOptions', { nama: name, name, tipe: 'Status Karyawan' }, { sheetName: 'Data_Master_Status', recordLabel: name });
+                    addDeleteMarker('masterDropdown', { nama: name, name, tipe: 'Status Karyawan' }, { sheetName: 'Data_Master_Dropdown', recordLabel: name });
+                    saveDeletedRecords({ queueSync: false });
                     settings.employeeStatusOptions = uniqueTextList((settings.employeeStatusOptions || []).filter(item => safeLower(item) !== safeLower(name)));
                     // Sengaja tidak mengisi ulang default status. Jika master kosong, dropdown akan menampilkan pesan kosong
                     // dan user bisa menambahkan status baru dari Pengaturan.
@@ -5771,6 +6126,7 @@ function setupLuxeHRSheets() {
                     const keepSheetId = settings.googleSheetId || '';
                     const keepFolder = settings.driveRootFolderName || 'LuxeHR Uploads';
                     const keepNetwork = settings.networkAccessEnabled === true;
+                    const resetDeleteMarkers = buildDeleteMarkersForReset();
                     employees = [];
                     attendance = [];
                     leaves = [];
@@ -5779,6 +6135,7 @@ function setupLuxeHRSheets() {
                     resignRecords = [];
                     blacklistRecords = [];
                     maintenanceLogs = [];
+                    deletedRecords = resetDeleteMarkers;
                     settings = {
                         companyName: '',
                         companyAddress: '',
@@ -5807,6 +6164,7 @@ function setupLuxeHRSheets() {
                     safeWrite(STORAGE_KEYS.resignRecords, resignRecords, Array.isArray);
                     safeWrite(STORAGE_KEYS.blacklistRecords, blacklistRecords, Array.isArray);
                     safeWrite(STORAGE_KEYS.maintenanceLogs, maintenanceLogs, Array.isArray);
+                    safeWrite(STORAGE_KEYS.deletedRecords, deletedRecords, Array.isArray);
                     safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
                     saveSyncQueue({ pending: false, nextRunAt: null, lastReason: 'Seluruh data dikosongkan', lastResult: 'reset-empty' });
                     renderAllSelectors();
@@ -6150,7 +6508,7 @@ function setupLuxeHRSheets() {
             function updateDateTime() {
                 const now = new Date();
                 byId('currentDate').textContent = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-                byId('currentTime').textContent = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: true });
+                byId('currentTime').textContent = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false });
                 updateConnectivityStatus();
             }
             function toggleFullscreen() {
@@ -6277,6 +6635,7 @@ function setupLuxeHRSheets() {
                     runAutoSyncNow,
                     pullCloudDataNow,
                     purgeSyncedLocalBusinessData,
+                    saveDeletedRecords,
                     resetLocalApplicationOnly,
                     emptyAllApplicationData,
                     saveIntegrationSettings,
@@ -6353,6 +6712,7 @@ function setupLuxeHRSheets() {
                 runSelfTests();
             });
         })();
+    
     </script>
 </body>
 </html>
