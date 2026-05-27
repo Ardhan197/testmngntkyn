@@ -888,8 +888,8 @@
                             <div>
                                 <label class="label-premium">Akses Jaringan Cloud</label>
                                 <select id="networkAccessEnabled" class="field">
-                                    <option value="false">Nonaktif / Aman Preview</option>
                                     <option value="true">Aktif / Izinkan Sync</option>
+                                    <option value="false">Nonaktif / Aman Preview</option>
                                 </select>
                             </div>
                             <div>
@@ -913,7 +913,7 @@
                         </div>
                         <div class="p-3 rounded-lg bg-surface-100 border border-blue-500/20 text-gray-400 text-[10px] leading-relaxed">
                             <i class="fa-solid fa-shield-halved text-blue-300 mr-1"></i>
-                            Akses jaringan dibuat <span class="text-yellow-400">nonaktif default</span> agar popup izin jaringan pada mode Pratinjau tidak muncul berulang. Aktifkan hanya saat aplikasi sudah siap sync Google Sheet/Drive.
+                            Mode aman pratinjau aktif otomatis: aplikasi tidak akan mengirim request ke script.google.com saat dibuka di Pratinjau, sehingga popup izin jaringan tidak muncul. Jalankan dari browser/hosting normal untuk sync Google Sheet/Drive.
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                             <button type="button" onclick="pullCloudDataNow()" class="border border-purple-500/40 text-purple-300 hover:bg-purple-500 hover:text-white font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all"><i class="fa-solid fa-cloud-arrow-down mr-1.5"></i> Tarik Data Cloud</button>
@@ -1033,12 +1033,14 @@
 /**
  * LuxeHR Premium - Google Sheet + Google Drive Connector v2.9
  *
- * WAJIB DIPAKAI untuk LuxeHR v4.3.0 ke atas.
+ * WAJIB DIPAKAI untuk LuxeHR v4.2.0 ke atas.
  * Versi ini mendukung:
  * - Test koneksi / ping.
  * - Sync satu sheet.
  * - Full sync banyak sheet dalam 1 request batch.
  * - Read-all cloud pull untuk mode realtime cloud-first multi user.
+ * - Safe merge sync agar data antar cabang/perangkat tidak saling menimpa.
+ * - Normalisasi jam shift/absensi menjadi format 24 jam HH:mm.
  * - Auto-sync dari aplikasi tanpa harus selalu klik Sync Manual.
  * - Upload gambar Foto Karyawan dan KTP ke Google Drive.
  * - Membuat folder Google Drive otomatis jika belum ada.
@@ -1062,13 +1064,13 @@
  * - Jangan pakai variabel SHEET_ID lama. Versi ini memakai DEFAULT_SPREADSHEET_ID.
  * - Fitur upload Google Drive membutuhkan izin DriveApp. Saat deploy pertama kali,
  *   Google akan meminta authorization ulang.
- * - Setelah mengganti script, WAJIB klik Deploy > Manage deployments > Edit > New version > Deploy.
+ * - Setelah mengganti script, WAJIB klik Deploy &gt; Manage deployments &gt; Edit &gt; New version &gt; Deploy.
  */
-const DEFAULT_SPREADSHEET_ID = 'GANTI_DENGAN_ID_SPREADSHEET_ANDA';
-const DEFAULT_DRIVE_ROOT_FOLDER_NAME = 'LuxeHR Uploads';
-const LUXEHR_CONNECTOR_VERSION = '2.9.0-realtime-cloud-first';
-const LUXEHR_HEADER_BG = '#D4AF37';
-const LUXEHR_HEADER_FG = '#FFFFFF';
+const DEFAULT_SPREADSHEET_ID = &#x27;GANTI_DENGAN_ID_SPREADSHEET_ANDA&#x27;;
+const DEFAULT_DRIVE_ROOT_FOLDER_NAME = &#x27;LuxeHR Uploads&#x27;;
+const LUXEHR_CONNECTOR_VERSION = &#x27;2.10.0-shift-time-safe-merge&#x27;;
+const LUXEHR_HEADER_BG = &#x27;#D4AF37&#x27;;
+const LUXEHR_HEADER_FG = &#x27;#FFFFFF&#x27;;
 
 function jsonOutput(payload) {
   return ContentService
@@ -1087,7 +1089,7 @@ function nowIso() {
 }
 
 function getRequestBody(e) {
-  const raw = e && e.postData && e.postData.contents ? e.postData.contents : '';
+  const raw = e &amp;&amp; e.postData &amp;&amp; e.postData.contents ? e.postData.contents : &#x27;&#x27;;
   if (!raw) return {};
   try {
     return JSON.parse(raw);
@@ -1103,24 +1105,24 @@ function getRequestBody(e) {
 
 function parseRequest(e) {
   const body = getRequestBody(e);
-  const params = e && e.parameter ? e.parameter : {};
+  const params = e &amp;&amp; e.parameter ? e.parameter : {};
   return Object.assign({}, params, body);
 }
 
 function setLuxeHRSpreadsheetId(spreadsheetId) {
-  const cleanId = String(spreadsheetId || '').trim();
-  if (!cleanId) throw new Error('Spreadsheet ID kosong.');
-  PropertiesService.getScriptProperties().setProperty('LUXEHR_SPREADSHEET_ID', cleanId);
+  const cleanId = String(spreadsheetId || &#x27;&#x27;).trim();
+  if (!cleanId) throw new Error(&#x27;Spreadsheet ID kosong.&#x27;);
+  PropertiesService.getScriptProperties().setProperty(&#x27;LUXEHR_SPREADSHEET_ID&#x27;, cleanId);
   return cleanId;
 }
 
 function getSpreadsheetId(request) {
-  const fromPayload = request && request.spreadsheetId ? String(request.spreadsheetId).trim() : '';
-  const fromProperty = PropertiesService.getScriptProperties().getProperty('LUXEHR_SPREADSHEET_ID') || '';
-  const fromConstant = String(DEFAULT_SPREADSHEET_ID || '').trim();
+  const fromPayload = request &amp;&amp; request.spreadsheetId ? String(request.spreadsheetId).trim() : &#x27;&#x27;;
+  const fromProperty = PropertiesService.getScriptProperties().getProperty(&#x27;LUXEHR_SPREADSHEET_ID&#x27;) || &#x27;&#x27;;
+  const fromConstant = String(DEFAULT_SPREADSHEET_ID || &#x27;&#x27;).trim();
   const selected = fromPayload || fromProperty || fromConstant;
-  if (!selected || selected === 'GANTI_DENGAN_ID_SPREADSHEET_ANDA') {
-    throw new Error('Spreadsheet ID belum dikonfigurasi. Isi DEFAULT_SPREADSHEET_ID di Apps Script atau isi Spreadsheet ID di Pengaturan LuxeHR. Link Web App bukan Spreadsheet ID.');
+  if (!selected || selected === &#x27;GANTI_DENGAN_ID_SPREADSHEET_ANDA&#x27;) {
+    throw new Error(&#x27;Spreadsheet ID belum dikonfigurasi. Isi DEFAULT_SPREADSHEET_ID di Apps Script atau isi Spreadsheet ID di Pengaturan LuxeHR. Link Web App bukan Spreadsheet ID.&#x27;);
   }
   return selected;
 }
@@ -1131,45 +1133,83 @@ function getSpreadsheet(request) {
 }
 
 function sanitizeSheetName(name) {
-  return String(name || 'Log_Umum')
-    .replace(/[\\/?*\[\]:]/g, '_')
-    .slice(0, 99) || 'Log_Umum';
+  return String(name || &#x27;Log_Umum&#x27;)
+    .replace(/[\\/?*\[\]:]/g, &#x27;_&#x27;)
+    .slice(0, 99) || &#x27;Log_Umum&#x27;;
 }
 
 function sanitizeDriveName(name, fallback) {
-  return String(name || fallback || 'LuxeHR')
-    .replace(/[\\/:*?"<>|#%{}~&]/g, '_')
-    .replace(/\s+/g, ' ')
+  return String(name || fallback || &#x27;LuxeHR&#x27;)
+    .replace(/[\\/:*?&quot;&lt;&gt;|#%{}~&amp;]/g, &#x27;_&#x27;)
+    .replace(/\s+/g, &#x27; &#x27;)
     .trim()
-    .slice(0, 120) || fallback || 'LuxeHR';
+    .slice(0, 120) || fallback || &#x27;LuxeHR&#x27;;
 }
 
 function normalizeRecords(data) {
   if (Array.isArray(data)) return data;
-  if (data && typeof data === 'object') return [data];
+  if (data &amp;&amp; typeof data === &#x27;object&#x27;) return [data];
   return [];
 }
 
-function prepareCellValue(value) {
-  if (value === undefined || value === null) return '';
-  if (value instanceof Date) return value;
-  if (typeof value === 'object') return JSON.stringify(value);
+function isTimeField(key) {
+  const clean = String(key || &#x27;&#x27;).toLowerCase();
+  return clean === &#x27;starttime&#x27; || clean === &#x27;endtime&#x27; || clean === &#x27;shiftstart&#x27; || clean === &#x27;shiftend&#x27; || clean === &#x27;checkin&#x27; || clean === &#x27;checkout&#x27; || clean === &#x27;standardstarttime&#x27; || clean.indexOf(&#x27;jam&#x27;) !== -1 || clean.indexOf(&#x27;time&#x27;) !== -1;
+}
+
+function normalizeTimeHHMM(value) {
+  if (value === undefined || value === null || value === &#x27;&#x27;) return &#x27;&#x27;;
+  if (value instanceof Date &amp;&amp; !isNaN(value.getTime())) {
+    const total = Math.round(value.getHours() * 60 + value.getMinutes() + (value.getSeconds() &gt;= 30 ? 1 : 0));
+    return String(Math.floor((total % 1440) / 60)).padStart(2, &#x27;0&#x27;) + &#x27;:&#x27; + String(total % 60).padStart(2, &#x27;0&#x27;);
+  }
+  if (typeof value === &#x27;number&#x27; &amp;&amp; isFinite(value)) {
+    const fraction = value &gt;= 1 ? value % 1 : value;
+    const total = Math.round(fraction * 24 * 60) % 1440;
+    return String(Math.floor(total / 60)).padStart(2, &#x27;0&#x27;) + &#x27;:&#x27; + String(total % 60).padStart(2, &#x27;0&#x27;);
+  }
+  const raw = String(value || &#x27;&#x27;).trim();
+  const hhmm = raw.match(/^([0-1]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/);
+  if (hhmm) return String(Number(hhmm[1])).padStart(2, &#x27;0&#x27;) + &#x27;:&#x27; + String(Number(hhmm[2])).padStart(2, &#x27;0&#x27;);
+  const iso = raw.match(/^\d{4}-\d{2}-\d{2}T(\d{2}):(\d{2}):(\d{2})/);
+  if (iso) {
+    const parsed = new Date(raw);
+    if (!isNaN(parsed.getTime())) {
+      const total = Math.round(parsed.getHours() * 60 + parsed.getMinutes() + (parsed.getSeconds() &gt;= 30 ? 1 : 0));
+      return String(Math.floor((total % 1440) / 60)).padStart(2, &#x27;0&#x27;) + &#x27;:&#x27; + String(total % 60).padStart(2, &#x27;0&#x27;);
+    }
+    return iso[1] + &#x27;:&#x27; + iso[2];
+  }
+  const anyTime = raw.match(/(\d{1,2})[.:](\d{2})/);
+  if (anyTime) {
+    const h = Number(anyTime[1]);
+    const m = Number(anyTime[2]);
+    if (h &gt;= 0 &amp;&amp; h &lt;= 23 &amp;&amp; m &gt;= 0 &amp;&amp; m &lt;= 59) return String(h).padStart(2, &#x27;0&#x27;) + &#x27;:&#x27; + String(m).padStart(2, &#x27;0&#x27;);
+  }
+  return raw;
+}
+
+function prepareCellValue(key, value) {
+  if (value === undefined || value === null) return &#x27;&#x27;;
+  if (isTimeField(key)) return normalizeTimeHHMM(value);
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === &#x27;object&#x27;) return JSON.stringify(value);
   return value;
 }
 
 function prepareRecord(record) {
   const clean = {};
   Object.keys(record || {}).forEach(function(key) {
-    clean[key] = prepareCellValue(record[key]);
+    clean[key] = prepareCellValue(key, record[key]);
   });
   if (!clean.timestamp) clean.timestamp = nowIso();
   return clean;
 }
 
 function styleHeader(sheet, headerLength) {
-  if (headerLength < 1) return;
+  if (headerLength &lt; 1) return;
   sheet.getRange(1, 1, 1, headerLength)
-    .setFontWeight('bold')
+    .setFontWeight(&#x27;bold&#x27;)
     .setBackground(LUXEHR_HEADER_BG)
     .setFontColor(LUXEHR_HEADER_FG);
   sheet.setFrozenRows(1);
@@ -1178,7 +1218,7 @@ function styleHeader(sheet, headerLength) {
 function getExistingHeaders(sheet) {
   const lastColumn = sheet.getLastColumn();
   const lastRow = sheet.getLastRow();
-  if (lastColumn < 1 || lastRow < 1) return [];
+  if (lastColumn &lt; 1 || lastRow &lt; 1) return [];
   return sheet.getRange(1, 1, 1, lastColumn).getValues()[0].filter(String);
 }
 
@@ -1189,46 +1229,57 @@ function readSheetRecords(ss, sheetName) {
   if (!sheet) return [];
   const lastRow = sheet.getLastRow();
   const lastColumn = sheet.getLastColumn();
-  if (lastRow < 2 || lastColumn < 1) return [];
-  const values = sheet.getRange(1, 1, lastRow, lastColumn).getValues();
-  const headers = (values[0] || []).map(function(header) { return String(header || '').trim(); });
+  if (lastRow &lt; 2 || lastColumn &lt; 1) return [];
+  const range = sheet.getRange(1, 1, lastRow, lastColumn);
+  const values = range.getValues();
+  const displayValues = range.getDisplayValues();
+  const headers = (values[0] || []).map(function(header, index) { return String(header || displayValues[0][index] || &#x27;&#x27;).trim(); });
   const records = [];
-  for (let r = 1; r < values.length; r++) {
+  for (let r = 1; r &lt; values.length; r++) {
     const row = values[r];
+    const displayRow = displayValues[r] || [];
     const record = {};
     let hasValue = false;
     headers.forEach(function(header, c) {
       if (!header) return;
       const value = row[c];
-      if (value !== '' && value !== null && value !== undefined) hasValue = true;
-      record[header] = value instanceof Date ? value.toISOString() : value;
+      const display = displayRow[c];
+      if (value !== &#x27;&#x27; &amp;&amp; value !== null &amp;&amp; value !== undefined) hasValue = true;
+      if (isTimeField(header)) {
+        record[header] = normalizeTimeHHMM(display || value);
+      } else if (value instanceof Date) {
+        record[header] = value.toISOString();
+      } else {
+        record[header] = value;
+      }
     });
     if (hasValue) records.push(record);
   }
   return records;
 }
 
+
 function processReadAll(ss, request) {
   const defaultSheets = [
-    'Data_Karyawan',
-    'Data_Absensi',
-    'Data_Cuti',
-    'Data_Shift',
-    'Data_Shift_Assignment',
-    'Data_Resign',
-    'Data_Blacklist',
-    'Data_Master_Cabang',
-    'Data_Master_Status',
-    'Data_Master_Dropdown',
-    'Data_Pengaturan',
-    'Data_Integrasi',
-    'Data_App_Metadata',
-    'Data_Drive_Files',
-    'Data_Maintenance_Log',
-    'Data_Maintenance_Report',
-    'Data_Sync_Manifest'
+    &#x27;Data_Karyawan&#x27;,
+    &#x27;Data_Absensi&#x27;,
+    &#x27;Data_Cuti&#x27;,
+    &#x27;Data_Shift&#x27;,
+    &#x27;Data_Shift_Assignment&#x27;,
+    &#x27;Data_Resign&#x27;,
+    &#x27;Data_Blacklist&#x27;,
+    &#x27;Data_Master_Cabang&#x27;,
+    &#x27;Data_Master_Status&#x27;,
+    &#x27;Data_Master_Dropdown&#x27;,
+    &#x27;Data_Pengaturan&#x27;,
+    &#x27;Data_Integrasi&#x27;,
+    &#x27;Data_App_Metadata&#x27;,
+    &#x27;Data_Drive_Files&#x27;,
+    &#x27;Data_Maintenance_Log&#x27;,
+    &#x27;Data_Maintenance_Report&#x27;,
+    &#x27;Data_Sync_Manifest&#x27;
   ];
-  const requestedSheets = Array.isArray(request.sheets) && request.sheets.length ? request.sheets : defaultSheets;
+  const requestedSheets = Array.isArray(request.sheets) &amp;&amp; request.sheets.length ? request.sheets : defaultSheets;
   const sheets = {};
   let totalRows = 0;
   requestedSheets.forEach(function(name) {
@@ -1237,9 +1288,9 @@ function processReadAll(ss, request) {
     totalRows += rows.length;
   });
   return {
-    status: 'success',
-    message: 'Cloud data berhasil dibaca. ' + requestedSheets.length + ' sheet, total ' + totalRows + ' baris.',
-    action: 'readAll',
+    status: &#x27;success&#x27;,
+    message: &#x27;Cloud data berhasil dibaca. &#x27; + requestedSheets.length + &#x27; sheet, total &#x27; + totalRows + &#x27; baris.&#x27;,
+    action: &#x27;readAll&#x27;,
     sheets: sheets,
     totalSheets: requestedSheets.length,
     totalRows: totalRows,
@@ -1252,83 +1303,133 @@ function processReadAll(ss, request) {
 function writeRealtimeState(ss, request, batchResult) {
   try {
     const state = [{
-      appVersion: request.appVersion || '',
+      appVersion: request.appVersion || &#x27;&#x27;,
       connectorVersion: LUXEHR_CONNECTOR_VERSION,
-      syncMode: request.mode || request.action || 'batchSync',
-      deviceId: request.deviceId || '',
-      clientTime: request.clientTime || '',
+      syncMode: request.mode || request.action || &#x27;batchSync&#x27;,
+      deviceId: request.deviceId || &#x27;&#x27;,
+      clientTime: request.clientTime || &#x27;&#x27;,
       serverTime: nowIso(),
-      totalJobs: batchResult && batchResult.summary ? batchResult.summary.totalJobs : '',
-      totalRows: batchResult && batchResult.summary ? batchResult.summary.totalRows : '',
-      status: batchResult && batchResult.status ? batchResult.status : 'success'
+      totalJobs: batchResult &amp;&amp; batchResult.summary ? batchResult.summary.totalJobs : &#x27;&#x27;,
+      totalRows: batchResult &amp;&amp; batchResult.summary ? batchResult.summary.totalRows : &#x27;&#x27;,
+      status: batchResult &amp;&amp; batchResult.status ? batchResult.status : &#x27;success&#x27;
     }];
-    writeRecords(ss, { sheetName: 'Data_Realtime_State', data: state, overwrite: true });
+    writeRecords(ss, { sheetName: &#x27;Data_Realtime_State&#x27;, data: state, overwrite: true });
   } catch (stateError) {}
 }
 
+function getMergeKey(sheetName, record) {
+  const safeName = sanitizeSheetName(sheetName);
+  if (safeName === &#x27;Data_Absensi&#x27;) return String(record.id || ((record.employeeId || &#x27;&#x27;) + &#x27;|&#x27; + (record.date || &#x27;&#x27;)));
+  if (safeName === &#x27;Data_Shift_Assignment&#x27;) return String(record.id || ((record.employeeId || &#x27;&#x27;) + &#x27;|&#x27; + (record.shiftId || &#x27;&#x27;) + &#x27;|&#x27; + (record.startDate || &#x27;&#x27;)));
+  if (safeName === &#x27;Data_Pengaturan&#x27;) return String(record.settingKey || record.key || record.id || JSON.stringify(record));
+  if (safeName === &#x27;Data_Integrasi&#x27;) return String(record.key || record.id || JSON.stringify(record));
+  if (safeName === &#x27;Data_Master_Cabang&#x27; || safeName === &#x27;Data_Master_Status&#x27;) return String(record.nama || record.name || record.id || JSON.stringify(record));
+  if (safeName === &#x27;Data_Drive_Files&#x27;) return String(record.fileId || ((record.employeeId || &#x27;&#x27;) + &#x27;|&#x27; + (record.type || &#x27;&#x27;) + &#x27;|&#x27; + (record.dataHash || &#x27;&#x27;)));
+  if (safeName === &#x27;Data_App_Metadata&#x27; || safeName === &#x27;Data_Realtime_State&#x27;) return String(record.deviceId || record.app || &#x27;singleton&#x27;);
+  return String(record.id || record.employeeId || record.key || record.settingKey || record.nama || record.name || JSON.stringify(record));
+}
+
+function recordVersionMillis(record) {
+  const fields = [&#x27;updatedAt&#x27;, &#x27;createdAt&#x27;, &#x27;timestamp&#x27;, &#x27;uploadedAt&#x27;, &#x27;checkedAt&#x27;, &#x27;serverTime&#x27;, &#x27;clientTime&#x27;, &#x27;effectiveDate&#x27;, &#x27;date&#x27;];
+  for (let i = 0; i &lt; fields.length; i++) {
+    const value = record &amp;&amp; record[fields[i]];
+    if (!value) continue;
+    const millis = new Date(value).getTime();
+    if (isFinite(millis)) return millis;
+  }
+  return 0;
+}
+
+function mergeRecordsByKey(sheetName, existingRecords, incomingRecords) {
+  const map = {};
+  (existingRecords || []).forEach(function(row) {
+    map[getMergeKey(sheetName, row)] = row;
+  });
+  (incomingRecords || []).forEach(function(row) {
+    const key = getMergeKey(sheetName, row);
+    const existing = map[key];
+    if (!existing || recordVersionMillis(row) &gt;= recordVersionMillis(existing)) map[key] = row;
+  });
+  return Object.keys(map).map(function(key) { return map[key]; });
+}
+
+function setTimeColumnsAsText(sheet, headers, rowCount) {
+  try {
+    headers.forEach(function(header, index) {
+      if (isTimeField(header)) sheet.getRange(1, index + 1, Math.max(rowCount + 1, 1), 1).setNumberFormat(&#x27;@&#x27;);
+    });
+  } catch (formatError) {}
+}
+
 function writeRecords(ss, request) {
-  const sheetName = sanitizeSheetName(request.sheetName || 'Log_Umum');
-  const records = normalizeRecords(request.data).map(prepareRecord);
-  const overwrite = request.overwrite === true || request.overwrite === 'true';
+  const sheetName = sanitizeSheetName(request.sheetName || &#x27;Log_Umum&#x27;);
+  let records = normalizeRecords(request.data).map(prepareRecord);
+  const overwrite = request.overwrite === true || request.overwrite === &#x27;true&#x27; || request.mergeStrategy === &#x27;replace-all&#x27;;
+  const mergeStrategy = String(request.mergeStrategy || &#x27;&#x27;).toLowerCase();
   let sheet = ss.getSheetByName(sheetName);
   if (!sheet) sheet = ss.insertSheet(sheetName);
-  if (overwrite) {
+  if (!overwrite &amp;&amp; mergeStrategy.indexOf(&#x27;upsert&#x27;) !== -1) {
+    const existingRecords = readSheetRecords(ss, sheetName).map(prepareRecord);
+    records = mergeRecordsByKey(sheetName, existingRecords, records);
+  }
+  if (overwrite || mergeStrategy.indexOf(&#x27;upsert&#x27;) !== -1) {
     sheet.clearContents();
     sheet.clearFormats();
   }
-  let headers = overwrite ? [] : getExistingHeaders(sheet);
+  let headers = (overwrite || mergeStrategy.indexOf(&#x27;upsert&#x27;) !== -1) ? [] : getExistingHeaders(sheet);
   records.forEach(function(record) {
     Object.keys(record).forEach(function(key) {
       if (headers.indexOf(key) === -1) headers.push(key);
     });
   });
-  if (headers.length === 0) headers = ['timestamp'];
+  if (headers.length === 0) headers = [&#x27;timestamp&#x27;];
   sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   styleHeader(sheet, headers.length);
+  setTimeColumnsAsText(sheet, headers, records.length);
   if (records.length === 0) {
-    return { status: 'success', message: 'Sheet ' + sheetName + ' berhasil dikosongkan/diperbarui tanpa baris data.', sheetName: sheetName, rows: 0, overwrite: overwrite };
+    return { status: &#x27;success&#x27;, message: &#x27;Sheet &#x27; + sheetName + &#x27; berhasil dikosongkan/diperbarui tanpa baris data.&#x27;, sheetName: sheetName, rows: 0, overwrite: overwrite };
   }
   const rows = records.map(function(record) {
     return headers.map(function(header) {
-      return record[header] !== undefined && record[header] !== null ? record[header] : '';
+      return record[header] !== undefined &amp;&amp; record[header] !== null ? record[header] : &#x27;&#x27;;
     });
   });
-  const startRow = overwrite ? 2 : Math.max(sheet.getLastRow() + 1, 2);
+  const startRow = (overwrite || mergeStrategy.indexOf(&#x27;upsert&#x27;) !== -1) ? 2 : Math.max(sheet.getLastRow() + 1, 2);
   sheet.getRange(startRow, 1, rows.length, headers.length).setValues(rows);
   try { sheet.autoResizeColumns(1, Math.min(headers.length, 25)); } catch (resizeError) {}
-  return { status: 'success', message: 'Berhasil memproses ' + rows.length + ' baris di sheet ' + sheetName, sheetName: sheetName, rows: rows.length, overwrite: overwrite };
+  return { status: &#x27;success&#x27;, message: &#x27;Berhasil memproses &#x27; + rows.length + &#x27; baris di sheet &#x27; + sheetName + (mergeStrategy.indexOf(&#x27;upsert&#x27;) !== -1 ? &#x27; dengan safe merge.&#x27; : &#x27;&#x27;), sheetName: sheetName, rows: rows.length, overwrite: overwrite, mergeStrategy: mergeStrategy || (overwrite ? &#x27;replace-all&#x27; : &#x27;append&#x27;) };
 }
 
 function ensureDriveFolder(parentFolder, folderName) {
-  const safeName = sanitizeDriveName(folderName, 'LuxeHR');
+  const safeName = sanitizeDriveName(folderName, &#x27;LuxeHR&#x27;);
   const existing = parentFolder.getFoldersByName(safeName);
   if (existing.hasNext()) return existing.next();
   return parentFolder.createFolder(safeName);
 }
 
 function parseDataUrl(dataUrl) {
-  const text = String(dataUrl || '');
+  const text = String(dataUrl || &#x27;&#x27;);
   const match = text.match(/^data:([^;]+);base64,(.+)$/);
-  if (!match) throw new Error('Format dataUrl gambar tidak valid.');
+  if (!match) throw new Error(&#x27;Format dataUrl gambar tidak valid.&#x27;);
   return { mimeType: match[1], base64: match[2] };
 }
 
 function extensionFromMime(mimeType) {
-  const mime = String(mimeType || '').toLowerCase();
-  if (mime.indexOf('png') !== -1) return 'png';
-  if (mime.indexOf('webp') !== -1) return 'webp';
-  if (mime.indexOf('gif') !== -1) return 'gif';
-  return 'jpg';
+  const mime = String(mimeType || &#x27;&#x27;).toLowerCase();
+  if (mime.indexOf(&#x27;png&#x27;) !== -1) return &#x27;png&#x27;;
+  if (mime.indexOf(&#x27;webp&#x27;) !== -1) return &#x27;webp&#x27;;
+  if (mime.indexOf(&#x27;gif&#x27;) !== -1) return &#x27;gif&#x27;;
+  return &#x27;jpg&#x27;;
 }
 
 function uploadOneDriveFile(rootFolder, upload) {
   const parsed = parseDataUrl(upload.dataUrl);
-  const type = String(upload.type || 'file').toLowerCase();
-  const subFolderName = sanitizeDriveName(upload.subFolderName || (type === 'ktp' ? 'KTP' : 'Foto Karyawan'), 'Dokumen');
+  const type = String(upload.type || &#x27;file&#x27;).toLowerCase();
+  const subFolderName = sanitizeDriveName(upload.subFolderName || (type === &#x27;ktp&#x27; ? &#x27;KTP&#x27; : &#x27;Foto Karyawan&#x27;), &#x27;Dokumen&#x27;);
   const folder = ensureDriveFolder(rootFolder, subFolderName);
   const ext = extensionFromMime(parsed.mimeType);
-  const rawName = upload.fileName || (String(upload.nik || upload.employeeId || 'employee') + '_' + type + '_' + String(upload.dataHash || Date.now()) + '.' + ext);
-  const fileName = sanitizeDriveName(rawName, 'luxehr_upload.' + ext);
+  const rawName = upload.fileName || (String(upload.nik || upload.employeeId || &#x27;employee&#x27;) + &#x27;_&#x27; + type + &#x27;_&#x27; + String(upload.dataHash || Date.now()) + &#x27;.&#x27; + ext);
+  const fileName = sanitizeDriveName(rawName, &#x27;luxehr_upload.&#x27; + ext);
 
   const existing = folder.getFilesByName(fileName);
   while (existing.hasNext()) {
@@ -1338,23 +1439,23 @@ function uploadOneDriveFile(rootFolder, upload) {
   const bytes = Utilities.base64Decode(parsed.base64);
   const blob = Utilities.newBlob(bytes, parsed.mimeType, fileName);
   const file = folder.createFile(blob);
-  file.setDescription('Uploaded by LuxeHR ' + LUXEHR_CONNECTOR_VERSION + ' | employeeId=' + (upload.employeeId || '') + ' | type=' + type + ' | time=' + nowIso());
+  file.setDescription(&#x27;Uploaded by LuxeHR &#x27; + LUXEHR_CONNECTOR_VERSION + &#x27; | employeeId=&#x27; + (upload.employeeId || &#x27;&#x27;) + &#x27; | type=&#x27; + type + &#x27; | time=&#x27; + nowIso());
   try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (sharingError) {}
 
   return {
-    status: 'success',
-    employeeId: upload.employeeId || '',
-    nik: upload.nik || '',
-    employeeName: upload.employeeName || '',
+    status: &#x27;success&#x27;,
+    employeeId: upload.employeeId || &#x27;&#x27;,
+    nik: upload.nik || &#x27;&#x27;,
+    employeeName: upload.employeeName || &#x27;&#x27;,
     type: type,
-    dataHash: upload.dataHash || '',
+    dataHash: upload.dataHash || &#x27;&#x27;,
     fileName: fileName,
     mimeType: parsed.mimeType,
     sizeBytes: bytes.length,
     sizeKb: Math.round(bytes.length / 1024),
     fileId: file.getId(),
     fileUrl: file.getUrl(),
-    downloadUrl: 'https://drive.google.com/uc?id=' + file.getId(),
+    downloadUrl: &#x27;https://drive.google.com/uc?id=&#x27; + file.getId(),
     folderId: folder.getId(),
     folderName: subFolderName,
     rootFolderName: rootFolder.getName(),
@@ -1375,13 +1476,13 @@ function processDriveUploads(request) {
     } catch (error) {
       return {
         index: index + 1,
-        status: 'error',
-        employeeId: upload && upload.employeeId ? upload.employeeId : '',
-        nik: upload && upload.nik ? upload.nik : '',
-        employeeName: upload && upload.employeeName ? upload.employeeName : '',
-        type: upload && upload.type ? upload.type : '',
-        dataHash: upload && upload.dataHash ? upload.dataHash : '',
-        message: error && error.message ? error.message : String(error),
+        status: &#x27;error&#x27;,
+        employeeId: upload &amp;&amp; upload.employeeId ? upload.employeeId : &#x27;&#x27;,
+        nik: upload &amp;&amp; upload.nik ? upload.nik : &#x27;&#x27;,
+        employeeName: upload &amp;&amp; upload.employeeName ? upload.employeeName : &#x27;&#x27;,
+        type: upload &amp;&amp; upload.type ? upload.type : &#x27;&#x27;,
+        dataHash: upload &amp;&amp; upload.dataHash ? upload.dataHash : &#x27;&#x27;,
+        message: error &amp;&amp; error.message ? error.message : String(error),
         uploadedAt: nowIso()
       };
     }
@@ -1389,15 +1490,15 @@ function processDriveUploads(request) {
 }
 
 function applyDriveUploadResultsToJobs(jobs, uploadResults) {
-  const success = (uploadResults || []).filter(function(item) { return item && item.status === 'success'; });
+  const success = (uploadResults || []).filter(function(item) { return item &amp;&amp; item.status === &#x27;success&#x27;; });
   if (!success.length) return jobs;
   (jobs || []).forEach(function(job) {
-    if (!job || sanitizeSheetName(job.sheetName) !== 'Data_Karyawan') return;
+    if (!job || sanitizeSheetName(job.sheetName) !== &#x27;Data_Karyawan&#x27;) return;
     const rows = normalizeRecords(job.data);
     rows.forEach(function(row) {
       success.forEach(function(file) {
-        if (String(row.id || row.employeeId || '') !== String(file.employeeId || '')) return;
-        if (file.type === 'photo') {
+        if (String(row.id || row.employeeId || &#x27;&#x27;) !== String(file.employeeId || &#x27;&#x27;)) return;
+        if (file.type === &#x27;photo&#x27;) {
           row.photoDriveUrl = file.fileUrl;
           row.photoDriveFileId = file.fileId;
           row.photoDriveDownloadUrl = file.downloadUrl;
@@ -1405,7 +1506,7 @@ function applyDriveUploadResultsToJobs(jobs, uploadResults) {
           row.photoDriveSyncedAt = file.uploadedAt;
           row.photo = file.fileUrl;
         }
-        if (file.type === 'ktp') {
+        if (file.type === &#x27;ktp&#x27;) {
           row.ktpDriveUrl = file.fileUrl;
           row.ktpDriveFileId = file.fileId;
           row.ktpDriveDownloadUrl = file.downloadUrl;
@@ -1423,17 +1524,17 @@ function applyDriveUploadResultsToJobs(jobs, uploadResults) {
 function buildPingData(request) {
   const incoming = normalizeRecords(request.data);
   if (incoming.length) return incoming;
-  return [{ test: 'Ping LuxeHR', connectorVersion: LUXEHR_CONNECTOR_VERSION, appVersion: request.appVersion || '', clientTime: request.clientTime || '', serverTime: nowIso() }];
+  return [{ test: &#x27;Ping LuxeHR&#x27;, connectorVersion: LUXEHR_CONNECTOR_VERSION, appVersion: request.appVersion || &#x27;&#x27;, clientTime: request.clientTime || &#x27;&#x27;, serverTime: nowIso() }];
 }
 
 function processBatchSync(ss, request) {
   const jobs = Array.isArray(request.jobs) ? request.jobs : [];
-  if (!jobs.length) throw new Error('Payload batch kosong. Aplikasi harus mengirim field jobs berisi daftar sheet.');
+  if (!jobs.length) throw new Error(&#x27;Payload batch kosong. Aplikasi harus mengirim field jobs berisi daftar sheet.&#x27;);
 
   const driveUploads = processDriveUploads(request);
   applyDriveUploadResultsToJobs(jobs, driveUploads);
   if (driveUploads.length) {
-    jobs.push({ sheetName: 'Data_Drive_Files', overwrite: true, data: driveUploads });
+    jobs.push({ sheetName: &#x27;Data_Drive_Files&#x27;, overwrite: true, data: driveUploads });
   }
 
   const results = [];
@@ -1442,24 +1543,24 @@ function processBatchSync(ss, request) {
   let totalRows = 0;
   jobs.forEach(function(job, index) {
     try {
-      const mergedJob = Object.assign({}, job, { overwrite: job.overwrite !== undefined ? job.overwrite : true });
+      const mergedJob = Object.assign({}, job, { overwrite: job.overwrite === true, mergeStrategy: job.mergeStrategy || request.mergeStrategy || (job.overwrite === true ? &#x27;replace-all&#x27; : &#x27;upsert-newer-by-key&#x27;) });
       const result = writeRecords(ss, mergedJob);
       successCount += 1;
       totalRows += Number(result.rows || 0);
       results.push(Object.assign({ index: index + 1 }, result));
     } catch (jobError) {
       failedCount += 1;
-      results.push({ index: index + 1, status: 'error', sheetName: job && job.sheetName ? sanitizeSheetName(job.sheetName) : 'Tidak diketahui', message: jobError && jobError.message ? jobError.message : String(jobError) });
+      results.push({ index: index + 1, status: &#x27;error&#x27;, sheetName: job &amp;&amp; job.sheetName ? sanitizeSheetName(job.sheetName) : &#x27;Tidak diketahui&#x27;, message: jobError &amp;&amp; jobError.message ? jobError.message : String(jobError) });
     }
   });
-  const uploadErrorCount = driveUploads.filter(function(item) { return item.status === 'error'; }).length;
-  const uploadSuccessCount = driveUploads.filter(function(item) { return item.status === 'success'; }).length;
-  if (uploadErrorCount > 0) failedCount += uploadErrorCount;
+  const uploadErrorCount = driveUploads.filter(function(item) { return item.status === &#x27;error&#x27;; }).length;
+  const uploadSuccessCount = driveUploads.filter(function(item) { return item.status === &#x27;success&#x27;; }).length;
+  if (uploadErrorCount &gt; 0) failedCount += uploadErrorCount;
 
   const summary = { totalJobs: jobs.length, successCount: successCount, failedCount: failedCount, totalRows: totalRows, driveUploadSuccessCount: uploadSuccessCount, driveUploadErrorCount: uploadErrorCount };
   return {
-    status: failedCount > 0 ? 'error' : 'success',
-    message: failedCount > 0 ? 'Batch sync selesai dengan ' + failedCount + ' proses gagal.' : 'Batch sync berhasil. ' + successCount + ' sheet diproses, total ' + totalRows + ' baris, ' + uploadSuccessCount + ' file Drive tersimpan.',
+    status: failedCount &gt; 0 ? &#x27;error&#x27; : &#x27;success&#x27;,
+    message: failedCount &gt; 0 ? &#x27;Batch sync selesai dengan &#x27; + failedCount + &#x27; proses gagal.&#x27; : &#x27;Batch sync berhasil. &#x27; + successCount + &#x27; sheet diproses, total &#x27; + totalRows + &#x27; baris, &#x27; + uploadSuccessCount + &#x27; file Drive tersimpan.&#x27;,
     summary: summary,
     driveUploads: driveUploads,
     results: results
@@ -1469,23 +1570,23 @@ function processBatchSync(ss, request) {
 function doPost(e) {
   try {
     const request = parseRequest(e);
-    if (request.action === 'setSpreadsheetId') {
+    if (request.action === &#x27;setSpreadsheetId&#x27;) {
       const savedId = setLuxeHRSpreadsheetId(request.spreadsheetId);
-      return jsonOutput({ status: 'success', message: 'Spreadsheet ID berhasil disimpan di Script Properties.', spreadsheetId: savedId, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: nowIso() });
+      return jsonOutput({ status: &#x27;success&#x27;, message: &#x27;Spreadsheet ID berhasil disimpan di Script Properties.&#x27;, spreadsheetId: savedId, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: nowIso() });
     }
     const ss = getSpreadsheet(request);
-    if (request.action === 'readAll') {
+    if (request.action === &#x27;readAll&#x27;) {
       return jsonOutput(processReadAll(ss, request));
     }
-    if (request.action === 'ping') {
-      const result = writeRecords(ss, { sheetName: request.sheetName || 'Ping', data: buildPingData(request), overwrite: false });
-      result.message = 'Koneksi berhasil. Apps Script terhubung ke spreadsheet: ' + ss.getName();
+    if (request.action === &#x27;ping&#x27;) {
+      const result = writeRecords(ss, { sheetName: request.sheetName || &#x27;Ping&#x27;, data: buildPingData(request), overwrite: false });
+      result.message = &#x27;Koneksi berhasil. Apps Script terhubung ke spreadsheet: &#x27; + ss.getName();
       result.spreadsheetName = ss.getName();
       result.connectorVersion = LUXEHR_CONNECTOR_VERSION;
       result.serverTime = nowIso();
       return jsonOutput(result);
     }
-    if (request.action === 'batchSync' || Array.isArray(request.jobs)) {
+    if (request.action === &#x27;batchSync&#x27; || Array.isArray(request.jobs)) {
       const batchResult = processBatchSync(ss, request);
       writeRealtimeState(ss, request, batchResult);
       batchResult.spreadsheetName = ss.getName();
@@ -1502,7 +1603,7 @@ function doPost(e) {
     result.driveUploads = uploadResults;
     return jsonOutput(result);
   } catch (error) {
-    return jsonOutput({ status: 'error', message: error && error.message ? error.message : String(error), hint: 'Pastikan DEFAULT_SPREADSHEET_ID benar, deployment Web App sudah versi terbaru, akses Web App = Anyone, izin DriveApp sudah diberikan, dan Anda memakai template LuxeHR Connector v2.9.', connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: nowIso(), stack: error && error.stack ? error.stack : '' });
+    return jsonOutput({ status: &#x27;error&#x27;, message: error &amp;&amp; error.message ? error.message : String(error), hint: &#x27;Pastikan DEFAULT_SPREADSHEET_ID benar, deployment Web App sudah versi terbaru, akses Web App = Anyone, izin DriveApp sudah diberikan, dan Anda memakai template LuxeHR Connector v2.10.&#x27;, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: nowIso(), stack: error &amp;&amp; error.stack ? error.stack : &#x27;&#x27; });
   }
 }
 
@@ -1510,45 +1611,45 @@ function doGet(e) {
   try {
     const request = parseRequest(e);
     const ss = getSpreadsheet(request);
-    if (request.action === 'readAll') {
+    if (request.action === &#x27;readAll&#x27;) {
       return jsonOutput(processReadAll(ss, request));
     }
-    return jsonOutput({ status: 'success', message: 'LuxeHR Smart API aktif dan berhasil membuka spreadsheet.', spreadsheetName: ss.getName(), connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: nowIso() });
+    return jsonOutput({ status: &#x27;success&#x27;, message: &#x27;LuxeHR Smart API aktif dan berhasil membuka spreadsheet.&#x27;, spreadsheetName: ss.getName(), connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: nowIso() });
   } catch (error) {
-    return jsonOutput({ status: 'error', message: error && error.message ? error.message : String(error), hint: 'Jika membuka URL Web App tanpa parameter, DEFAULT_SPREADSHEET_ID wajib diisi di Apps Script atau disimpan lewat action setSpreadsheetId.', connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: nowIso() });
+    return jsonOutput({ status: &#x27;error&#x27;, message: error &amp;&amp; error.message ? error.message : String(error), hint: &#x27;Jika membuka URL Web App tanpa parameter, DEFAULT_SPREADSHEET_ID wajib diisi di Apps Script atau disimpan lewat action setSpreadsheetId.&#x27;, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: nowIso() });
   }
 }
 
 function setupLuxeHRSheets() {
   const ss = getSpreadsheet({});
   const sheetNames = [
-    'Data_Karyawan',
-    'Data_Absensi',
-    'Data_Cuti',
-    'Data_Shift',
-    'Data_Shift_Assignment',
-    'Data_Resign',
-    'Data_Blacklist',
-    'Data_Master_Cabang',
-    'Data_Master_Status',
-    'Data_Master_Dropdown',
-    'Data_Pengaturan',
-    'Data_Integrasi',
-    'Data_App_Metadata',
-    'Data_Storage_Index',
-    'Data_Drive_Files',
-    'Data_Maintenance_Log',
-    'Data_Maintenance_Report',
-    'Data_Realtime_State',
-    'Data_Sync_Manifest',
-    'Ping'
+    &#x27;Data_Karyawan&#x27;,
+    &#x27;Data_Absensi&#x27;,
+    &#x27;Data_Cuti&#x27;,
+    &#x27;Data_Shift&#x27;,
+    &#x27;Data_Shift_Assignment&#x27;,
+    &#x27;Data_Resign&#x27;,
+    &#x27;Data_Blacklist&#x27;,
+    &#x27;Data_Master_Cabang&#x27;,
+    &#x27;Data_Master_Status&#x27;,
+    &#x27;Data_Master_Dropdown&#x27;,
+    &#x27;Data_Pengaturan&#x27;,
+    &#x27;Data_Integrasi&#x27;,
+    &#x27;Data_App_Metadata&#x27;,
+    &#x27;Data_Storage_Index&#x27;,
+    &#x27;Data_Drive_Files&#x27;,
+    &#x27;Data_Maintenance_Log&#x27;,
+    &#x27;Data_Maintenance_Report&#x27;,
+    &#x27;Data_Realtime_State&#x27;,
+    &#x27;Data_Sync_Manifest&#x27;,
+    &#x27;Ping&#x27;
   ];
   sheetNames.forEach(function(name) { if (!ss.getSheetByName(name)) ss.insertSheet(name); });
   const rootName = DEFAULT_DRIVE_ROOT_FOLDER_NAME;
   const root = ensureDriveFolder(DriveApp.getRootFolder(), rootName);
-  ensureDriveFolder(root, 'Foto Karyawan');
-  ensureDriveFolder(root, 'KTP');
-  return 'Setup selesai. Total sheet LuxeHR tersedia: ' + sheetNames.length + '. Folder Drive tersedia: ' + root.getName() + '. Connector: ' + LUXEHR_CONNECTOR_VERSION;
+  ensureDriveFolder(root, &#x27;Foto Karyawan&#x27;);
+  ensureDriveFolder(root, &#x27;KTP&#x27;);
+  return &#x27;Setup selesai. Total sheet LuxeHR tersedia: &#x27; + sheetNames.length + &#x27;. Folder Drive tersedia: &#x27; + root.getName() + &#x27;. Connector: &#x27; + LUXEHR_CONNECTOR_VERSION;
 }
 </textarea>
                 </div>
@@ -1740,7 +1841,7 @@ function setupLuxeHRSheets() {
             // Masukkan URL Web App Google Apps Script Anda di dalam tanda kutip di bawah ini:
             const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzUM-uaRnj_sftvEJKT6KSXM26x7dh_2rU9YaKRTlb18QHXMDkRg0nLwf4Z_R5k_Ipl-w/exec";
 
-            const APP_VERSION = '4.4.0-online-status-indicator';
+            const APP_VERSION = '4.7.0-preview-network-guard';
             const PAYROLL_MONTH_DAYS = 30;
             const STANDARD_WORKDAY_HOURS = 12;
             const STANDARD_WORKDAY_MINUTES = STANDARD_WORKDAY_HOURS * 60;
@@ -2262,17 +2363,20 @@ function setupLuxeHRSheets() {
                     data: prepareSyncData(sheetName, payloadData)
                 };
             }
-            function buildBatchSyncPayload(jobs, action = 'batchSync') {
+            function buildBatchSyncPayload(jobs, action = 'batchSync', options = {}) {
+                const forceOverwrite = options.overwrite === true;
                 const normalizedJobs = (jobs || []).map(([sheetName, data]) => ({
                     sheetName,
-                    overwrite: true,
+                    overwrite: forceOverwrite,
+                    mergeStrategy: forceOverwrite ? 'replace-all' : 'upsert-newer-by-key',
                     data: prepareSyncData(sheetName, data)
                 }));
                 return {
                     app: 'LuxeHR Premium',
                     appVersion: APP_VERSION,
                     action,
-                    mode: 'full-batch-auto-sync',
+                    mode: forceOverwrite ? 'full-batch-overwrite' : 'full-batch-safe-merge',
+                    mergeStrategy: forceOverwrite ? 'replace-all' : 'upsert-newer-by-key',
                     spreadsheetId: getConfiguredSpreadsheetId(),
                     driveRootFolderName: getDriveRootFolderName(),
                     deviceId: getDeviceId(),
@@ -2282,6 +2386,7 @@ function setupLuxeHRSheets() {
                 };
             }
             async function postToAppsScript(payload, allowOpaqueFallback = true) {
+                if (isPreviewNetworkGuardActive()) throw new Error('Mode Aman Pratinjau aktif. Aplikasi tidak mengirim request jaringan eksternal agar popup izin jaringan tidak muncul. Jalankan dari browser/hosting normal untuk sync.');
                 if (!isNetworkAccessEnabled()) throw new Error('Akses jaringan cloud sedang nonaktif. Aktifkan di Pengaturan.');
                 const jsonBody = JSON.stringify(payload);
                 const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
@@ -2309,6 +2414,7 @@ function setupLuxeHRSheets() {
                 return { verified: true, mode: 'verified-fetch', result };
             }
             async function postToAppsScriptOpaque(payload) {
+                if (isPreviewNetworkGuardActive()) throw new Error('Mode Aman Pratinjau aktif. Request fallback juga diblokir agar popup izin jaringan tidak muncul.');
                 if (!isNetworkAccessEnabled()) throw new Error('Akses jaringan cloud sedang nonaktif. Aktifkan di Pengaturan.');
                 await fetch(GOOGLE_APPS_SCRIPT_URL, {
                     method: 'POST',
@@ -2414,7 +2520,7 @@ function setupLuxeHRSheets() {
 
                 syncInProgress = true;
                 const jobs = getFullCloudSyncJobs();
-                const payload = buildBatchSyncPayload(jobs);
+                const payload = buildBatchSyncPayload(jobs, 'batchSync', { overwrite: options.overwrite === true || options.source === 'reset-empty' });
                 saveSyncMeta({
                     status: 'syncing',
                     sheetName: 'Semua Data',
@@ -2452,12 +2558,11 @@ function setupLuxeHRSheets() {
                         lastSuccessAt: new Date().toISOString(),
                         lastAttemptAt: new Date().toISOString(),
                         lastError: null,
-                        message: `${isAuto ? 'Auto-sync' : 'Sync manual'} batch berhasil. ${successCount} sheet, ${totalRows} baris, dan ${uploadedDriveFiles} file Drive tersinkron. Cache lokal bisnis akan dibersihkan.`
+                        message: `${isAuto ? 'Auto-sync' : 'Sync manual'} batch berhasil. ${successCount} sheet, ${totalRows} baris, dan ${uploadedDriveFiles} file Drive tersinkron. Data lokal diperbarui sebagai mirror cloud.`
                     });
                     saveSyncQueue({ pending: false, nextRunAt: null, lastRunAt: new Date().toISOString(), retryCount: 0, lastResult: 'success' });
                     if (isCloudFirstEnabled()) {
-                        setTimeout(() => purgeSyncedLocalBusinessData({ silent: true, force: true }), CLOUD_FIRST_PURGE_DELAY_MS);
-                        setTimeout(() => pullCloudDataNow({ silent: true, force: true }), 1400);
+                        setTimeout(() => pullCloudDataNow({ silent: true, force: true }), 900);
                     }
                     if (!silent) showToast(uploadedDriveFiles ? `Semua data sync. ${uploadedDriveFiles} file masuk Google Drive` : 'Semua data berhasil sync batch', 'success');
                     return { ok: true, verifiedCount: successCount, fallbackCount: 0, failedCount: 0 };
@@ -2572,13 +2677,17 @@ function setupLuxeHRSheets() {
                     offboardingFeatureInitialized: false,
                     autoSyncEnabled: true,
                     autoSyncIntervalSeconds: 60,
-                    networkAccessEnabled: false,
+                    networkAccessEnabled: true,
+                    previewNetworkGuardEnabled: true,
                     cloudFirstEnabled: true,
                     realtimePullEnabled: true,
                     realtimePullIntervalSeconds: REALTIME_PULL_DEFAULT_SECONDS
                 }, value => value && typeof value === 'object' && !Array.isArray(value));
 
                 if (!settings.driveRootFolderName) settings.driveRootFolderName = 'LuxeHR Uploads';
+                // Akses cloud boleh aktif untuk browser/hosting normal, tetapi request eksternal diblokir otomatis saat aplikasi berjalan di mode Pratinjau/iframe agar popup izin jaringan tidak muncul.
+                settings.networkAccessEnabled = settings.networkAccessEnabled !== false;
+                settings.previewNetworkGuardEnabled = settings.previewNetworkGuardEnabled !== false;
                 settings.cloudFirstEnabled = settings.cloudFirstEnabled !== false;
                 settings.realtimePullEnabled = settings.realtimePullEnabled !== false;
                 settings.realtimePullIntervalSeconds = Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS);
@@ -2587,6 +2696,7 @@ function setupLuxeHRSheets() {
                 migrateCabangTerminology();
                 migrateEmployeeImages();
                 migrateShiftData();
+                normalizeLocalBusinessData({ write: false });
                 migrateOffboardingData();
                 normalizeMasterDropdowns();
                 const shouldKeepBusinessLocal = !isCloudFirstEnabled() || !navigator.onLine || getSyncQueue().pending;
@@ -2643,7 +2753,8 @@ function setupLuxeHRSheets() {
                 normalizeMasterDropdowns();
                 settings.autoSyncEnabled = settings.autoSyncEnabled !== false;
                 settings.autoSyncIntervalSeconds = Number(settings.autoSyncIntervalSeconds || 60);
-                settings.networkAccessEnabled = settings.networkAccessEnabled === true;
+                settings.networkAccessEnabled = settings.networkAccessEnabled !== false;
+                settings.previewNetworkGuardEnabled = settings.previewNetworkGuardEnabled !== false;
                 settings.cloudFirstEnabled = settings.cloudFirstEnabled !== false;
                 settings.realtimePullEnabled = settings.realtimePullEnabled !== false;
                 settings.realtimePullIntervalSeconds = Math.max(REALTIME_PULL_MIN_SECONDS, Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS));
@@ -2991,6 +3102,8 @@ function setupLuxeHRSheets() {
             function prepareSyncData(sheetName, payloadData) {
                 const rows = Array.isArray(payloadData) ? payloadData : (payloadData ? [payloadData] : []);
                 if (sheetName === 'Data_Karyawan') return rows.map(prepareEmployeeForSheet);
+                if (sheetName === 'Data_Shift') return rows.map(normalizeShiftRecord);
+                if (sheetName === 'Data_Absensi') return rows.map(normalizeAttendanceTimeFields);
                 return rows;
             }
             function getSettingSheetRows() {
@@ -3143,7 +3256,8 @@ function setupLuxeHRSheets() {
                     no: index + 1,
                     sheetName,
                     rowsSent: Array.isArray(data) ? data.length : (data ? 1 : 0),
-                    overwrite: true,
+                    overwrite: false,
+                    mergeStrategy: 'upsert-newer-by-key',
                     includedInFullSync: true,
                     updatedAt: new Date().toISOString()
                 }));
@@ -3159,9 +3273,25 @@ function setupLuxeHRSheets() {
                 requestAutoSyncAfterLocalSave('Pengaturan/master data berubah');
             }
 
-            function isNetworkAccessEnabled() { return settings && settings.networkAccessEnabled === true; }
+            function isLikelyPreviewRuntime() {
+                try {
+                    const host = String(window.location.hostname || '').toLowerCase();
+                    const href = String(window.location.href || '').toLowerCase();
+                    const embedded = window.self !== window.top;
+                    return embedded || host.includes('oaiusercontent') || host.includes('chatgpt') || host.includes('openai') || href.includes('pratinjau') || href.includes('preview');
+                } catch (error) {
+                    return true;
+                }
+            }
+            function isPreviewNetworkGuardActive() {
+                return settings && settings.previewNetworkGuardEnabled !== false && isLikelyPreviewRuntime();
+            }
+            function isNetworkAccessEnabled() { return settings && settings.networkAccessEnabled === true && !isPreviewNetworkGuardActive(); }
             function getNetworkDisabledResult(mode = 'network-disabled') {
-                const message = 'Akses jaringan cloud sedang nonaktif. Aktifkan di Pengaturan agar aplikasi dapat menghubungi Google Sheet/Drive.';
+                const previewGuard = isPreviewNetworkGuardActive();
+                const message = previewGuard
+                    ? 'Mode Aman Pratinjau aktif: request ke script.google.com diblokir agar popup izin jaringan tidak muncul. Jalankan file dari browser/hosting normal untuk sync Google Sheet/Drive.'
+                    : 'Akses jaringan cloud sedang nonaktif. Ubah di Pengaturan jika ingin mengaktifkan sync Google Sheet/Drive.';
                 saveSyncMeta({
                     status: 'warning',
                     sheetName: 'Network Gate',
@@ -3263,6 +3393,92 @@ function setupLuxeHRSheets() {
             function listFromMasterRows(rows = []) {
                 return uniqueTextList(cleanCloudRows(rows, ['nama']).map(row => row.nama).filter(Boolean));
             }
+            function businessStateSnapshot() {
+                return {
+                    employees: clone(employees || []),
+                    attendance: clone(attendance || []),
+                    leaves: clone(leaves || []),
+                    shifts: clone(shifts || []),
+                    shiftAssignments: clone(shiftAssignments || []),
+                    resignRecords: clone(resignRecords || []),
+                    blacklistRecords: clone(blacklistRecords || []),
+                    maintenanceLogs: clone(maintenanceLogs || []),
+                    settings: clone(settings || {})
+                };
+            }
+            function recordIdentity(moduleName, record = {}) {
+                const id = record.id || record.employeeId || record.settingKey || record.key || record.nama || record.name;
+                if (id !== undefined && id !== null && id !== '') return String(id);
+                if (moduleName === 'attendance') return `${record.employeeId || ''}|${record.date || ''}`;
+                if (moduleName === 'shiftAssignments') return `${record.employeeId || ''}|${record.shiftId || ''}|${record.startDate || ''}`;
+                return JSON.stringify(record);
+            }
+            function recordVersionTime(record = {}) {
+                const candidates = [record.updatedAt, record.createdAt, record.timestamp, record.checkedAt, record.effectiveDate, record.date];
+                for (const item of candidates) {
+                    if (!item) continue;
+                    const time = new Date(item).getTime();
+                    if (Number.isFinite(time)) return time;
+                }
+                return 0;
+            }
+            function mergeRecordArray(moduleName, baseRows = [], incomingRows = []) {
+                const map = new Map();
+                (Array.isArray(baseRows) ? baseRows : []).forEach(row => map.set(recordIdentity(moduleName, row), row));
+                (Array.isArray(incomingRows) ? incomingRows : []).forEach(row => {
+                    const key = recordIdentity(moduleName, row);
+                    const existing = map.get(key);
+                    if (!existing || recordVersionTime(row) >= recordVersionTime(existing)) map.set(key, row);
+                });
+                return Array.from(map.values());
+            }
+            function mergeBusinessStateIntoMemory(snapshot = {}) {
+                if (!snapshot) return;
+                employees = mergeRecordArray('employees', employees, snapshot.employees);
+                attendance = mergeRecordArray('attendance', attendance, snapshot.attendance).map(normalizeAttendanceTimeFields);
+                leaves = mergeRecordArray('leaves', leaves, snapshot.leaves);
+                shifts = mergeRecordArray('shifts', shifts, snapshot.shifts).map(normalizeShiftRecord);
+                shiftAssignments = mergeRecordArray('shiftAssignments', shiftAssignments, snapshot.shiftAssignments);
+                resignRecords = mergeRecordArray('resignRecords', resignRecords, snapshot.resignRecords);
+                blacklistRecords = mergeRecordArray('blacklistRecords', blacklistRecords, snapshot.blacklistRecords);
+                maintenanceLogs = mergeRecordArray('maintenanceLogs', maintenanceLogs, snapshot.maintenanceLogs);
+                settings = Object.assign({}, settings || {}, snapshot.settings || {});
+                normalizeLocalBusinessData({ write: false });
+            }
+            function writeCloudSnapshotToLocalStorage() {
+                try {
+                    normalizeLocalBusinessData({ write: false });
+                    safeWrite(STORAGE_KEYS.employees, employees, Array.isArray);
+                    safeWrite(STORAGE_KEYS.attendance, attendance, Array.isArray);
+                    safeWrite(STORAGE_KEYS.leaves, leaves, Array.isArray);
+                    safeWrite(STORAGE_KEYS.shifts, shifts, Array.isArray);
+                    safeWrite(STORAGE_KEYS.shiftAssignments, shiftAssignments, Array.isArray);
+                    safeWrite(STORAGE_KEYS.resignRecords, resignRecords, Array.isArray);
+                    safeWrite(STORAGE_KEYS.blacklistRecords, blacklistRecords, Array.isArray);
+                    safeWrite(STORAGE_KEYS.maintenanceLogs, maintenanceLogs, Array.isArray);
+                    safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
+                    return true;
+                } catch (error) {
+                    console.warn('Gagal menulis mirror cloud ke localStorage', error);
+                    return false;
+                }
+            }
+            async function startCloudFirstStartupSync() {
+                if (!isNetworkAccessEnabled() || !isCloudFirstEnabled() || !navigator.onLine) return;
+                const pendingBeforePull = hasUnsyncedOfflineData();
+                const pendingSnapshot = pendingBeforePull ? businessStateSnapshot() : null;
+                saveSyncMeta({ status: 'syncing', sheetName: 'Cloud Boot', mode: 'cloud-first-startup', lastAttemptAt: new Date().toISOString(), lastError: null, message: 'Membuka aplikasi: menarik data cloud terlebih dahulu agar data antar cabang tidak saling menimpa.' });
+                await pullCloudDataNow({ silent: true, force: true, initial: true });
+                if (pendingSnapshot) {
+                    mergeBusinessStateIntoMemory(pendingSnapshot);
+                    writeCloudSnapshotToLocalStorage();
+                    markAutoSyncDirty('Merge data offline lokal dengan data cloud saat aplikasi dibuka');
+                    await runAutoSyncQueue(true);
+                    await pullCloudDataNow({ silent: true, force: true });
+                    showToast('Data offline digabung dengan cloud dan disinkronkan', 'success');
+                }
+            }
+
             function getCloudFingerprint(sheets) {
                 try {
                     const counts = Object.keys(sheets || {}).sort().map(name => `${name}:${Array.isArray(sheets[name]) ? sheets[name].length : 0}`).join('|');
@@ -3305,6 +3521,7 @@ function setupLuxeHRSheets() {
                     resignRecords = cleanCloudRows(sheets.Data_Resign || [], ['id', 'employeeId']);
                     blacklistRecords = cleanCloudRows(sheets.Data_Blacklist || [], ['id', 'employeeId']);
                     maintenanceLogs = cleanCloudRows(sheets.Data_Maintenance_Log || [], ['id', 'moduleId', 'checkedAt']);
+                    normalizeLocalBusinessData({ write: false });
 
                     settings.cloudFirstEnabled = settings.cloudFirstEnabled !== false;
                     settings.realtimePullEnabled = settings.realtimePullEnabled !== false;
@@ -3323,6 +3540,7 @@ function setupLuxeHRSheets() {
                     renderActiveView();
                     updateStorageStatus();
                     renderRealtimeStatus();
+                    writeCloudSnapshotToLocalStorage();
                 } finally {
                     cloudHydrationInProgress = false;
                 }
@@ -3372,7 +3590,7 @@ function setupLuxeHRSheets() {
                         message: changed ? 'Data terbaru berhasil ditarik dari Google Sheet.' : 'Data cloud sudah terbaru.'
                     });
                     if (!silent && changed) showToast('Data terbaru dari cloud berhasil dimuat', 'success');
-                    if (isCloudFirstEnabled()) purgeSyncedLocalBusinessData({ silent: true, force: true });
+                    if (isCloudFirstEnabled()) writeCloudSnapshotToLocalStorage();
                     return { ok: true, changed, rows: result.totalRows || 0 };
                 } catch (error) {
                     saveSyncMeta({ status: 'error', sheetName: 'Cloud Pull', mode: 'read-all-cloud-failed', lastAttemptAt: new Date().toISOString(), lastError: error.message || String(error), message: 'Gagal menarik data cloud. Cek Apps Script v2.9 dan koneksi.' });
@@ -3390,10 +3608,10 @@ function setupLuxeHRSheets() {
                 const queue = getSyncQueue();
                 const lastPull = meta.lastCloudPullAt ? new Date(meta.lastCloudPullAt).toLocaleString('id-ID') : '-';
                 const intervalSec = Math.round(getRealtimePullIntervalMs() / 1000);
-                const network = isNetworkAccessEnabled() ? 'Aktif' : 'Nonaktif / aman untuk Pratinjau';
+                const network = isPreviewNetworkGuardActive() ? 'Diblokir Mode Aman Pratinjau' : (isNetworkAccessEnabled() ? 'Aktif' : 'Nonaktif / aman untuk Pratinjau');
                 const mode = isCloudFirstEnabled() ? 'Cloud-first' : 'Lokal sementara';
                 const pull = isRealtimePullEnabled() && isNetworkAccessEnabled() ? `Aktif setiap ${intervalSec} detik` : 'Nonaktif';
-                const localPolicy = queue.pending ? 'Ada antrean offline/lokal yang belum tersync' : 'Cache bisnis lokal dibersihkan setelah sync sukses';
+                const localPolicy = queue.pending ? 'Ada antrean offline/lokal yang belum tersync' : 'LocalStorage berisi mirror cloud terbaru + antrean offline';
                 el.innerHTML = `
                     <div class="flex items-start gap-2">
                         <i class="fa-solid fa-tower-broadcast text-gold-500 mt-0.5"></i>
@@ -3420,19 +3638,102 @@ function setupLuxeHRSheets() {
                 document.addEventListener('visibilitychange', () => {
                     if (!document.hidden && isNetworkAccessEnabled() && isRealtimePullEnabled() && isCloudFirstEnabled()) pullCloudDataNow({ silent: true });
                 });
-                if (navigator.onLine && isNetworkAccessEnabled() && isCloudFirstEnabled()) setTimeout(() => pullCloudDataNow({ silent: true, initial: true }), 1200);
                 renderRealtimeStatus();
             }
 
-            function getShift(id) { return shifts.find(shift => String(shift.id) === String(id)); }
-            function getActiveShifts() { return shifts.filter(shift => shift.status !== 'Nonaktif'); }
-            function getDefaultShift() { return getActiveShifts()[0] || shifts[0] || null; }
+            function normalizeTimeToHHMM(value, fallback = '') {
+                if (value === undefined || value === null || value === '') return fallback;
+                if (value instanceof Date && !Number.isNaN(value.getTime())) {
+                    const minutes = Math.round((value.getHours() * 60 + value.getMinutes()) + (value.getSeconds() >= 30 ? 1 : 0));
+                    return `${String(Math.floor((minutes % 1440) / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+                }
+                if (typeof value === 'number' && Number.isFinite(value)) {
+                    const fraction = value >= 1 ? value % 1 : value;
+                    const total = Math.round(fraction * 24 * 60) % 1440;
+                    return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+                }
+                const raw = String(value || '').trim();
+                if (!raw) return fallback;
+                const hhmm = raw.match(/^([0-1]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/);
+                if (hhmm) return `${String(Number(hhmm[1])).padStart(2, '0')}:${String(Number(hhmm[2])).padStart(2, '0')}`;
+                const dateLike = raw.match(/^(?:\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+                if (dateLike) {
+                    const parsed = new Date(raw);
+                    if (!Number.isNaN(parsed.getTime())) {
+                        const minutes = Math.round((parsed.getHours() * 60 + parsed.getMinutes()) + (parsed.getSeconds() >= 30 ? 1 : 0));
+                        return `${String(Math.floor((minutes % 1440) / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+                    }
+                    return `${dateLike[1]}:${dateLike[2]}`;
+                }
+                const displayTime = raw.match(/(\d{1,2})[.:](\d{2})/);
+                if (displayTime) {
+                    const h = Number(displayTime[1]);
+                    const m = Number(displayTime[2]);
+                    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                }
+                return fallback || raw;
+            }
+            function formatShiftTimeRange(start, end) {
+                const safeStart = normalizeTimeToHHMM(start, start || '-');
+                const safeEnd = normalizeTimeToHHMM(end, end || '-');
+                return `${safeStart || '-'} - ${safeEnd || '-'}`;
+            }
+            function normalizeShiftRecord(shift = {}) {
+                const next = {
+                    ...shift,
+                    startTime: normalizeTimeToHHMM(shift.startTime, shift.startTime ? String(shift.startTime) : ''),
+                    endTime: normalizeTimeToHHMM(shift.endTime, shift.endTime ? String(shift.endTime) : '')
+                };
+                if (next.isDeleted === 'true') next.isDeleted = true;
+                if (next.isDeleted === 'false') next.isDeleted = false;
+                return next;
+            }
+            function normalizeShiftAssignmentRecord(item = {}) {
+                const next = { ...item };
+                if (next.isDeleted === 'true') next.isDeleted = true;
+                if (next.isDeleted === 'false') next.isDeleted = false;
+                return next;
+            }
+            function isDeletedRecord(item) {
+                return item && (item.isDeleted === true || String(item.isDeleted || '').toLowerCase() === 'true' || Boolean(item.deletedAt));
+            }
+            function getVisibleShifts() { return Array.isArray(shifts) ? shifts.filter(shift => !isDeletedRecord(shift)) : []; }
+            function getVisibleShiftAssignments() { return Array.isArray(shiftAssignments) ? shiftAssignments.filter(item => !isDeletedRecord(item)) : []; }
+            function normalizeAttendanceTimeFields(log = {}) {
+                const next = { ...log };
+                if (next.checkIn) next.checkIn = normalizeTimeToHHMM(next.checkIn, next.checkIn);
+                if (next.checkOut) next.checkOut = normalizeTimeToHHMM(next.checkOut, next.checkOut);
+                if (next.shiftStart) next.shiftStart = normalizeTimeToHHMM(next.shiftStart, next.shiftStart);
+                if (next.shiftEnd) next.shiftEnd = normalizeTimeToHHMM(next.shiftEnd, next.shiftEnd);
+                return next;
+            }
+            function normalizeLocalBusinessData(options = {}) {
+                const write = options.write === true;
+                shifts = Array.isArray(shifts) ? shifts.map(normalizeShiftRecord) : [];
+                shiftAssignments = Array.isArray(shiftAssignments) ? shiftAssignments.map(normalizeShiftAssignmentRecord) : [];
+                attendance = Array.isArray(attendance) ? attendance.map(item => normalizeAttendanceTimeFields(item)) : [];
+                if (settings && settings.standardStartTime) settings.standardStartTime = normalizeTimeToHHMM(settings.standardStartTime, '08:00');
+                if (write) {
+                    try {
+                        safeWrite(STORAGE_KEYS.shifts, shifts, Array.isArray);
+                        safeWrite(STORAGE_KEYS.attendance, attendance, Array.isArray);
+                        safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
+                    } catch (error) { console.warn('Normalize local business data write failed', error); }
+                }
+            }
+
+            function getShift(id, options = {}) {
+                const source = options.includeDeleted ? (Array.isArray(shifts) ? shifts : []) : getVisibleShifts();
+                return source.find(shift => String(shift.id) === String(id));
+            }
+            function getActiveShifts() { return getVisibleShifts().filter(shift => shift.status !== 'Nonaktif'); }
+            function getDefaultShift() { return getActiveShifts()[0] || getVisibleShifts()[0] || null; }
             function getShiftDisplay(shift) {
                 if (!shift) return 'Shift belum diatur';
-                return `${shift.name} (${shift.startTime || '-'}-${shift.endTime || '-'})`;
+                return `${shift.name} (${formatShiftTimeRange(shift.startTime, shift.endTime)})`;
             }
             function timeToMinutes(time) {
-                const parts = String(time || '00:00').split(':').map(Number);
+                const parts = normalizeTimeToHHMM(time, '00:00').split(':').map(Number);
                 return (Number(parts[0]) || 0) * 60 + (Number(parts[1]) || 0);
             }
             function calculateLateMinutes(checkIn, shift) {
@@ -3446,7 +3747,7 @@ function setupLuxeHRSheets() {
             }
             function getEmployeeShift(employeeId, date = todayKey()) {
                 const emp = getEmployee(employeeId);
-                const activeAssignments = shiftAssignments
+                const activeAssignments = getVisibleShiftAssignments()
                     .filter(item => String(item.employeeId) === String(employeeId))
                     .filter(item => !item.startDate || item.startDate <= date)
                     .filter(item => !item.endDate || item.endDate >= date)
@@ -3466,8 +3767,8 @@ function setupLuxeHRSheets() {
                     employeePosition: emp?.position || '-',
                     shiftId: activeShift?.id || '',
                     shiftName: activeShift?.name || 'Standar',
-                    shiftStart: activeShift?.startTime || settings.standardStartTime || '08:00',
-                    shiftEnd: activeShift?.endTime || '-',
+                    shiftStart: normalizeTimeToHHMM(activeShift?.startTime || settings.standardStartTime || '08:00', '08:00'),
+                    shiftEnd: normalizeTimeToHHMM(activeShift?.endTime || '', activeShift?.endTime || '-'),
                     toleranceMinutes: Number(activeShift?.toleranceMinutes || 0),
                     snapshotLocked: true,
                     snapshotCreatedAt: new Date().toISOString()
@@ -3514,9 +3815,10 @@ function setupLuxeHRSheets() {
                 return log?.shiftName || 'Shift Snapshot';
             }
             function attendanceShiftTime(log) {
-                return `${log?.shiftStart || '-'}-${log?.shiftEnd || '-'}`;
+                return formatShiftTimeRange(log?.shiftStart, log?.shiftEnd).replace(' - ', '-');
             }
             function migrateShiftData() {
+                normalizeLocalBusinessData({ write: false });
                 if (!Array.isArray(shifts)) shifts = [];
                 const fallbackShift = getDefaultShift();
                 let changed = false;
@@ -3990,7 +4292,7 @@ function setupLuxeHRSheets() {
                     { label: 'Resign', value: resignCount, icon: 'fa-person-walking-arrow-right', desc: `${resignRecords.length} catatan resign` },
                     { label: 'Blacklist', value: blacklistCount, icon: 'fa-ban', desc: `${blacklistRecords.length} catatan blacklist` },
                     { label: 'Hadir Hari Ini', value: presentToday, icon: 'fa-fingerprint', desc: `${todayAttendance.length} log absensi` },
-                    { label: 'Shift Aktif', value: activeShiftCount, icon: 'fa-business-time', desc: `${shiftAssignments.length} assignment` },
+                    { label: 'Shift Aktif', value: activeShiftCount, icon: 'fa-business-time', desc: `${getVisibleShiftAssignments().length} assignment` },
                     { label: 'Pending Cuti', value: pendingLeaves, icon: 'fa-calendar-check', desc: 'Menunggu keputusan' }
                 ];
                 byId('summaryCards').innerHTML = cards.map((card, idx) => `
@@ -4424,7 +4726,7 @@ function setupLuxeHRSheets() {
                 if (!emp) return showToast('Pilih karyawan terlebih dahulu', 'error');
                 const date = getSelectedAttendanceDate();
                 if (date > todayKey()) return showToast('Tanggal absensi tidak boleh melebihi hari ini', 'error');
-                const time = getSelectedAttendanceTime();
+                const time = normalizeTimeToHHMM(getSelectedAttendanceTime(), '');
                 if (!time) return showToast('Format jam absensi tidak valid', 'error');
                 const shift = getEmployeeShift(emp.id, date);
                 let log = attendance.find(a => String(a.employeeId) === String(empId) && a.date === date);
@@ -4496,7 +4798,7 @@ function setupLuxeHRSheets() {
 
             function renderShiftSelectors() {
                 const activeShiftOptions = getActiveShifts().map(shift => `<option value="${Number(shift.id)}">${escapeHtml(getShiftDisplay(shift))}</option>`).join('');
-                const allShiftOptions = shifts.map(shift => `<option value="${Number(shift.id)}">${escapeHtml(getShiftDisplay(shift))}${shift.status === 'Nonaktif' ? ' - Nonaktif' : ''}</option>`).join('');
+                const allShiftOptions = getVisibleShifts().map(shift => `<option value="${Number(shift.id)}">${escapeHtml(getShiftDisplay(shift))}${shift.status === 'Nonaktif' ? ' - Nonaktif' : ''}</option>`).join('');
                 const assignShift = byId('shiftAssignSelect');
                 if (assignShift) { assignShift.innerHTML = activeShiftOptions || `<option value="">Belum ada shift aktif</option>`; refreshPremiumSelect(assignShift); }
             }
@@ -4510,9 +4812,9 @@ function setupLuxeHRSheets() {
                 const el = byId('shiftSummaryCards');
                 if (!el) return;
                 const today = todayKey();
-                const assignedToday = shiftAssignments.filter(item => (!item.startDate || item.startDate <= today) && (!item.endDate || item.endDate >= today)).length;
+                const assignedToday = getVisibleShiftAssignments().filter(item => (!item.startDate || item.startDate <= today) && (!item.endDate || item.endDate >= today)).length;
                 const cards = [
-                    { label: 'Total Shift', value: shifts.length, icon: 'fa-layer-group', desc: 'Master shift tersimpan' },
+                    { label: 'Total Shift', value: getVisibleShifts().length, icon: 'fa-layer-group', desc: 'Master shift tersimpan' },
                     { label: 'Shift Aktif', value: getActiveShifts().length, icon: 'fa-business-time', desc: 'Dapat dipakai absensi' },
                     { label: 'Assignment Aktif', value: assignedToday, icon: 'fa-user-clock', desc: 'Berlaku hari ini' },
                     { label: 'Log Shift Hari Ini', value: attendance.filter(a => a.date === today && a.shiftName).length, icon: 'fa-fingerprint', desc: 'Absensi dengan shift' }
@@ -4522,15 +4824,15 @@ function setupLuxeHRSheets() {
             function renderShiftTable() {
                 const tbody = byId('shiftTable');
                 if (!tbody) return;
-                tbody.innerHTML = shifts.map(shift => `<tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4"><p class="text-white text-[11px] font-medium">${escapeHtml(shift.name)}</p><p class="text-gray-500 text-[9px]">${escapeHtml(shift.description || '-')}</p></td><td class="py-3 px-4 text-gold-500 font-mono text-[10px]">${escapeHtml(shift.startTime || '-')} - ${escapeHtml(shift.endTime || '-')}</td><td class="py-3 px-4 text-gray-300 text-[10px]">${Number(shift.toleranceMinutes || 0)} menit</td><td class="py-3 px-4">${getStatusBadge(shift.status || 'Aktif')}</td><td class="py-3 px-4 text-right"><div class="inline-flex gap-1"><button type="button" onclick="editShift(${Number(shift.id)})" class="btn-icon hover:text-white hover:border-white/30" title="Edit"><i class="fa-solid fa-pen text-[10px]"></i></button><button type="button" onclick="deleteShift(${Number(shift.id)})" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Hapus"><i class="fa-solid fa-trash-can text-[10px]"></i></button></div></td></tr>`).join('') || `<tr><td colspan="5" class="py-10 text-center text-gray-500 italic">Belum ada shift.</td></tr>`;
+                tbody.innerHTML = getVisibleShifts().map(shift => `<tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4"><p class="text-white text-[11px] font-medium">${escapeHtml(shift.name)}</p><p class="text-gray-500 text-[9px]">${escapeHtml(shift.description || '-')}</p></td><td class="py-3 px-4 text-gold-500 font-mono text-[10px]">${escapeHtml(formatShiftTimeRange(shift.startTime, shift.endTime))}</td><td class="py-3 px-4 text-gray-300 text-[10px]">${Number(shift.toleranceMinutes || 0)} menit</td><td class="py-3 px-4">${getStatusBadge(shift.status || 'Aktif')}</td><td class="py-3 px-4 text-right"><div class="inline-flex gap-1"><button type="button" onclick="editShift(${Number(shift.id)})" class="btn-icon hover:text-white hover:border-white/30" title="Edit"><i class="fa-solid fa-pen text-[10px]"></i></button><button type="button" onclick="deleteShift(${Number(shift.id)})" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Hapus"><i class="fa-solid fa-trash-can text-[10px]"></i></button></div></td></tr>`).join('') || `<tr><td colspan="5" class="py-10 text-center text-gray-500 italic">Belum ada shift.</td></tr>`;
             }
             function renderShiftAssignments() {
                 const tbody = byId('shiftAssignmentTable');
                 if (!tbody) return;
-                tbody.innerHTML = shiftAssignments.map(item => {
+                tbody.innerHTML = getVisibleShiftAssignments().map(item => {
                     const emp = getEmployee(item.employeeId);
                     const shift = getShift(item.shiftId);
-                    return `<tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4"><p class="text-white text-[11px]">${escapeHtml(emp?.name || 'Karyawan Terhapus')}</p><p class="text-gray-500 text-[9px]">${escapeHtml(emp?.nik || '-')}</p></td><td class="py-3 px-4 text-gray-300 text-[10px]"><p>${escapeHtml(shift?.name || 'Shift Terhapus')}</p><p class="text-gray-500 text-[9px] font-mono">${escapeHtml(shift?.startTime || '-')} - ${escapeHtml(shift?.endTime || '-')}</p></td><td class="py-3 px-4 text-gray-400 text-[10px]">${formatDate(item.startDate)} - ${item.endDate ? formatDate(item.endDate) : 'Seterusnya'}</td><td class="py-3 px-4 text-gray-500 text-[10px]">${escapeHtml(item.note || '-')}</td><td class="py-3 px-4 text-right"><button type="button" onclick="deleteShiftAssignment(${Number(item.id)})" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Hapus"><i class="fa-solid fa-trash-can text-[10px]"></i></button></td></tr>`;
+                    return `<tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4"><p class="text-white text-[11px]">${escapeHtml(emp?.name || 'Karyawan Terhapus')}</p><p class="text-gray-500 text-[9px]">${escapeHtml(emp?.nik || '-')}</p></td><td class="py-3 px-4 text-gray-300 text-[10px]"><p>${escapeHtml(shift?.name || 'Shift Terhapus')}</p><p class="text-gray-500 text-[9px] font-mono">${escapeHtml(formatShiftTimeRange(shift?.startTime, shift?.endTime))}</p></td><td class="py-3 px-4 text-gray-400 text-[10px]">${formatDate(item.startDate)} - ${item.endDate ? formatDate(item.endDate) : 'Seterusnya'}</td><td class="py-3 px-4 text-gray-500 text-[10px]">${escapeHtml(item.note || '-')}</td><td class="py-3 px-4 text-right"><button type="button" onclick="deleteShiftAssignment(${Number(item.id)})" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Hapus"><i class="fa-solid fa-trash-can text-[10px]"></i></button></td></tr>`;
                 }).join('') || `<tr><td colspan="5" class="py-10 text-center text-gray-500 italic">Belum ada assignment shift.</td></tr>`;
             }
             function resetShiftForm() {
@@ -4548,8 +4850,8 @@ function setupLuxeHRSheets() {
                 const id = byId('shiftId').value;
                 const data = {
                     name: byId('shiftName').value.trim(),
-                    startTime: byId('shiftStart').value,
-                    endTime: byId('shiftEnd').value,
+                    startTime: normalizeTimeToHHMM(byId('shiftStart').value, ''),
+                    endTime: normalizeTimeToHHMM(byId('shiftEnd').value, ''),
                     toleranceMinutes: Number(byId('shiftTolerance').value || 0),
                     status: byId('shiftStatus').value,
                     description: byId('shiftDescription').value.trim(),
@@ -4557,10 +4859,10 @@ function setupLuxeHRSheets() {
                 };
                 if (!data.name || !data.startTime || !data.endTime) return showToast('Lengkapi nama dan jam shift', 'error');
                 if (id) {
-                    shifts = shifts.map(shift => String(shift.id) === String(id) ? { ...shift, ...data, id: shift.id } : shift);
+                    shifts = shifts.map(shift => String(shift.id) === String(id) ? { ...shift, ...data, id: shift.id, isDeleted: false, updatedAt: new Date().toISOString() } : shift);
                     showToast('Shift berhasil diperbarui. Histori absensi lama tetap aman.', 'success');
                 } else {
-                    shifts.unshift({ id: Date.now(), ...data, createdAt: new Date().toISOString() });
+                    shifts.unshift({ id: Date.now(), ...data, isDeleted: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
                     showToast('Shift baru berhasil ditambahkan', 'success');
                 }
                 saveShifts();
@@ -4574,31 +4876,45 @@ function setupLuxeHRSheets() {
                 if (!shift) return;
                 byId('shiftId').value = shift.id;
                 byId('shiftName').value = shift.name || '';
-                byId('shiftStart').value = shift.startTime || '08:00';
-                byId('shiftEnd').value = shift.endTime || '16:00';
+                byId('shiftStart').value = normalizeTimeToHHMM(shift.startTime, '08:00');
+                byId('shiftEnd').value = normalizeTimeToHHMM(shift.endTime, '16:00');
                 byId('shiftTolerance').value = Number(shift.toleranceMinutes || 0);
                 byId('shiftStatus').value = shift.status || 'Aktif';
                 byId('shiftDescription').value = shift.description || '';
                 showToast('Mode edit shift aktif', 'info');
             }
             function deleteShift(id) {
-                const shift = getShift(id);
-                if (!shift) return;
+                const shift = getShift(id, { includeDeleted: true });
+                if (!shift || isDeletedRecord(shift)) return showToast('Shift tidak ditemukan atau sudah dihapus', 'warning');
                 const usedByEmployee = employees.some(emp => String(emp.defaultShiftId) === String(id));
-                const usedByAssignment = shiftAssignments.some(item => String(item.shiftId) === String(id));
-                const msg = usedByEmployee || usedByAssignment ? `Shift ${shift.name} sedang dipakai. Hapus shift ini dan kembalikan karyawan ke shift default pertama?` : `Hapus shift ${shift.name}?`;
+                const usedByAssignment = getVisibleShiftAssignments().some(item => String(item.shiftId) === String(id));
+                const msg = usedByEmployee || usedByAssignment
+                    ? `Shift ${shift.name} sedang dipakai. Shift akan disembunyikan dari daftar, assignment aktifnya dinonaktifkan, dan histori absensi lama tetap aman. Lanjutkan?`
+                    : `Hapus shift ${shift.name}?`;
                 showConfirm(msg, () => {
-                    const fallback = shifts.find(s => String(s.id) !== String(id) && s.status !== 'Nonaktif') || shifts.find(s => String(s.id) !== String(id));
-                    shifts = shifts.filter(item => String(item.id) !== String(id));
-                    employees = employees.map(emp => String(emp.defaultShiftId) === String(id) ? { ...emp, defaultShiftId: fallback?.id || '' } : emp);
-                    shiftAssignments = shiftAssignments.filter(item => String(item.shiftId) !== String(id));
+                    const now = new Date().toISOString();
+                    shifts = shifts.map(item => String(item.id) === String(id) ? {
+                        ...item,
+                        isDeleted: true,
+                        deletedAt: now,
+                        updatedAt: now,
+                        status: 'Dihapus'
+                    } : item);
+                    employees = employees.map(emp => String(emp.defaultShiftId) === String(id) ? { ...emp, defaultShiftId: '', updatedAt: now } : emp);
+                    shiftAssignments = shiftAssignments.map(item => String(item.shiftId) === String(id) && !isDeletedRecord(item) ? {
+                        ...item,
+                        isDeleted: true,
+                        deletedAt: now,
+                        updatedAt: now,
+                        note: `${item.note ? item.note + ' | ' : ''}Assignment dinonaktifkan karena shift dihapus`
+                    } : item);
                     saveShifts();
                     saveEmployees();
                     saveShiftAssignments();
                     renderShiftView();
                     renderAllSelectors();
                     updateStorageStatus();
-                    showToast('Shift berhasil dihapus. Histori absensi lama tetap tersimpan.', 'success');
+                    showToast('Shift berhasil dihapus dari daftar. Cloud sync memakai penanda hapus agar tidak muncul lagi setelah tarik data.', 'success');
                 });
             }
             function handleShiftAssignmentSubmit(e) {
@@ -4609,7 +4925,7 @@ function setupLuxeHRSheets() {
                 const endDate = byId('shiftAssignEnd').value;
                 if (!employeeId || !shiftId || !startDate) return showToast('Lengkapi assignment shift', 'error');
                 if (endDate && new Date(endDate) < new Date(startDate)) return showToast('Tanggal selesai tidak boleh lebih awal', 'error');
-                shiftAssignments.unshift({ id: Date.now(), employeeId, shiftId, startDate, endDate, note: byId('shiftAssignNote').value.trim(), createdAt: new Date().toISOString() });
+                shiftAssignments.unshift({ id: Date.now(), employeeId, shiftId, startDate, endDate, note: byId('shiftAssignNote').value.trim(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
                 saveShiftAssignments();
                 e.target.reset();
                 byId('shiftAssignStart').value = todayKey();
@@ -4620,12 +4936,13 @@ function setupLuxeHRSheets() {
             }
             function deleteShiftAssignment(id) {
                 showConfirm('Hapus assignment shift ini?', () => {
-                    shiftAssignments = shiftAssignments.filter(item => Number(item.id) !== Number(id));
+                    const now = new Date().toISOString();
+                    shiftAssignments = shiftAssignments.map(item => Number(item.id) === Number(id) ? { ...item, isDeleted: true, deletedAt: now, updatedAt: now } : item);
                     saveShiftAssignments();
                     renderShiftView();
                     renderAttendance();
                     updateStorageStatus();
-                    showToast('Assignment shift berhasil dihapus', 'success');
+                    showToast('Assignment shift berhasil dihapus dari daftar dan akan tetap hilang setelah sync cloud', 'success');
                 });
             }
 
@@ -5001,7 +5318,7 @@ function setupLuxeHRSheets() {
                 return [
                     { id: 'employees', label: 'Data Karyawan', icon: 'fa-users', color: 'text-blue-300', sheetNames: ['Data_Karyawan'], storageKeys: [STORAGE_KEYS.employees], count: () => employees.length, data: () => employees },
                     { id: 'attendance', label: 'Absensi & Histori', icon: 'fa-fingerprint', color: 'text-green-300', sheetNames: ['Data_Absensi'], storageKeys: [STORAGE_KEYS.attendance], count: () => attendance.length, data: () => attendance },
-                    { id: 'shifts', label: 'Shift & Assignment', icon: 'fa-business-time', color: 'text-gold-500', sheetNames: ['Data_Shift', 'Data_Shift_Assignment'], storageKeys: [STORAGE_KEYS.shifts, STORAGE_KEYS.shiftAssignments], count: () => shifts.length + shiftAssignments.length, data: () => ({ shifts, shiftAssignments }) },
+                    { id: 'shifts', label: 'Shift & Assignment', icon: 'fa-business-time', color: 'text-gold-500', sheetNames: ['Data_Shift', 'Data_Shift_Assignment'], storageKeys: [STORAGE_KEYS.shifts, STORAGE_KEYS.shiftAssignments], count: () => getVisibleShifts().length + getVisibleShiftAssignments().length, data: () => ({ shifts: getVisibleShifts(), shiftAssignments: getVisibleShiftAssignments() }) },
                     { id: 'leaves', label: 'Cuti & Izin', icon: 'fa-calendar-check', color: 'text-purple-300', sheetNames: ['Data_Cuti'], storageKeys: [STORAGE_KEYS.leaves], count: () => leaves.length, data: () => leaves },
                     { id: 'payroll', label: 'Payroll', icon: 'fa-wallet', color: 'text-emerald-300', sheetNames: ['Data_App_Metadata'], storageKeys: [], count: () => employees.filter(isEmployeeEligibleForOperations).length, data: () => getPayrollMaintenanceRows() },
                     { id: 'offboarding', label: 'Resign & Blacklist', icon: 'fa-user-slash', color: 'text-red-300', sheetNames: ['Data_Resign', 'Data_Blacklist'], storageKeys: [STORAGE_KEYS.resignRecords, STORAGE_KEYS.blacklistRecords], count: () => resignRecords.length + blacklistRecords.length, data: () => ({ resignRecords, blacklistRecords }) },
@@ -5065,12 +5382,12 @@ function setupLuxeHRSheets() {
                     if (invalidTime) pushMaintenanceIssue(issues, 'error', `${invalidTime} log absensi memiliki format jam tidak valid.`, 'Koreksi jam di histori/backup.');
                 }
                 if (moduleId === 'shifts') {
-                    const missingId = shifts.filter(s => !s?.id).length;
-                    const missingName = shifts.filter(s => !String(s?.name || '').trim()).length;
-                    const invalidTime = shifts.filter(s => !isValidTimeHHMM(s?.startTime) || !isValidTimeHHMM(s?.endTime)).length;
-                    const orphanEmployee = shiftAssignments.filter(a => a?.employeeId && !getEmployee(a.employeeId)).length;
-                    const orphanShift = shiftAssignments.filter(a => a?.shiftId && !getShift(a.shiftId)).length;
-                    if (!shifts.length) pushMaintenanceIssue(issues, 'warning', 'Master shift masih kosong.', 'Buat shift dari halaman Shift sebelum memakai absensi.');
+                    const missingId = getVisibleShifts().filter(s => !s?.id).length;
+                    const missingName = getVisibleShifts().filter(s => !String(s?.name || '').trim()).length;
+                    const invalidTime = getVisibleShifts().filter(s => !isValidTimeHHMM(s?.startTime) || !isValidTimeHHMM(s?.endTime)).length;
+                    const orphanEmployee = getVisibleShiftAssignments().filter(a => a?.employeeId && !getEmployee(a.employeeId)).length;
+                    const orphanShift = getVisibleShiftAssignments().filter(a => a?.shiftId && !getShift(a.shiftId)).length;
+                    if (!getVisibleShifts().length) pushMaintenanceIssue(issues, 'warning', 'Master shift masih kosong.', 'Buat shift dari halaman Shift sebelum memakai absensi.');
                     if (missingId) pushMaintenanceIssue(issues, 'warning', `${missingId} shift belum punya ID.`, 'Jalankan Repair modul Shift.');
                     if (missingName) pushMaintenanceIssue(issues, 'error', `${missingName} shift belum memiliki nama.`, 'Lengkapi nama shift di halaman Shift.');
                     if (invalidTime) pushMaintenanceIssue(issues, 'error', `${invalidTime} shift memiliki jam tidak valid.`, 'Edit jam shift di halaman Shift.');
@@ -5542,6 +5859,7 @@ function setupLuxeHRSheets() {
                     autoSyncEnabled: settings.autoSyncEnabled !== false,
                     autoSyncIntervalSeconds: Number(settings.autoSyncIntervalSeconds || 60),
                     networkAccessEnabled: byId('networkAccessEnabled') ? byId('networkAccessEnabled').value === 'true' : (settings.networkAccessEnabled === true),
+                    previewNetworkGuardEnabled: settings.previewNetworkGuardEnabled !== false,
                     cloudFirstEnabled: byId('cloudFirstEnabled') ? byId('cloudFirstEnabled').value !== 'false' : (settings.cloudFirstEnabled !== false),
                     realtimePullEnabled: byId('realtimePullEnabled') ? byId('realtimePullEnabled').value !== 'false' : (settings.realtimePullEnabled !== false),
                     realtimePullIntervalSeconds: Number(byId('realtimePullIntervalSeconds')?.value || settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS)
@@ -5562,13 +5880,14 @@ function setupLuxeHRSheets() {
                 settings.googleSheetId = sheetInput ? sheetInput.value.trim() : '';
                 settings.driveRootFolderName = driveInput ? (driveInput.value.trim() || 'LuxeHR Uploads') : (settings.driveRootFolderName || 'LuxeHR Uploads');
                 settings.networkAccessEnabled = networkSelect ? networkSelect.value === 'true' : (settings.networkAccessEnabled === true);
+                settings.previewNetworkGuardEnabled = settings.previewNetworkGuardEnabled !== false;
                 settings.cloudFirstEnabled = cloudFirstSelect ? cloudFirstSelect.value !== 'false' : (settings.cloudFirstEnabled !== false);
                 settings.realtimePullEnabled = realtimeSelect ? realtimeSelect.value !== 'false' : (settings.realtimePullEnabled !== false);
                 settings.realtimePullIntervalSeconds = Math.max(REALTIME_PULL_MIN_SECONDS, Number(intervalInput?.value || settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS));
                 saveSettings();
                 startRealtimeCloudService();
                 updateConnectivityStatus();
-                showToast(settings.networkAccessEnabled === true ? 'Integrasi disimpan. Akses jaringan cloud aktif.' : 'Integrasi disimpan. Akses jaringan masih nonaktif agar Pratinjau tidak memunculkan izin jaringan.', settings.networkAccessEnabled === true ? 'success' : 'warning');
+                showToast(settings.networkAccessEnabled === true ? 'Integrasi disimpan. Akses jaringan cloud aktif.' : 'Integrasi disimpan. Akses jaringan cloud dinonaktifkan sementara.', settings.networkAccessEnabled === true ? 'success' : 'warning');
                 renderSettings();
             }
 
@@ -5808,11 +6127,11 @@ function setupLuxeHRSheets() {
             }
             function exportShiftCSV() {
                 const masterRows = [['Jenis', 'Nama/Employee', 'NIK', 'Shift', 'Jam Masuk', 'Jam Pulang', 'Toleransi', 'Mulai', 'Selesai', 'Status/Catatan'],
-                    ...shifts.map(s => ['Master Shift', '-', '-', s.name, s.startTime, s.endTime, s.toleranceMinutes, '-', '-', s.status || 'Aktif']),
+                    ...shifts.map(s => ['Master Shift', '-', '-', s.name, normalizeTimeToHHMM(s.startTime, s.startTime), normalizeTimeToHHMM(s.endTime, s.endTime), s.toleranceMinutes, '-', '-', s.status || 'Aktif']),
                     ...shiftAssignments.map(item => {
                         const emp = getEmployee(item.employeeId) || {};
                         const shift = getShift(item.shiftId) || {};
-                        return ['Assignment', emp.name || '-', emp.nik || '-', shift.name || '-', shift.startTime || '-', shift.endTime || '-', shift.toleranceMinutes || 0, item.startDate || '-', item.endDate || '-', item.note || '-'];
+                        return ['Assignment', emp.name || '-', emp.nik || '-', shift.name || '-', normalizeTimeToHHMM(shift.startTime, shift.startTime || '-'), normalizeTimeToHHMM(shift.endTime, shift.endTime || '-'), shift.toleranceMinutes || 0, item.startDate || '-', item.endDate || '-', item.note || '-'];
                     })
                 ];
                 downloadCSV(`shift_${todayKey()}.csv`, masterRows);
@@ -6027,6 +6346,7 @@ function setupLuxeHRSheets() {
                 renderRealtimeStatus();
                 startAutoSyncService();
                 startRealtimeCloudService();
+                if (navigator.onLine && isNetworkAccessEnabled() && isCloudFirstEnabled()) setTimeout(() => startCloudFirstStartupSync(), 500);
                 if (storageRecovered) {
                     showToast('Data dipulihkan dari backup lokal', 'success');
                 }
