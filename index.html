@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>LuxeHR Premium Google Sheet DB v6.5 - Professional Sync + Style Base Guard</title>
+<title>LuxeHR Premium v6.8 - Hard Reset & Access Layout</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css';" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
@@ -993,7 +993,7 @@
 </div>
 <div class="overflow-x-auto">
 <table class="w-full text-left whitespace-nowrap">
-<thead class="bg-surface-100/50"><tr><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Karyawan</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Shift</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Masuk</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Pulang</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Status</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Terlambat</th></tr></thead>
+<thead class="bg-surface-100/50"><tr><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Karyawan</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Shift</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Masuk</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Pulang</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Durasi Kerja</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Status</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Terlambat</th></tr></thead>
 <tbody class="divide-y divide-white/5" id="attendanceTable"></tbody>
 </table>
 </div>
@@ -1041,6 +1041,7 @@
 <th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Shift Snapshot</th>
 <th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Masuk</th>
 <th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Pulang</th>
+<th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Durasi Kerja</th>
 <th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Terlambat</th>
 <th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Status</th>
 <th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium text-right">Aksi</th>
@@ -1157,7 +1158,7 @@
 </div>
 <div class="mt-3 p-3 rounded-lg bg-surface-100 border border-white/5 text-gray-400 text-[10px] leading-relaxed">
 <i class="fa-solid fa-circle-info text-gold-500 mr-1"></i>
-                    Rumus payroll: <span class="text-white">Gaji Pokok ÷ 30 × Hari Kerja</span>. Satu hari kerja dihitung <span class="text-white">12 jam / 720 menit</span> berdasarkan absensi masuk pada bulan payroll.
+                    Rumus payroll aktual: <span class="text-white">Gaji Pokok ÷ 30 × Hari Setara</span>. Hari setara dihitung dari <span class="text-white">total menit kerja aktual ÷ 720 menit</span>, sehingga kerja 1 jam beberapa menit tetap tercatat proporsional.
                 </div>
 </div>
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4" id="payrollSummaryCards"></div>
@@ -1165,13 +1166,13 @@
 <div class="p-4 border-b border-white/5 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
 <div>
 <h3 class="font-serif font-bold text-white text-base">Rekap Hari, Jam, Menit &amp; Gaji Prorata</h3>
-<p class="text-[10px] text-gray-500 mt-0.5" id="payrollFormulaLabel">Gaji harian = gaji pokok ÷ 30. Basis 1 hari kerja = 12 jam.</p>
+<p class="text-[10px] text-gray-500 mt-0.5" id="payrollFormulaLabel">Gaji harian = gaji pokok ÷ 30. Durasi aktual = jam pulang - jam masuk. Basis 1 hari kerja = 12 jam.</p>
 </div>
 <span class="px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/30 text-gold-500 text-[9px] uppercase tracking-widest">Basis 30 Hari</span>
 </div>
 <div class="overflow-x-auto">
 <table class="w-full text-left whitespace-nowrap">
-<thead class="bg-surface-100/50"><tr><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Karyawan</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Hari Kerja</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Jam</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Menit</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Gaji Pokok</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Nilai / Hari</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Gaji Prorata</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Tunjangan</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Potongan</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Take Home Pay</th></tr></thead>
+<thead class="bg-surface-100/50"><tr><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Karyawan</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Hari Masuk</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Durasi Aktual</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Hari Setara</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Gaji Pokok</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Nilai / Hari</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Gaji Aktual</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Tunjangan</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Potongan</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Take Home Pay</th></tr></thead>
 <tbody class="divide-y divide-white/5" id="payrollTable"></tbody>
 </table>
 </div>
@@ -1370,7 +1371,7 @@
 <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
 <div>
 <h3 class="font-serif font-bold text-white text-base">Restart &amp; Kosongkan Data</h3>
-<p class="text-[10px] text-gray-500 mt-0.5">Gunakan hanya saat maintenance besar. Fitur ini dipisah agar user bisa memilih reset lokal saja atau mengosongkan seluruh data aplikasi.</p>
+<p class="text-[10px] text-gray-500 mt-0.5">Gunakan hanya saat maintenance besar. Restart lokal hanya membersihkan cache browser, sedangkan Kosongkan Seluruh Data melakukan hard reset data bisnis, histori, master, pengaturan, dan cloud jika online.</p>
 </div>
 <div class="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-300 text-[9px] uppercase tracking-widest">
 <i class="fa-solid fa-power-off mr-1"></i> Zona Berisiko
@@ -1382,7 +1383,7 @@
 </div>
 <div class="mt-3 p-3 rounded-lg bg-surface-100 border border-white/5 text-gray-400 text-[10px] leading-relaxed">
 <p><span class="text-yellow-300">Restart Ulang Lokal</span> menghapus storage browser dan reload aplikasi. Data aplikasi dapat memakai cache lokal/offline, tetapi sesi login tidak lagi disimpan permanen. Lakukan Backup JSON sebelum restart bila data ingin disimpan eksternal.</p>
-<p class="mt-1"><span class="text-red-300">Kosongkan Seluruh Data</span> mengosongkan data karyawan, absensi, cuti, shift, resign, blacklist, master, maintenance, dan pengaturan. Tindakan ini menghapus data aplikasi di browser ini; sesi login tetap tidak tersimpan permanen.</p>
+<p class="mt-1"><span class="text-red-300">Kosongkan Seluruh Data</span> melakukan hard reset: data karyawan, shift, absensi, histori, cuti, payroll, resign, blacklist, master, maintenance, hak akses, pengaturan, sync log, dan cache akan dikosongkan. Jika Web App aktif, isi Google Sheet juga dihapus sampai body tabel kosong. Setelah reset, aplikasi membuat ulang akun owner default agar sistem tidak terkunci.</p>
 </div>
 </div>
 <div class="premium-card rounded-xl p-4 lg:col-span-2 mt-2">
@@ -1430,14 +1431,14 @@
 <!-- NEW CARD: Google Apps Script Template -->
 <div class="premium-card rounded-xl p-4 lg:col-span-2 mt-2">
 <div class="flex justify-between items-center mb-1">
-<h3 class="font-serif font-bold text-white text-base">Google Apps Script Database Template v6.5 Professional Central Sync</h3>
+<h3 class="font-serif font-bold text-white text-base">Google Apps Script Database Template v6.8 Hard Reset & Access Layout</h3>
 <button class="border border-white/10 text-gray-300 hover:text-white hover:border-gold-500/40 py-1.5 px-3 text-[9px] uppercase tracking-widest rounded-lg transition-all flex items-center gap-1.5" onclick="copyAppScript()" type="button">
 <i class="fa-solid fa-copy"></i> Salin Script
                         </button>
 </div>
-<p class="text-[10px] text-gray-500 mb-4">Copy script ini ke Google Apps Script. Script v6.4 Professional Central Sync memakai database server-side: Spreadsheet ID tidak perlu diinput di setiap perangkat. Header tetap otomatis, data dibaca berdasarkan nama header, dan layout dirapikan mulai kolom A.</p>
+<p class="text-[10px] text-gray-500 mb-4">Copy script ini ke Google Apps Script. Script v6.8 memakai database server-side: Spreadsheet ID tidak perlu diinput di setiap perangkat. Header tetap otomatis, data dibaca berdasarkan nama header, dan layout dirapikan mulai kolom A.</p>
 <textarea class="field min-h-[420px] font-mono text-[10px] leading-relaxed resize-y bg-surface-100/80 cursor-text" id="appScriptTemplate" readonly="" spellcheck="false">/**
- * LuxeHR Premium v6.5 - Professional Central Sync Google Sheet Database Connector
+ * LuxeHR Premium v6.8 - Hard Reset & Access Layout Google Sheet Database Connector
  * Fokus utama:
  * - Spreadsheet ID tidak dikirim/disimpan di perangkat pengguna. Database ditentukan server-side di Apps Script.
  * - Header dibuat otomatis untuk semua sheet inti.
@@ -1458,7 +1459,7 @@
  * atau set Script Property: LUXEHR_SPREADSHEET_ID = ID Google Sheet database.
  */
 
-const LUXEHR_CONNECTOR_VERSION = '6.5.0-professional-central-sync';
+const LUXEHR_CONNECTOR_VERSION = '6.8.0-hard-reset-access-layout';
 const DEFAULT_ROOT_FOLDER_NAME = 'LuxeHR Uploads';
 const SERVER_SPREADSHEET_ID = '';
 const SERVER_SPREADSHEET_ID_PROPERTY = 'LUXEHR_SPREADSHEET_ID';
@@ -1498,9 +1499,9 @@ const LUXEHR_SCHEMAS = {
   },
   Data_Absensi: {
     key: ['id', 'employeeId', 'employeeNik', 'employeeName', 'date'],
-    headers: ['id','date','employeeId','employeeName','employeeNik','employeeBranch','employeePosition','shiftId','shiftName','shiftStart','shiftEnd','toleranceMinutes','checkIn','checkOut','status','snapshotLocked','snapshotCreatedAt','createdAt','updatedAt'],
+    headers: ['id','date','employeeId','employeeName','employeeNik','employeeBranch','employeePosition','shiftId','shiftName','shiftStart','shiftEnd','toleranceMinutes','checkIn','checkOut','workDurationMinutes','workDurationText','lateMinutes','status','snapshotLocked','snapshotCreatedAt','createdAt','updatedAt'],
     aliases: {
-      id: ['id','ID'], date: ['date','Tanggal','Tanggal Absensi'], employeeId: ['employeeId','ID Karyawan','idKaryawan'], employeeName: ['employeeName','Nama','Nama Karyawan','name'], employeeNik: ['employeeNik','NIK','nik','No Induk'], employeeBranch: ['employeeBranch','Cabang','branch','employeeDepartment','Divisi'], employeePosition: ['employeePosition','Jabatan','position'], shiftId: ['shiftId','ID Shift'], shiftName: ['shiftName','Shift','Nama Shift'], shiftStart: ['shiftStart','Jam Shift Masuk','Jam Masuk Shift'], shiftEnd: ['shiftEnd','Jam Shift Pulang','Jam Pulang Shift'], checkIn: ['checkIn','Masuk','Jam Masuk'], checkOut: ['checkOut','Pulang','Jam Pulang'], status: ['status','Status'], updatedAt: ['updatedAt','Updated At','Last Update']
+      id: ['id','ID'], date: ['date','Tanggal','Tanggal Absensi'], employeeId: ['employeeId','ID Karyawan','idKaryawan'], employeeName: ['employeeName','Nama','Nama Karyawan','name'], employeeNik: ['employeeNik','NIK','nik','No Induk'], employeeBranch: ['employeeBranch','Cabang','branch','employeeDepartment','Divisi'], employeePosition: ['employeePosition','Jabatan','position'], shiftId: ['shiftId','ID Shift'], shiftName: ['shiftName','Shift','Nama Shift'], shiftStart: ['shiftStart','Jam Shift Masuk','Jam Masuk Shift'], shiftEnd: ['shiftEnd','Jam Shift Pulang','Jam Pulang Shift'], toleranceMinutes: ['toleranceMinutes','Toleransi','Toleransi Menit'], checkIn: ['checkIn','Masuk','Jam Masuk'], checkOut: ['checkOut','Pulang','Jam Pulang'], workDurationMinutes: ['workDurationMinutes','Durasi Menit','Menit Kerja Aktual','Total Menit Kerja'], workDurationText: ['workDurationText','Durasi Kerja','Durasi Aktual'], lateMinutes: ['lateMinutes','Terlambat Menit','Menit Terlambat'], status: ['status','Status'], updatedAt: ['updatedAt','Updated At','Last Update']
     }
   },
   Data_Cuti: {
@@ -2225,11 +2226,11 @@ function jsonOutput_(obj) {
 </div>
 <button class="bg-gold-500 text-surface-400 hover:bg-gold-400 font-bold uppercase tracking-widest py-2.5 px-4 text-[10px] rounded-lg transition-all shadow-gold-glow" onclick="resetAccountForm()" type="button"><i class="fa-solid fa-plus mr-1.5"></i> Akun Baru</button>
 </div>
-<div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+<div class="space-y-4">
 <div class="premium-card rounded-xl p-4">
 <h3 class="font-serif font-bold text-white text-base mb-1">Form Akun</h3>
 <p class="text-[10px] text-gray-500 mb-4">Password tersimpan sebagai hash sederhana di pengaturan cloud. Untuk keamanan operasional, deploy aplikasi di akses internal/hosting yang dipercaya.</p>
-<form class="space-y-3" id="accountAccessForm">
+<form class="grid grid-cols-1 lg:grid-cols-4 gap-3" id="accountAccessForm">
 <input id="accountId" type="hidden"/>
 <div><label class="label-premium">Username Login</label><input autocomplete="off" class="field" id="accountUsername" placeholder="contoh: andi01" required="" type="text"/></div>
 <div><label class="label-premium">Nama Tampilan</label><input class="field" id="accountDisplayName" placeholder="Nama user" required="" type="text"/></div>
@@ -2252,7 +2253,7 @@ function jsonOutput_(obj) {
 <i class="fa-solid fa-triangle-exclamation text-yellow-300 mr-1"></i> Login awal setelah update: <span class="text-white font-mono">owner</span> / <span class="text-white font-mono">owner123</span>. Segera ubah password dari halaman ini.
                     </div>
 </div>
-<div class="premium-card rounded-xl overflow-hidden xl:col-span-2">
+<div class="premium-card rounded-xl overflow-hidden">
 <div class="p-4 border-b border-white/5 flex items-center justify-between gap-3">
 <div><h3 class="font-serif font-bold text-white text-base">Daftar Akun</h3><p class="text-[10px] text-gray-500 mt-0.5" id="accountAccessSummary">0 akun</p></div>
 <span class="px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/20 text-gold-500 text-[9px] uppercase tracking-widest"><i class="fa-solid fa-shield-halved mr-1"></i> RBAC Aktif</span>
@@ -2264,7 +2265,7 @@ function jsonOutput_(obj) {
 </table>
 </div>
 </div>
-<div class="premium-card rounded-xl p-4 xl:col-span-3">
+<div class="premium-card rounded-xl p-4">
 <h3 class="font-serif font-bold text-white text-base mb-2">Aturan Akses Data</h3>
 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-[10px] text-gray-400 leading-relaxed">
 <div class="p-3 rounded-lg bg-surface-100 border border-white/5"><i class="fa-solid fa-crown text-gold-500 mr-1"></i><span class="text-white">Owner</span> memiliki akses penuh, termasuk membuat/menghapus akun dan mengubah password.</div>
@@ -2516,7 +2517,7 @@ function jsonOutput_(obj) {
             });
             const GOOGLE_APPS_SCRIPT_URL = String(LUXEHR_CENTRAL_SYNC_CONFIG.webAppUrl || '').trim();
 
-            const APP_VERSION = '6.6.0-secure-login-fresh-session';
+            const APP_VERSION = '6.8.0-hard-reset-access-layout';
             const PAYROLL_MONTH_DAYS = 30;
             const STANDARD_WORKDAY_HOURS = 12;
             const STANDARD_WORKDAY_MINUTES = STANDARD_WORKDAY_HOURS * 60;
@@ -4402,6 +4403,10 @@ function jsonOutput_(obj) {
                             date: normalizeCloudDateValue(readCloudField(row, ['date','Tanggal','Tanggal Absensi'], row.date || ''), todayKey()),
                             checkIn: normalizeTimeToHHMM(readCloudField(row, ['checkIn','Masuk','Jam Masuk'], row.checkIn || ''), ''),
                             checkOut: normalizeTimeToHHMM(readCloudField(row, ['checkOut','Pulang','Jam Pulang'], row.checkOut || ''), ''),
+                            workDurationMinutes: Number(readCloudField(row, ['workDurationMinutes','Durasi Menit','Menit Kerja Aktual','Total Menit Kerja'], row.workDurationMinutes || 0)) || 0,
+                            workDurationText: readCloudField(row, ['workDurationText','Durasi Kerja','Durasi Aktual'], row.workDurationText || ''),
+                            lateMinutes: Number(readCloudField(row, ['lateMinutes','Terlambat Menit','Menit Terlambat'], row.lateMinutes || 0)) || 0,
+                            toleranceMinutes: Number(readCloudField(row, ['toleranceMinutes','Toleransi','Toleransi Menit'], row.toleranceMinutes || 0)) || 0,
                             status: readCloudField(row, ['status','Status'], row.status || 'Hadir') || 'Hadir'
                         });
                     })
@@ -4908,6 +4913,15 @@ function jsonOutput_(obj) {
                 if (next.checkOut) next.checkOut = normalizeTimeToHHMM(next.checkOut, next.checkOut);
                 if (next.shiftStart) next.shiftStart = normalizeTimeToHHMM(next.shiftStart, next.shiftStart);
                 if (next.shiftEnd) next.shiftEnd = normalizeTimeToHHMM(next.shiftEnd, next.shiftEnd);
+                if (next.checkIn && next.checkOut) {
+                    next.workDurationMinutes = calculateActualAttendanceMinutes(next);
+                    next.workDurationText = formatMinutesAsHourMinute(next.workDurationMinutes);
+                    next.workDurationDayText = formatMinutesAsWorkdayHourMinute(next.workDurationMinutes);
+                } else if (!next.checkOut) {
+                    next.workDurationMinutes = 0;
+                    next.workDurationText = '';
+                    next.workDurationDayText = '';
+                }
                 return next;
             }
             function normalizeLocalBusinessData(options = {}) {
@@ -5005,9 +5019,10 @@ function jsonOutput_(obj) {
                     safeLog.lateMinutes = calculateLateMinutes(safeLog.checkIn, { startTime: safeLog.shiftStart, toleranceMinutes: safeLog.toleranceMinutes });
                 }
                 if (safeLog.checkIn && !safeLog.status) safeLog.status = Number(safeLog.lateMinutes || 0) > 0 ? 'Terlambat' : 'Hadir';
-                if (safeLog.checkIn && safeLog.checkOut && (safeLog.workDurationMinutes === undefined || safeLog.workDurationMinutes === null || safeLog.workDurationMinutes === '')) {
+                if (safeLog.checkIn && safeLog.checkOut) {
                     safeLog.workDurationMinutes = calculateActualAttendanceMinutes(safeLog);
                     safeLog.workDurationText = formatMinutesAsHourMinute(safeLog.workDurationMinutes);
+                    safeLog.workDurationDayText = formatMinutesAsWorkdayHourMinute(safeLog.workDurationMinutes);
                 }
                 if (!safeLog.snapshotLocked) safeLog.snapshotLocked = true;
                 if (!safeLog.snapshotCreatedAt) safeLog.snapshotCreatedAt = safeLog.createdAt || new Date().toISOString();
@@ -5954,10 +5969,12 @@ function jsonOutput_(obj) {
                     const shift = log ? null : getEmployeeShift(emp.id, selectedDate);
                     const status = log?.status || 'Belum Absen';
                     const lateText = log?.checkIn ? `${Number(log.lateMinutes || 0)} menit` : '-';
+                    const durationMinutes = log?.checkIn && log?.checkOut ? getAttendanceWorkMinutes(log) : 0;
+                    const durationText = log?.checkIn && log?.checkOut ? formatMinutesAsHourMinute(durationMinutes) : (log?.checkIn ? 'Belum pulang' : '-');
                     const shiftName = log ? attendanceShiftName(log) : (shift?.name || 'Standar');
                     const shiftTime = log ? attendanceShiftTime(log) : `${shift?.startTime || '-'}-${shift?.endTime || '-'}`;
-                    return `<tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4"><div class="flex items-center gap-3"><img src="${escapeHtml(getEmployeePhotoSource(emp))}" class="w-8 h-8 rounded-full object-cover border border-white/10"><div><p class="text-white text-[11px]">${escapeHtml(emp.name)}</p><p class="text-gray-500 text-[9px]">${escapeHtml(emp.branch)}</p></div></div></td><td class="py-3 px-4 text-gray-300 text-[10px]"><p>${escapeHtml(shiftName)}</p><p class="text-gray-500 text-[9px] font-mono">${escapeHtml(shiftTime)}</p></td><td class="py-3 px-4 text-gold-500 font-mono text-[10px]">${escapeHtml(log?.checkIn || '-')}</td><td class="py-3 px-4 text-gray-300 font-mono text-[10px]">${escapeHtml(log?.checkOut || '-')}</td><td class="py-3 px-4">${getStatusBadge(status)}</td><td class="py-3 px-4 text-gray-400 text-[10px]">${escapeHtml(lateText)}</td></tr>`;
-                }).join('') || `<tr><td colspan="6" class="py-10 text-center text-gray-500 italic">Belum ada karyawan aktif.</td></tr>`;
+                    return `<tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4"><div class="flex items-center gap-3"><img src="${escapeHtml(getEmployeePhotoSource(emp))}" class="w-8 h-8 rounded-full object-cover border border-white/10"><div><p class="text-white text-[11px]">${escapeHtml(emp.name)}</p><p class="text-gray-500 text-[9px]">${escapeHtml(emp.branch)}</p></div></div></td><td class="py-3 px-4 text-gray-300 text-[10px]"><p>${escapeHtml(shiftName)}</p><p class="text-gray-500 text-[9px] font-mono">${escapeHtml(shiftTime)}</p></td><td class="py-3 px-4 text-gold-500 font-mono text-[10px]">${escapeHtml(log?.checkIn || '-')}</td><td class="py-3 px-4 text-gray-300 font-mono text-[10px]">${escapeHtml(log?.checkOut || '-')}</td><td class="py-3 px-4 text-gray-300 text-[10px]"><p>${escapeHtml(durationText)}</p><p class="text-gray-600 text-[9px]">${durationMinutes ? escapeHtml(formatMinutesAsWorkdayHourMinute(durationMinutes)) : ''}</p></td><td class="py-3 px-4">${getStatusBadge(status)}</td><td class="py-3 px-4 text-gray-400 text-[10px]">${escapeHtml(lateText)}</td></tr>`;
+                }).join('') || `<tr><td colspan="7" class="py-10 text-center text-gray-500 italic">Belum ada karyawan aktif.</td></tr>`;
                 updateAttendanceShiftInfo();
             }
 
@@ -6013,6 +6030,7 @@ function jsonOutput_(obj) {
                     const checkOutUpdate = { ...normalized, checkOut: time, updatedAt: new Date().toISOString() };
                     checkOutUpdate.workDurationMinutes = calculateActualAttendanceMinutes(checkOutUpdate);
                     checkOutUpdate.workDurationText = formatMinutesAsHourMinute(checkOutUpdate.workDurationMinutes);
+                    checkOutUpdate.workDurationDayText = formatMinutesAsWorkdayHourMinute(checkOutUpdate.workDurationMinutes);
                     Object.assign(log, checkOutUpdate);
                     showToast(`Absen pulang ${emp.name} berhasil untuk ${dateLabel}`, 'success');
                 }
@@ -6274,11 +6292,13 @@ function jsonOutput_(obj) {
                 const terlambat = logs.filter(log => log.status === 'Terlambat').length;
                 const belumPulang = logs.filter(log => log.checkIn && !log.checkOut).length;
                 const lateMinutes = logs.reduce((sum, log) => sum + Number(log.lateMinutes || 0), 0);
+                const totalWorkMinutes = logs.reduce((sum, log) => sum + getAttendanceWorkMinutes(log), 0);
+                const workParts = splitWorkMinutes(totalWorkMinutes);
                 const cards = [
                     { label: 'Total Log', value: total, icon: 'fa-list-check', desc: 'Sesuai filter aktif' },
-                    { label: 'Hadir', value: hadir, icon: 'fa-user-check', desc: 'Tepat waktu' },
+                    { label: 'Total Durasi', value: `${workParts.totalHours} jam`, icon: 'fa-hourglass-half', desc: `${formatMinutesAsWorkdayHourMinute(totalWorkMinutes)} • ${workParts.totalHourRemainder} menit sisa jam` },
                     { label: 'Terlambat', value: terlambat, icon: 'fa-clock', desc: `${lateMinutes} menit total` },
-                    { label: 'Belum Pulang', value: belumPulang, icon: 'fa-door-open', desc: 'Check-out kosong' }
+                    { label: 'Belum Pulang', value: belumPulang, icon: 'fa-door-open', desc: 'Check-out kosong belum dihitung durasi' }
                 ];
                 const summary = byId('attendanceHistorySummaryCards');
                 if (summary) summary.innerHTML = cards.map((card, idx) => `<div class="premium-card premium-card-hover rounded-xl p-4 animate-fade-in" style="animation-delay:${idx * .04}s"><div class="flex items-start justify-between gap-3"><div><p class="text-[9px] text-gray-500 uppercase tracking-widest">${escapeHtml(card.label)}</p><h3 class="text-2xl font-serif font-bold text-white text-glow mt-2">${card.value}</h3><p class="text-[10px] text-gray-500 mt-1">${escapeHtml(card.desc)}</p></div><div class="w-10 h-10 rounded-full border border-gold-500/30 bg-gold-500/10 text-gold-500 flex items-center justify-center"><i class="fa-solid ${card.icon}"></i></div></div></div>`).join('');
@@ -6289,8 +6309,10 @@ function jsonOutput_(obj) {
                 tbody.innerHTML = logs.map(log => {
                     const displayStatus = log.checkIn && !log.checkOut ? 'Belum Pulang' : (log.status || '-');
                     const logId = String(log.id || '');
-                    return `<tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4 text-gray-300 text-[10px]"><p>${formatDate(log.date)}</p><p class="text-gray-500 font-mono text-[9px]">${escapeHtml(log.date || '-')}</p></td><td class="py-3 px-4"><p class="text-white text-[11px]">${escapeHtml(attendanceEmployeeName(log))}</p><p class="text-gray-500 text-[9px] font-mono">${escapeHtml(attendanceEmployeeNik(log))}</p></td><td class="py-3 px-4 text-gray-400 text-[10px]">${escapeHtml(attendanceBranch(log))}</td><td class="py-3 px-4 text-gray-300 text-[10px]"><p>${escapeHtml(attendanceShiftName(log))}</p><p class="text-gray-500 text-[9px] font-mono">${escapeHtml(attendanceShiftTime(log))}</p></td><td class="py-3 px-4 text-gold-500 font-mono text-[10px]">${escapeHtml(log.checkIn || '-')}</td><td class="py-3 px-4 text-gray-300 font-mono text-[10px]">${escapeHtml(log.checkOut || '-')}</td><td class="py-3 px-4 text-gray-400 text-[10px]">${Number(log.lateMinutes || 0)} menit</td><td class="py-3 px-4">${getStatusBadge(displayStatus)}</td><td class="py-3 px-4 text-right"><button type="button" onclick="deleteAttendanceHistory('${escapeHtml(logId)}')" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Hapus histori"><i class="fa-solid fa-trash-can text-[10px]"></i></button></td></tr>`;
-                }).join('') || `<tr><td colspan="9" class="py-10 text-center text-gray-500 italic">Histori absensi tidak ditemukan.</td></tr>`;
+                    const durationMinutes = getAttendanceWorkMinutes(log);
+                    const durationText = log.checkIn && log.checkOut ? formatMinutesAsHourMinute(durationMinutes) : (log.checkIn ? 'Belum pulang' : '-');
+                    return `<tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4 text-gray-300 text-[10px]"><p>${formatDate(log.date)}</p><p class="text-gray-500 font-mono text-[9px]">${escapeHtml(log.date || '-')}</p></td><td class="py-3 px-4"><p class="text-white text-[11px]">${escapeHtml(attendanceEmployeeName(log))}</p><p class="text-gray-500 text-[9px] font-mono">${escapeHtml(attendanceEmployeeNik(log))}</p></td><td class="py-3 px-4 text-gray-400 text-[10px]">${escapeHtml(attendanceBranch(log))}</td><td class="py-3 px-4 text-gray-300 text-[10px]"><p>${escapeHtml(attendanceShiftName(log))}</p><p class="text-gray-500 text-[9px] font-mono">${escapeHtml(attendanceShiftTime(log))}</p></td><td class="py-3 px-4 text-gold-500 font-mono text-[10px]">${escapeHtml(log.checkIn || '-')}</td><td class="py-3 px-4 text-gray-300 font-mono text-[10px]">${escapeHtml(log.checkOut || '-')}</td><td class="py-3 px-4 text-gray-300 text-[10px]"><p>${escapeHtml(durationText)}</p><p class="text-gray-600 text-[9px]">${durationMinutes ? escapeHtml(formatMinutesAsWorkdayHourMinute(durationMinutes)) : ''}</p></td><td class="py-3 px-4 text-gray-400 text-[10px]">${Number(log.lateMinutes || 0)} menit</td><td class="py-3 px-4">${getStatusBadge(displayStatus)}</td><td class="py-3 px-4 text-right"><button type="button" onclick="deleteAttendanceHistory('${escapeHtml(logId)}')" class="btn-icon hover:text-red-400 hover:border-red-500/30" title="Hapus histori"><i class="fa-solid fa-trash-can text-[10px]"></i></button></td></tr>`;
+                }).join('') || `<tr><td colspan="10" class="py-10 text-center text-gray-500 italic">Histori absensi tidak ditemukan.</td></tr>`;
             }
             function deleteAttendanceHistory(id) {
                 const log = attendance.find(item => String(item.id) === String(id));
@@ -6322,7 +6344,10 @@ function jsonOutput_(obj) {
             }
             function exportAttendanceHistoryCSV() {
                 const logs = getFilteredAttendanceHistory();
-                const rows = [['Tanggal', 'NIK Snapshot', 'Nama Snapshot', 'Cabang Snapshot', 'Jabatan Snapshot', 'Shift Snapshot', 'Jam Shift Snapshot', 'Masuk', 'Pulang', 'Toleransi Menit', 'Terlambat Menit', 'Status'], ...logs.map(log => [log.date || '-', attendanceEmployeeNik(log), attendanceEmployeeName(log), attendanceBranch(log), log.employeePosition || '-', attendanceShiftName(log), attendanceShiftTime(log), log.checkIn || '-', log.checkOut || '-', Number(log.toleranceMinutes || 0), Number(log.lateMinutes || 0), log.status || '-'])];
+                const rows = [['Tanggal', 'NIK Snapshot', 'Nama Snapshot', 'Cabang Snapshot', 'Jabatan Snapshot', 'Shift Snapshot', 'Jam Shift Snapshot', 'Masuk', 'Pulang', 'Durasi Menit', 'Durasi Jam-Menit', 'Durasi Hari-Jam-Menit', 'Toleransi Menit', 'Terlambat Menit', 'Status'], ...logs.map(log => {
+                    const durationMinutes = getAttendanceWorkMinutes(log);
+                    return [log.date || '-', attendanceEmployeeNik(log), attendanceEmployeeName(log), attendanceBranch(log), log.employeePosition || '-', attendanceShiftName(log), attendanceShiftTime(log), log.checkIn || '-', log.checkOut || '-', durationMinutes, durationMinutes ? formatMinutesAsHourMinute(durationMinutes) : '', durationMinutes ? formatMinutesAsWorkdayHourMinute(durationMinutes) : '', Number(log.toleranceMinutes || 0), Number(log.lateMinutes || 0), log.status || '-'];
+                })];
                 downloadCSV(`histori_absensi_${todayKey()}.csv`, rows);
             }
 
@@ -6396,6 +6421,32 @@ function jsonOutput_(obj) {
                 const remainder = minutes % 60;
                 return `${hours} jam ${remainder} menit`;
             }
+            function getAttendanceWorkMinutes(log = {}) {
+                if (!log || !log.checkIn || !log.checkOut) return 0;
+                const stored = Number(log.workDurationMinutes);
+                if (Number.isFinite(stored) && stored >= 0) return Math.round(stored);
+                return calculateActualAttendanceMinutes(log);
+            }
+            function splitWorkMinutes(totalMinutes) {
+                const total = Math.max(0, Math.round(Number(totalMinutes || 0)));
+                const basis = Math.max(1, Number(STANDARD_WORKDAY_MINUTES || 720));
+                const days = Math.floor(total / basis);
+                const remainingAfterDays = total % basis;
+                const hours = Math.floor(remainingAfterDays / 60);
+                const minutes = remainingAfterDays % 60;
+                const totalHours = Math.floor(total / 60);
+                const totalHourRemainder = total % 60;
+                const equivalentDays = total / basis;
+                return { total, days, hours, minutes, totalHours, totalHourRemainder, equivalentDays };
+            }
+            function formatMinutesAsWorkdayHourMinute(totalMinutes) {
+                const parts = splitWorkMinutes(totalMinutes);
+                return `${parts.days} hari ${parts.hours} jam ${parts.minutes} menit`;
+            }
+            function formatEquivalentWorkDays(totalMinutes) {
+                const parts = splitWorkMinutes(totalMinutes);
+                return `${parts.equivalentDays.toFixed(2)} hari`;
+            }
             function getMonthAttendanceLogs(employeeId, month) {
                 return attendance
                     .filter(log => String(log.employeeId) === String(employeeId))
@@ -6405,26 +6456,39 @@ function jsonOutput_(obj) {
             function getEmployeeMonthlyWorkSummary(emp, month, deductionPerDay = 0, allowance = 0) {
                 const logs = getMonthAttendanceLogs(emp.id, month);
                 const uniqueDates = [...new Set(logs.map(log => log.date).filter(Boolean))];
+                const completedLogs = logs.filter(log => log.checkIn && log.checkOut);
+                const incompleteLogs = logs.filter(log => log.checkIn && !log.checkOut);
                 const workDays = uniqueDates.length;
-                const payrollMinutes = workDays * STANDARD_WORKDAY_MINUTES;
-                const payrollHours = Math.floor(payrollMinutes / 60);
-                const payrollMinuteRemainder = payrollMinutes % 60;
-                const actualRecordedMinutes = logs.reduce((sum, log) => sum + calculateActualAttendanceMinutes(log), 0);
+                const completedWorkDays = [...new Set(completedLogs.map(log => log.date).filter(Boolean))].length;
+                const actualRecordedMinutes = completedLogs.reduce((sum, log) => sum + getAttendanceWorkMinutes(log), 0);
+                const payrollMinutes = actualRecordedMinutes;
+                const payrollParts = splitWorkMinutes(payrollMinutes);
+                const payrollHours = payrollParts.totalHours;
+                const payrollMinuteRemainder = payrollParts.totalHourRemainder;
+                const equivalentWorkDays = payrollParts.equivalentDays;
+                const actualWorkText = formatMinutesAsWorkdayHourMinute(actualRecordedMinutes);
+                const actualHourMinuteText = formatMinutesAsHourMinute(actualRecordedMinutes);
                 const lateLogs = logs.filter(log => log.status === 'Terlambat');
                 const lateCount = lateLogs.length;
                 const lateMinutes = lateLogs.reduce((sum, item) => sum + Number(item.lateMinutes || 0), 0);
                 const baseSalary = Number(emp.salary || 0);
                 const dailySalary = baseSalary / PAYROLL_MONTH_DAYS;
-                const proratedSalary = dailySalary * workDays;
+                const proratedSalary = dailySalary * equivalentWorkDays;
                 const deduction = lateCount * Number(deductionPerDay || 0);
                 const takeHome = proratedSalary + Number(allowance || 0) - deduction;
                 return {
                     logs,
+                    completedLogs,
+                    incompleteLogs,
                     workDays,
+                    completedWorkDays,
                     payrollMinutes,
                     payrollHours,
                     payrollMinuteRemainder,
                     actualRecordedMinutes,
+                    equivalentWorkDays,
+                    actualWorkText,
+                    actualHourMinuteText,
                     lateCount,
                     lateMinutes,
                     baseSalary,
@@ -6445,10 +6509,11 @@ function jsonOutput_(obj) {
                 const totalPayrollMinutes = summaries.reduce((sum, item) => sum + item.summary.payrollMinutes, 0);
                 const totalProratedSalary = summaries.reduce((sum, item) => sum + item.summary.proratedSalary, 0);
                 const totalTakeHome = summaries.reduce((sum, item) => sum + item.summary.takeHome, 0);
+                const totalWorkParts = splitWorkMinutes(totalPayrollMinutes);
                 const summaryCards = [
-                    { label: 'Total Hari Kerja', value: totalWorkDays, icon: 'fa-calendar-day', desc: `Bulan ${month}` },
-                    { label: 'Total Jam Kerja', value: Math.floor(totalPayrollMinutes / 60), icon: 'fa-clock', desc: `${totalPayrollMinutes % 60} menit sisa` },
-                    { label: 'Gaji Prorata', value: formatRupiah(totalProratedSalary), icon: 'fa-money-bill-wave', desc: 'Gaji ÷ 30 × hari kerja' },
+                    { label: 'Total Hari Masuk', value: totalWorkDays, icon: 'fa-calendar-day', desc: `Bulan ${month}` },
+                    { label: 'Durasi Aktual', value: `${totalWorkParts.totalHours} jam`, icon: 'fa-hourglass-half', desc: `${formatMinutesAsWorkdayHourMinute(totalPayrollMinutes)} • ${totalWorkParts.totalHourRemainder} menit sisa jam` },
+                    { label: 'Gaji Aktual', value: formatRupiah(totalProratedSalary), icon: 'fa-money-bill-wave', desc: 'Gaji ÷ 30 × hari setara' },
                     { label: 'Total THP', value: formatRupiah(totalTakeHome), icon: 'fa-wallet', desc: 'Setelah tunjangan & potongan' }
                 ];
                 const summaryWrap = byId('payrollSummaryCards');
@@ -6456,9 +6521,10 @@ function jsonOutput_(obj) {
                     summaryWrap.innerHTML = summaryCards.map((card, idx) => `<div class="premium-card premium-card-hover rounded-xl p-4 animate-fade-in" style="animation-delay:${idx * .04}s"><div class="flex items-start justify-between gap-3"><div><p class="text-[9px] text-gray-500 uppercase tracking-widest">${escapeHtml(card.label)}</p><h3 class="text-lg md:text-xl font-serif font-bold text-white text-glow mt-2">${escapeHtml(card.value)}</h3><p class="text-[10px] text-gray-500 mt-1">${escapeHtml(card.desc)}</p></div><div class="w-10 h-10 rounded-full border border-gold-500/30 bg-gold-500/10 text-gold-500 flex items-center justify-center"><i class="fa-solid ${card.icon}"></i></div></div></div>`).join('');
                 }
                 const formulaLabel = byId('payrollFormulaLabel');
-                if (formulaLabel) formulaLabel.textContent = `Bulan ${month}: hari kerja diambil dari absensi masuk. 1 hari = ${STANDARD_WORKDAY_HOURS} jam / ${STANDARD_WORKDAY_MINUTES} menit. Gaji harian = gaji pokok ÷ ${PAYROLL_MONTH_DAYS}.`;
+                if (formulaLabel) formulaLabel.textContent = `Bulan ${month}: durasi aktual dihitung dari jam masuk sampai jam pulang. 1 hari setara = ${STANDARD_WORKDAY_HOURS} jam / ${STANDARD_WORKDAY_MINUTES} menit. Absensi belum pulang belum masuk hitungan durasi.`;
                 byId('payrollTable').innerHTML = summaries.map(({ emp, summary }) => {
-                    return `<tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4"><p class="text-white text-[11px]">${escapeHtml(emp.name)}</p><p class="text-gray-500 text-[9px]">${escapeHtml(emp.nik)} • ${summary.lateCount} terlambat • ${summary.lateMinutes} menit telat</p><p class="text-gray-600 text-[9px]">Aktual tercatat: ${escapeHtml(formatMinutesAsHourMinute(summary.actualRecordedMinutes))}</p></td><td class="py-3 px-4 text-gold-500 font-bold text-[11px]">${summary.workDays}</td><td class="py-3 px-4 text-gray-300 text-[10px]">${summary.payrollHours} jam</td><td class="py-3 px-4 text-gray-400 text-[10px]">${summary.payrollMinutes} menit</td><td class="py-3 px-4 text-gray-300 text-[10px]">${formatRupiah(summary.baseSalary)}</td><td class="py-3 px-4 text-gray-300 text-[10px]">${formatRupiah(summary.dailySalary)}</td><td class="py-3 px-4 text-green-400 text-[10px]">${formatRupiah(summary.proratedSalary)}</td><td class="py-3 px-4 text-green-400 text-[10px]">${formatRupiah(summary.allowance)}</td><td class="py-3 px-4 text-red-400 text-[10px]">${formatRupiah(summary.deduction)}</td><td class="py-3 px-4 text-gold-500 font-bold text-[11px]">${formatRupiah(summary.takeHome)}</td></tr>`;
+                    const incompleteText = summary.incompleteLogs.length ? ` • ${summary.incompleteLogs.length} belum pulang` : '';
+                    return `<tr class="hover:bg-white/5 transition-colors"><td class="py-3 px-4"><p class="text-white text-[11px]">${escapeHtml(emp.name)}</p><p class="text-gray-500 text-[9px]">${escapeHtml(emp.nik)} • ${summary.lateCount} terlambat • ${summary.lateMinutes} menit telat${escapeHtml(incompleteText)}</p><p class="text-gray-600 text-[9px]">Durasi HH:MM: ${escapeHtml(summary.actualHourMinuteText)}</p></td><td class="py-3 px-4 text-gold-500 font-bold text-[11px]">${summary.workDays}</td><td class="py-3 px-4 text-gray-300 text-[10px]"><p>${escapeHtml(summary.actualWorkText)}</p><p class="text-gray-600 text-[9px]">${summary.payrollMinutes} menit aktual</p></td><td class="py-3 px-4 text-gray-400 text-[10px]">${summary.equivalentWorkDays.toFixed(2)} hari</td><td class="py-3 px-4 text-gray-300 text-[10px]">${formatRupiah(summary.baseSalary)}</td><td class="py-3 px-4 text-gray-300 text-[10px]">${formatRupiah(summary.dailySalary)}</td><td class="py-3 px-4 text-green-400 text-[10px]">${formatRupiah(summary.proratedSalary)}</td><td class="py-3 px-4 text-green-400 text-[10px]">${formatRupiah(summary.allowance)}</td><td class="py-3 px-4 text-red-400 text-[10px]">${formatRupiah(summary.deduction)}</td><td class="py-3 px-4 text-gold-500 font-bold text-[11px]">${formatRupiah(summary.takeHome)}</td></tr>`;
                 }).join('') || `<tr><td colspan="10" class="py-10 text-center text-gray-500 italic">Belum ada karyawan aktif.</td></tr>`;
             }
 
@@ -7053,13 +7119,86 @@ function jsonOutput_(obj) {
                     setTimeout(() => window.location.reload(), 700);
                 });
             }
+            function getFactoryResetSettings(keep = {}) {
+                const nextSettings = {
+                    companyName: '',
+                    companyAddress: '',
+                    standardStartTime: '08:00',
+                    googleSheetId: '',
+                    googleWebAppUrl: keep.webAppUrl || '',
+                    webAppUrl: keep.webAppUrl || '',
+                    driveRootFolderName: keep.driveRootFolderName || (LUXEHR_CENTRAL_SYNC_CONFIG.defaultDriveRootFolderName || 'LuxeHR Uploads'),
+                    branchOptions: [],
+                    employeeStatusOptions: [],
+                    offboardingFeatureInitialized: true,
+                    autoSyncEnabled: true,
+                    autoSyncIntervalSeconds: 60,
+                    networkAccessEnabled: keep.networkAccessEnabled !== false,
+                    cloudFirstEnabled: true,
+                    realtimePullEnabled: true,
+                    realtimePullIntervalSeconds: REALTIME_PULL_DEFAULT_SECONDS,
+                    accessControlEnabled: true,
+                    userAccounts: []
+                };
+                return nextSettings;
+            }
+            function getHardEmptyCloudJobs() {
+                const sheetNames = uniqueTextList((getFullCloudSyncJobs() || []).map(([sheetName]) => sheetName).filter(Boolean));
+                return sheetNames.map(sheetName => [sheetName, []]);
+            }
+            async function hardWipeCloudDatabase() {
+                if (!isNetworkAccessEnabled()) return { ok: false, skipped: true, reason: 'network-disabled' };
+                const emptyJobs = getHardEmptyCloudJobs();
+                const payload = buildBatchSyncPayload(emptyJobs, 'batchSync', { overwrite: true });
+                payload.mode = 'hard-empty-reset';
+                payload.mergeStrategy = 'replace-all';
+                payload.driveUploads = [];
+                payload.resetReason = 'owner-empty-all-application-data';
+                const response = await postToAppsScript(payload);
+                const result = response.result || {};
+                const summary = result.summary || {};
+                const failedCount = Number(summary.failedCount || 0);
+                if (!result.ok || failedCount > 0) throw new Error(result.message || `${failedCount} tabel gagal dikosongkan di Google Sheet.`);
+                return { ok: true, result, sheetCount: emptyJobs.length };
+            }
+            function clearAllLuxeHrLocalStorage() {
+                Object.values(STORAGE_KEYS).forEach(key => {
+                    try { localStorage.removeItem(key); localStorage.removeItem(getBackupKey(key)); } catch (error) {}
+                });
+                try { localStorage.removeItem(META_KEY); } catch (error) {}
+                try { localStorage.removeItem('luxehr_device_id'); } catch (error) {}
+            }
+            function persistEmptyApplicationState() {
+                safeWrite(STORAGE_KEYS.employees, employees, Array.isArray);
+                safeWrite(STORAGE_KEYS.attendance, attendance, Array.isArray);
+                safeWrite(STORAGE_KEYS.leaves, leaves, Array.isArray);
+                safeWrite(STORAGE_KEYS.shifts, shifts, Array.isArray);
+                safeWrite(STORAGE_KEYS.shiftAssignments, shiftAssignments, Array.isArray);
+                safeWrite(STORAGE_KEYS.resignRecords, resignRecords, Array.isArray);
+                safeWrite(STORAGE_KEYS.blacklistRecords, blacklistRecords, Array.isArray);
+                safeWrite(STORAGE_KEYS.maintenanceLogs, maintenanceLogs, Array.isArray);
+                safeWrite(STORAGE_KEYS.deletedRecords, deletedRecords, Array.isArray);
+                safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
+            }
             async function emptyAllApplicationData() {
                 if (!requirePermission('resetData')) return;
-                showConfirm('Kosongkan seluruh data aplikasi? Data karyawan, absensi, cuti, shift, resign, blacklist, master, maintenance, dan pengaturan akan dikosongkan. Jika akses jaringan cloud aktif, Google Sheet juga akan ditimpa kosong. Lanjutkan?', async () => {
-                    const keepWebAppUrl = settings.googleWebAppUrl || getBundledWebAppUrl() || '';
+                showConfirm('Kosongkan seluruh data aplikasi? Semua data karyawan, shift, absensi, histori, cuti, payroll, resign, blacklist, master, maintenance, hak akses, pengaturan, sync log, dan cache akan dihapus. Jika Web App aktif, Google Sheet juga akan dikosongkan sampai body tabel kosong. Lanjutkan?', async () => {
+                    const keepWebAppUrl = settings.googleWebAppUrl || settings.webAppUrl || getBundledWebAppUrl() || '';
                     const keepFolder = settings.driveRootFolderName || LUXEHR_CENTRAL_SYNC_CONFIG.defaultDriveRootFolderName || 'LuxeHR Uploads';
                     const keepNetwork = settings.networkAccessEnabled !== false;
-                    const resetDeleteMarkers = buildDeleteMarkersForReset();
+                    const shouldTryCloudWipe = keepNetwork && Boolean(String(keepWebAppUrl || '').trim());
+                    showToast('Memproses hard reset seluruh data...', 'warning');
+
+                    let cloudWipeResult = { ok: false, skipped: true };
+                    if (shouldTryCloudWipe) {
+                        try {
+                            cloudWipeResult = await hardWipeCloudDatabase();
+                        } catch (error) {
+                            cloudWipeResult = { ok: false, error };
+                            showToast(`Google Sheet belum berhasil dikosongkan: ${error.message || error}`, 'error');
+                        }
+                    }
+
                     employees = [];
                     attendance = [];
                     leaves = [];
@@ -7068,50 +7207,30 @@ function jsonOutput_(obj) {
                     resignRecords = [];
                     blacklistRecords = [];
                     maintenanceLogs = [];
-                    deletedRecords = resetDeleteMarkers;
-                    settings = {
-                        companyName: '',
-                        companyAddress: '',
-                        standardStartTime: '08:00',
-                        googleSheetId: '',
-                        googleWebAppUrl: keepWebAppUrl,
-                        webAppUrl: keepWebAppUrl,
-                        driveRootFolderName: keepFolder,
-                        branchOptions: [],
-                        employeeStatusOptions: [],
-                        offboardingFeatureInitialized: true,
-                        autoSyncEnabled: true,
-                        autoSyncIntervalSeconds: 60,
-                        networkAccessEnabled: keepNetwork,
-                        cloudFirstEnabled: true,
-                        realtimePullEnabled: true,
-                        realtimePullIntervalSeconds: REALTIME_PULL_DEFAULT_SECONDS
-                    };
-                    Object.values(STORAGE_KEYS).forEach(key => {
-                        try { localStorage.removeItem(key); localStorage.removeItem(getBackupKey(key)); } catch (error) {}
+                    deletedRecords = [];
+                    settings = getFactoryResetSettings({ webAppUrl: keepWebAppUrl, driveRootFolderName: keepFolder, networkAccessEnabled: keepNetwork });
+                    ensureAuthSettings();
+                    clearCurrentUser({ silent: true });
+                    clearAllLuxeHrLocalStorage();
+                    persistEmptyApplicationState();
+                    saveSyncMeta({
+                        status: cloudWipeResult.ok ? 'success' : (shouldTryCloudWipe ? 'warning' : 'local-only'),
+                        sheetName: 'Semua Data',
+                        mode: 'hard-empty-reset',
+                        lastSuccessAt: cloudWipeResult.ok ? new Date().toISOString() : getSyncMeta().lastSuccessAt,
+                        lastAttemptAt: new Date().toISOString(),
+                        lastError: cloudWipeResult.error ? (cloudWipeResult.error.message || String(cloudWipeResult.error)) : null,
+                        message: cloudWipeResult.ok ? `Hard reset selesai. ${cloudWipeResult.sheetCount || 0} tabel Google Sheet dikosongkan.` : (shouldTryCloudWipe ? 'Hard reset lokal selesai, tetapi Google Sheet belum berhasil dikosongkan.' : 'Hard reset lokal selesai. Cloud tidak disentuh karena Web App/nonaktif.')
                     });
-                    try { localStorage.removeItem(META_KEY); } catch (error) {}
-                    safeWrite(STORAGE_KEYS.employees, employees, Array.isArray);
-                    safeWrite(STORAGE_KEYS.attendance, attendance, Array.isArray);
-                    safeWrite(STORAGE_KEYS.leaves, leaves, Array.isArray);
-                    safeWrite(STORAGE_KEYS.shifts, shifts, Array.isArray);
-                    safeWrite(STORAGE_KEYS.shiftAssignments, shiftAssignments, Array.isArray);
-                    safeWrite(STORAGE_KEYS.resignRecords, resignRecords, Array.isArray);
-                    safeWrite(STORAGE_KEYS.blacklistRecords, blacklistRecords, Array.isArray);
-                    safeWrite(STORAGE_KEYS.maintenanceLogs, maintenanceLogs, Array.isArray);
-                    safeWrite(STORAGE_KEYS.deletedRecords, deletedRecords, Array.isArray);
-                    safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
-                    saveSyncQueue({ pending: false, nextRunAt: null, lastReason: 'Seluruh data dikosongkan', lastResult: 'reset-empty' });
+                    saveSyncQueue({ pending: false, nextRunAt: null, lastReason: 'Hard reset seluruh data', lastResult: cloudWipeResult.ok ? 'hard-empty-cloud-and-local' : 'hard-empty-local' });
                     renderAllSelectors();
+                    renderAccessView();
                     renderActiveView();
                     renderSettings();
                     updateStorageStatus();
-                    if (isNetworkAccessEnabled()) {
-                        const result = await syncAllToCloud({ source: 'reset-empty', silent: false });
-                        if (result && result.ok) purgeSyncedLocalBusinessData({ silent: true, force: true });
-                    } else {
-                        showToast('Seluruh data lokal dikosongkan. Cloud tidak disentuh karena akses jaringan nonaktif.', 'warning');
-                    }
+                    updateConnectivityStatus();
+                    showToast(cloudWipeResult.ok ? 'Seluruh data lokal dan Google Sheet berhasil dikosongkan. Login ulang sebagai owner / owner123.' : 'Seluruh data lokal dikosongkan. Cek koneksi/Web App untuk mengosongkan Google Sheet.', cloudWipeResult.ok ? 'success' : 'warning');
+                    setTimeout(() => window.location.reload(), 1100);
                 });
             }
             function handleSettingsSubmit(e) {
@@ -7298,9 +7417,10 @@ function jsonOutput_(obj) {
             }
             function exportAttendanceCSV() {
                 const selectedDate = getSelectedAttendanceDate();
-                const rows = [['Tanggal', 'NIK', 'Nama', 'Cabang', 'Shift', 'Jam Shift', 'Masuk', 'Pulang', 'Terlambat Menit', 'Status'], ...attendance.filter(a => a.date === selectedDate).map(a => {
+                const rows = [['Tanggal', 'NIK', 'Nama', 'Cabang', 'Shift', 'Jam Shift', 'Masuk', 'Pulang', 'Durasi Menit', 'Durasi Jam-Menit', 'Durasi Hari-Jam-Menit', 'Terlambat Menit', 'Status'], ...attendance.filter(a => a.date === selectedDate).map(a => {
                     const e = getEmployee(a.employeeId) || {};
-                    return [a.date, a.employeeNik || e.nik || '-', a.employeeName || e.name || '-', a.employeeBranch || e.branch || '-', a.shiftName || '-', `${a.shiftStart || '-'}-${a.shiftEnd || '-'}`, a.checkIn || '-', a.checkOut || '-', Number(a.lateMinutes || 0), a.status || '-'];
+                    const durationMinutes = getAttendanceWorkMinutes(a);
+                    return [a.date, a.employeeNik || e.nik || '-', a.employeeName || e.name || '-', a.employeeBranch || e.branch || '-', a.shiftName || '-', `${a.shiftStart || '-'}-${a.shiftEnd || '-'}`, a.checkIn || '-', a.checkOut || '-', durationMinutes, durationMinutes ? formatMinutesAsHourMinute(durationMinutes) : '', durationMinutes ? formatMinutesAsWorkdayHourMinute(durationMinutes) : '', Number(a.lateMinutes || 0), a.status || '-'];
                 })];
                 downloadCSV(`absensi_${selectedDate}.csv`, rows);
             }
@@ -7319,9 +7439,9 @@ function jsonOutput_(obj) {
                 const month = byId('payrollMonth').value || new Date().toISOString().slice(0, 7);
                 const deductionPerDay = parseMoneyValue(byId('deductionPerDay').value);
                 const allowance = parseMoneyValue(byId('fixedAllowance').value);
-                const rows = [['Bulan', 'NIK', 'Nama', 'Jabatan', 'Shift Default', 'Hari Kerja', 'Jam Kerja Payroll', 'Menit Kerja Payroll', 'Aktual Menit Tercatat', 'Total Terlambat', 'Menit Terlambat', 'Gaji Pokok', 'Gaji Per Hari', 'Gaji Prorata', 'Tunjangan', 'Potongan', 'Take Home Pay'], ...employees.filter(isEmployeeEligibleForOperations).map(emp => {
+                const rows = [['Bulan', 'NIK', 'Nama', 'Jabatan', 'Shift Default', 'Hari Masuk', 'Hari Selesai Checkout', 'Durasi Aktual Hari-Jam-Menit', 'Durasi Aktual Jam-Menit', 'Menit Kerja Aktual', 'Hari Setara Payroll', 'Absensi Belum Pulang', 'Total Terlambat', 'Menit Terlambat', 'Gaji Pokok', 'Gaji Per Hari', 'Gaji Aktual', 'Tunjangan', 'Potongan', 'Take Home Pay'], ...employees.filter(isEmployeeEligibleForOperations).map(emp => {
                     const summary = getEmployeeMonthlyWorkSummary(emp, month, deductionPerDay, allowance);
-                    return [month, emp.nik, emp.name, emp.position, getShiftDisplay(getShift(emp.defaultShiftId) || getDefaultShift()), summary.workDays, summary.payrollHours, summary.payrollMinutes, summary.actualRecordedMinutes, summary.lateCount, summary.lateMinutes, summary.baseSalary, summary.dailySalary, summary.proratedSalary, summary.allowance, summary.deduction, summary.takeHome];
+                    return [month, emp.nik, emp.name, emp.position, getShiftDisplay(getShift(emp.defaultShiftId) || getDefaultShift()), summary.workDays, summary.completedWorkDays, summary.actualWorkText, summary.actualHourMinuteText, summary.actualRecordedMinutes, summary.equivalentWorkDays.toFixed(4), summary.incompleteLogs.length, summary.lateCount, summary.lateMinutes, summary.baseSalary, summary.dailySalary, summary.proratedSalary, summary.allowance, summary.deduction, summary.takeHome];
                 })];
                 downloadCSV(`payroll_${month}.csv`, rows);
             }
