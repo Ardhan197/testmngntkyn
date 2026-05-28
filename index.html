@@ -1381,8 +1381,8 @@
 <button class="border border-red-500/40 text-red-300 hover:bg-red-500 hover:text-white font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all" onclick="emptyAllApplicationData()" type="button"><i class="fa-solid fa-trash-can mr-1.5"></i> Kosongkan Seluruh Data</button>
 </div>
 <div class="mt-3 p-3 rounded-lg bg-surface-100 border border-white/5 text-gray-400 text-[10px] leading-relaxed">
-<p><span class="text-yellow-300">Restart Ulang Lokal</span> menghapus storage browser dan reload aplikasi. Karena server berada di localStorage browser ini, lakukan Backup JSON sebelum restart bila data ingin disimpan eksternal.</p>
-<p class="mt-1"><span class="text-red-300">Kosongkan Seluruh Data</span> mengosongkan data karyawan, absensi, cuti, shift, resign, blacklist, master, maintenance, dan pengaturan. Karena server adalah localStorage, tindakan ini menghapus data aplikasi di browser ini.</p>
+<p><span class="text-yellow-300">Restart Ulang Lokal</span> menghapus storage browser dan reload aplikasi. Data aplikasi dapat memakai cache lokal/offline, tetapi sesi login tidak lagi disimpan permanen. Lakukan Backup JSON sebelum restart bila data ingin disimpan eksternal.</p>
+<p class="mt-1"><span class="text-red-300">Kosongkan Seluruh Data</span> mengosongkan data karyawan, absensi, cuti, shift, resign, blacklist, master, maintenance, dan pengaturan. Tindakan ini menghapus data aplikasi di browser ini; sesi login tetap tidak tersimpan permanen.</p>
 </div>
 </div>
 <div class="premium-card rounded-xl p-4 lg:col-span-2 mt-2">
@@ -2447,13 +2447,13 @@ function jsonOutput_(obj) {
 <h2 class="font-serif text-2xl font-bold text-white">Luxe<span class="text-gold-500">HR</span> Login</h2>
 <p class="text-[10px] text-gray-500 mt-2 leading-relaxed">Masuk sesuai akun dan hak akses yang diberikan Owner.</p>
 </div>
-<form class="relative z-10 space-y-3" id="loginForm">
-<div><label class="label-premium">Username</label><input autocomplete="username" class="field" id="loginUsername" placeholder="owner" required="" type="text"/></div>
-<div><label class="label-premium">Password</label><input autocomplete="current-password" class="field" id="loginPassword" placeholder="••••••••" required="" type="password"/></div>
+<form autocomplete="off" class="relative z-10 space-y-3" id="loginForm">
+<div><label class="label-premium">Username</label><input autocomplete="off" autocapitalize="off" spellcheck="false" class="field" id="loginUsername" placeholder="owner" required="" type="text"/></div>
+<div><label class="label-premium">Password</label><input autocomplete="new-password" class="field" id="loginPassword" placeholder="••••••••" required="" type="password"/></div>
 <button class="w-full bg-gold-500 text-surface-400 hover:bg-gold-400 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all shadow-gold-glow" type="submit"><i class="fa-solid fa-right-to-bracket mr-1.5"></i> Login</button>
 </form>
 <div class="relative z-10 mt-4 p-3 rounded-lg bg-surface-100 border border-gold-500/20 text-gray-400 text-[10px] leading-relaxed" id="loginHint">
-                Login awal setelah update: <span class="text-white font-mono">owner</span> / <span class="text-white font-mono">owner123</span>. Segera ganti password melalui menu Hak Akses.
+                Login awal setelah update: <span class="text-white font-mono">owner</span> / <span class="text-white font-mono">owner123</span>. Sesi login sekarang tidak disimpan di localStorage dan akan diminta ulang setiap aplikasi dibuka/reload. Segera ganti password melalui menu Hak Akses.
             </div>
 </div>
 </div>
@@ -2516,7 +2516,7 @@ function jsonOutput_(obj) {
             });
             const GOOGLE_APPS_SCRIPT_URL = String(LUXEHR_CENTRAL_SYNC_CONFIG.webAppUrl || '').trim();
 
-            const APP_VERSION = '6.5.0-stylebase-professional-central-sync';
+            const APP_VERSION = '6.6.0-secure-login-fresh-session';
             const PAYROLL_MONTH_DAYS = 30;
             const STANDARD_WORKDAY_HOURS = 12;
             const STANDARD_WORKDAY_MINUTES = STANDARD_WORKDAY_HOURS * 60;
@@ -2624,6 +2624,16 @@ function jsonOutput_(obj) {
             let cloudReadBackoffUntil = 0;
             let cloudHydrationInProgress = false;
             let lastCloudFingerprint = '';
+            const AUTH_SECURITY_CONFIG = Object.freeze({
+                persistLoginToLocalStorage: false,
+                requireFreshLoginOnAppLoad: true,
+                sessionTtlMinutes: 180,
+                idleTimeoutMinutes: 30,
+                clearLegacyLocalAuthOnStartup: true
+            });
+            let currentAuthSession = null;
+            let authSessionTimer = null;
+            let lastAuthActivityTouch = 0;
 
             function byId(id) { return document.getElementById(id); }
             function clone(value) { return JSON.parse(JSON.stringify(value)); }
@@ -3331,19 +3341,105 @@ function jsonOutput_(obj) {
                 });
             }
             function getUserAccounts() { ensureAuthSettings(); return settings.userAccounts || []; }
-            function getCurrentSession() { return safeParse(localStorage.getItem(STORAGE_KEYS.authSession), null); }
+            function clearLegacyAuthStorage() {
+                try { localStorage.removeItem(STORAGE_KEYS.authSession); } catch (error) {}
+                try { sessionStorage.removeItem(STORAGE_KEYS.authSession); } catch (error) {}
+            }
+            function stopAuthSessionTimer() {
+                if (authSessionTimer) clearTimeout(authSessionTimer);
+                authSessionTimer = null;
+            }
+            function getAuthTimeLimit(session = currentAuthSession) {
+                if (!session) return 0;
+                const now = Date.now();
+                const ttlMs = Math.max(1, Number(AUTH_SECURITY_CONFIG.sessionTtlMinutes || 180)) * 60 * 1000;
+                const idleMs = Math.max(1, Number(AUTH_SECURITY_CONFIG.idleTimeoutMinutes || 30)) * 60 * 1000;
+                const loginAt = Date.parse(session.loggedInAt || '') || now;
+                const activityAt = Date.parse(session.lastActivityAt || session.loggedInAt || '') || now;
+                return Math.min(loginAt + ttlMs, activityAt + idleMs);
+            }
+            function isAuthSessionValid(session = currentAuthSession) {
+                if (!session || !session.username) return false;
+                return Date.now() < getAuthTimeLimit(session);
+            }
+            function scheduleAuthSessionExpiry() {
+                stopAuthSessionTimer();
+                if (!currentAuthSession) return;
+                const remaining = Math.max(0, getAuthTimeLimit(currentAuthSession) - Date.now());
+                authSessionTimer = setTimeout(() => {
+                    if (!currentAuthSession) return;
+                    if (!isAuthSessionValid(currentAuthSession)) {
+                        clearCurrentUser({ silent: true });
+                        showToast('Sesi login berakhir. Silakan login ulang.', 'error');
+                    } else {
+                        scheduleAuthSessionExpiry();
+                    }
+                }, Math.min(remaining + 250, 2147483000));
+            }
+            function initializeSecureAuthSession() {
+                currentAuthSession = null;
+                stopAuthSessionTimer();
+                if (AUTH_SECURITY_CONFIG.clearLegacyLocalAuthOnStartup) clearLegacyAuthStorage();
+            }
+            function touchAuthSession() {
+                if (!currentAuthSession || !isAuthSessionValid(currentAuthSession)) return;
+                const now = Date.now();
+                if (now - lastAuthActivityTouch < 15000) return;
+                lastAuthActivityTouch = now;
+                currentAuthSession.lastActivityAt = new Date().toISOString();
+                scheduleAuthSessionExpiry();
+            }
+            function bindAuthSecurityEvents() {
+                ['click', 'keydown', 'touchstart', 'mousemove'].forEach(eventName => {
+                    document.addEventListener(eventName, touchAuthSession, { passive: true });
+                });
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible' && currentAuthSession && !isAuthSessionValid(currentAuthSession)) {
+                        clearCurrentUser({ silent: true });
+                        showToast('Sesi login berakhir. Silakan login ulang.', 'error');
+                    }
+                });
+            }
+            function getCurrentSession() {
+                if (!currentAuthSession) return null;
+                if (!isAuthSessionValid(currentAuthSession)) {
+                    clearCurrentUser({ silent: true });
+                    return null;
+                }
+                return currentAuthSession;
+            }
             function getCurrentUser() {
                 const session = getCurrentSession();
                 if (!session || !session.username) return null;
                 const account = getUserAccounts().find(acc => safeLower(acc.username) === safeLower(session.username));
-                if (!account || !account.isActive) return null;
+                if (!account || !account.isActive) {
+                    clearCurrentUser({ silent: true });
+                    return null;
+                }
                 return account;
             }
             function setCurrentUser(account) {
-                localStorage.setItem(STORAGE_KEYS.authSession, JSON.stringify({ username: account.username, accountId: account.id, loggedInAt: new Date().toISOString() }));
+                clearLegacyAuthStorage();
+                const now = new Date().toISOString();
+                currentAuthSession = {
+                    username: account.username,
+                    accountId: account.id,
+                    loggedInAt: now,
+                    lastActivityAt: now,
+                    authMode: 'memory-only',
+                    nonce: `sess_${Date.now()}_${Math.random().toString(36).slice(2)}`
+                };
+                lastAuthActivityTouch = Date.now();
+                scheduleAuthSessionExpiry();
                 updateAuthUI();
             }
-            function clearCurrentUser() { try { localStorage.removeItem(STORAGE_KEYS.authSession); } catch (error) {} updateAuthUI(); }
+            function clearCurrentUser(options = {}) {
+                currentAuthSession = null;
+                stopAuthSessionTimer();
+                clearLegacyAuthStorage();
+                updateAuthUI();
+                if (!options.silent && options.message) showToast(options.message, options.type || 'success');
+            }
             function isEmployeeScoped(account = getCurrentUser()) {
                 if (!account) return false;
                 // Owner selalu full-scope, walaupun data lama pernah menyimpan permission selfOnly.
@@ -3401,13 +3497,19 @@ function jsonOutput_(obj) {
                 const password = byId('loginPassword')?.value || '';
                 const account = getUserAccounts().find(acc => safeLower(acc.username) === safeLower(username));
                 if (!account || !account.isActive || account.passwordHash !== passwordHash(password)) {
+                    const passwordInput = byId('loginPassword');
+                    if (passwordInput) passwordInput.value = '';
                     showToast('Username atau password salah / akun nonaktif', 'error');
                     return;
                 }
                 if (account.role === 'employee' && !account.employeeId) {
+                    const passwordInput = byId('loginPassword');
+                    if (passwordInput) passwordInput.value = '';
                     showToast('Akun karyawan belum dihubungkan ke data karyawan. Hubungi Owner.', 'error');
                     return;
                 }
+                const passwordInput = byId('loginPassword');
+                if (passwordInput) passwordInput.value = '';
                 setCurrentUser(account);
                 showToast(`Selamat datang, ${account.displayName || account.username}`, 'success');
                 renderNavigationAccess();
@@ -3426,14 +3528,20 @@ function jsonOutput_(obj) {
                 ensureAuthSettings();
                 const user = getCurrentUser();
                 const overlay = byId('loginOverlay');
-                if (overlay) overlay.classList.toggle('hidden', !!user);
+                if (overlay) {
+                    overlay.classList.toggle('hidden', !!user);
+                    if (!user) setTimeout(() => byId('loginUsername')?.focus(), 60);
+                }
                 const box = byId('authHeaderBox');
                 if (box) box.classList.toggle('hidden', !user);
+                const nameEl = byId('authHeaderName');
+                const roleEl = byId('authHeaderRole');
                 if (user) {
-                    const nameEl = byId('authHeaderName');
-                    const roleEl = byId('authHeaderRole');
                     if (nameEl) nameEl.textContent = user.displayName || user.username;
-                    if (roleEl) roleEl.textContent = `${formatRoleLabel(user.role)}${isEmployeeScoped(user) ? ' • Self' : ''}`;
+                    if (roleEl) roleEl.textContent = `${formatRoleLabel(user.role)}${isEmployeeScoped(user) ? ' • Self' : ''} • Secure Session`;
+                } else {
+                    if (nameEl) nameEl.textContent = '-';
+                    if (roleEl) roleEl.textContent = '-';
                 }
                 renderNavigationAccess();
             }
@@ -8107,9 +8215,11 @@ function jsonOutput_(obj) {
 
             document.addEventListener('DOMContentLoaded', () => {
                 initStorage();
+                initializeSecureAuthSession();
                 ensureAuthSettings();
                 exposeGlobals();
                 bindEvents();
+                bindAuthSecurityEvents();
                 startConnectivityStatusService();
                 updateDateTime();
                 setInterval(updateDateTime, 60000);
