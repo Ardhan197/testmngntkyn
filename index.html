@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>LuxeHR Premium Google Sheet DB v6.2 - Compact Column Database</title>
+<title>LuxeHR Premium Google Sheet DB v6.3 - Clean Compact Column Database</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css';" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
@@ -1004,14 +1004,14 @@
 <!-- NEW CARD: Google Apps Script Template -->
 <div class="premium-card rounded-xl p-4 lg:col-span-2 mt-2">
 <div class="flex justify-between items-center mb-1">
-<h3 class="font-serif font-bold text-white text-base">Google Apps Script Database Template v6.2 Compact-Column Header-Safe</h3>
+<h3 class="font-serif font-bold text-white text-base">Google Apps Script Database Template v6.3 Clean Compact-Column Header-Safe</h3>
 <button class="border border-white/10 text-gray-300 hover:text-white hover:border-gold-500/40 py-1.5 px-3 text-[9px] uppercase tracking-widest rounded-lg transition-all flex items-center gap-1.5" onclick="copyAppScript()" type="button">
 <i class="fa-solid fa-copy"></i> Salin Script
                         </button>
 </div>
-<p class="text-[10px] text-gray-500 mb-4">Copy script ini ke Google Apps Script. Script v6.2 Compact-Column akan membuat header otomatis, membaca data berdasarkan nama header, dan merapikan layout agar header serta data selalu mulai dari kolom A meskipun sebelumnya bergeser ke H/kolom jauh.</p>
+<p class="text-[10px] text-gray-500 mb-4">Copy script ini ke Google Apps Script. Script v6.3 Clean Compact-Column akan membuat header otomatis, membaca data berdasarkan nama header, dan merapikan layout agar header serta data selalu mulai dari kolom A meskipun sebelumnya bergeser ke H/kolom jauh.</p>
 <textarea class="field min-h-[420px] font-mono text-[10px] leading-relaxed resize-y bg-surface-100/80 cursor-text" id="appScriptTemplate" readonly="" spellcheck="false">/**
- * LuxeHR Premium v6.2 - Compact-Column Lock-Safe Google Sheet Database Connector
+ * LuxeHR Premium v6.3 - Clean Compact-Column Lock-Safe Google Sheet Database Connector
  * Fokus utama:
  * - Header dibuat otomatis untuk semua sheet inti.
  * - Read/write memakai nama header, bukan posisi kolom.
@@ -2012,14 +2012,51 @@ function jsonOutput_(obj) {
 <span class="font-medium tracking-wide text-xs" id="toastMessage">Berhasil.</span>
 </div>
 <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        gold: {
+                            100: '#FDF7E6',
+                            200: '#FBE8B3',
+                            300: '#F8D880',
+                            400: '#F4C45A',
+                            500: '#D4AF37',
+                            600: '#AA8825',
+                            700: '#806415',
+                            800: '#5A460E',
+                            900: '#362908',
+                        },
+                        surface: {
+                            50: '#2A2A2A',
+                            100: '#222222',
+                            200: '#1A1A1A',
+                            300: '#121212',
+                            400: '#0A0A0A',
+                        }
+                    },
+                    boxShadow: {
+                        'gold-glow': '0 0 20px rgba(212, 175, 55, 0.15)',
+                        'gold-glow-lg': '0 0 30px rgba(212, 175, 55, 0.25)',
+                    }
+                }
+            }
+        }
+    
+;
+
         (function () {
             'use strict';
 
             // --- MODE SERVER LOCAL STORAGE ---
-            // Aplikasi v5.7 berjalan localStorage-only. Tidak ada request Google Sheet, Apps Script, atau Google Drive.
+            // Database utama: Google Sheet via Apps Script. Local Storage hanya dipakai sebagai cache/offline fallback.
             const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzgZxX7HaFDE1z1FzFmuaMZpbLGLiyah7H9F_PgST6xPHXYGR_7NYjqE0mL0nbcO3iElw/exec";
 
-            const APP_VERSION = '6.1.0-google-sheet-lock-safe-sync';
+            const APP_VERSION = '6.3.0-google-sheet-clean-sync';
             const PAYROLL_MONTH_DAYS = 30;
             const STANDARD_WORKDAY_HOURS = 12;
             const STANDARD_WORKDAY_MINUTES = STANDARD_WORKDAY_HOURS * 60;
@@ -2130,7 +2167,6 @@ function jsonOutput_(obj) {
 
             function byId(id) { return document.getElementById(id); }
             function clone(value) { return JSON.parse(JSON.stringify(value)); }
-            function hasStorageValue(key) { return localStorage.getItem(key) !== null; }
             function safeParse(raw, fallback = null) {
                 try { return raw ? JSON.parse(raw) : fallback; }
                 catch (error) { return fallback; }
@@ -2313,7 +2349,7 @@ function jsonOutput_(obj) {
                 return {
                     app: 'LuxeHR Premium',
                     appVersion: APP_VERSION,
-                    storageMode: 'localStorage-server',
+                    storageMode: 'google-sheet-db-cache',
                     reason,
                     savedAt: new Date().toISOString(),
                     deviceId: typeof getDeviceId === 'function' ? getDeviceId() : 'local-device',
@@ -2334,7 +2370,7 @@ function jsonOutput_(obj) {
                     }
                 };
             }
-            function persistLocalServerSnapshot(reason = 'Data disimpan ke Local Storage Server', options = {}) {
+            function persistLocalServerSnapshot(reason = 'Data disimpan ke Cache Lokal', options = {}) {
                 try {
                     const snapshot = buildLocalServerSnapshot(reason);
                     localStorage.setItem(STORAGE_KEYS.localServerSnapshot, JSON.stringify(snapshot));
@@ -2344,7 +2380,7 @@ function jsonOutput_(obj) {
                     if (!options.silent) {
                         saveSyncMeta({
                             status: 'success',
-                            sheetName: 'Local Storage Server',
+                            sheetName: 'Cache Lokal',
                             mode: options.mode || 'local-storage-checkpoint',
                             lastSuccessAt: snapshot.savedAt,
                             lastAttemptAt: snapshot.savedAt,
@@ -2357,55 +2393,10 @@ function jsonOutput_(obj) {
                     }
                     return { ok: true, snapshot };
                 } catch (error) {
-                    console.error('Local Storage Server save failed:', error);
+                    console.error('Cache Lokal save failed:', error);
                     if (!options.silent) {
-                        saveSyncMeta({ status: 'error', sheetName: 'Local Storage Server', mode: 'local-storage-save-failed', lastAttemptAt: new Date().toISOString(), lastError: error.message || String(error), message: 'Gagal membuat checkpoint Local Storage Server. Cek kapasitas storage browser.' });
+                        saveSyncMeta({ status: 'error', sheetName: 'Cache Lokal', mode: 'local-storage-save-failed', lastAttemptAt: new Date().toISOString(), lastError: error.message || String(error), message: 'Gagal membuat checkpoint Cache Lokal. Cek kapasitas storage browser.' });
                     }
-                    return { ok: false, error };
-                }
-            }
-            function hydrateStateFromLocalServerSnapshot(options = {}) {
-                const snapshot = readLocalServerSnapshot();
-                if (!snapshot || !snapshot.data) return { ok: false, skipped: true, reason: 'empty-local-server' };
-                try {
-                    const state = snapshot.data || {};
-                    if (typeof mergeBusinessStateIntoMemory === 'function') mergeBusinessStateIntoMemory(state);
-                    else {
-                        employees = Array.isArray(state.employees) ? clone(state.employees) : employees;
-                        attendance = Array.isArray(state.attendance) ? clone(state.attendance) : attendance;
-                        leaves = Array.isArray(state.leaves) ? clone(state.leaves) : leaves;
-                        shifts = Array.isArray(state.shifts) ? clone(state.shifts) : shifts;
-                        shiftAssignments = Array.isArray(state.shiftAssignments) ? clone(state.shiftAssignments) : shiftAssignments;
-                        resignRecords = Array.isArray(state.resignRecords) ? clone(state.resignRecords) : resignRecords;
-                        blacklistRecords = Array.isArray(state.blacklistRecords) ? clone(state.blacklistRecords) : blacklistRecords;
-                        maintenanceLogs = Array.isArray(state.maintenanceLogs) ? clone(state.maintenanceLogs) : maintenanceLogs;
-                        deletedRecords = Array.isArray(state.deletedRecords) ? clone(state.deletedRecords) : deletedRecords;
-                        if (state.settings && typeof state.settings === 'object') settings = Object.assign({}, settings || {}, state.settings);
-                    }
-                    normalizeLocalBusinessData({ write: false });
-                    ensureAuthSettings();
-                    normalizeMasterDropdowns();
-                    migrateCabangTerminology();
-                    migrateEmployeeImages();
-                    migrateShiftData();
-                    migrateOffboardingData();
-                    applyDeleteMarkersToMemory();
-                    safeWrite(STORAGE_KEYS.employees, employees, Array.isArray);
-                    safeWrite(STORAGE_KEYS.attendance, attendance, Array.isArray);
-                    safeWrite(STORAGE_KEYS.leaves, leaves, Array.isArray);
-                    safeWrite(STORAGE_KEYS.shifts, shifts, Array.isArray);
-                    safeWrite(STORAGE_KEYS.shiftAssignments, shiftAssignments, Array.isArray);
-                    safeWrite(STORAGE_KEYS.resignRecords, resignRecords, Array.isArray);
-                    safeWrite(STORAGE_KEYS.blacklistRecords, blacklistRecords, Array.isArray);
-                    safeWrite(STORAGE_KEYS.maintenanceLogs, maintenanceLogs, Array.isArray);
-                    safeWrite(STORAGE_KEYS.deletedRecords, deletedRecords, Array.isArray);
-                    safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
-                    if (!options.silent) {
-                        saveSyncMeta({ status: 'success', sheetName: 'Local Storage Server', mode: 'local-storage-load', lastSuccessAt: new Date().toISOString(), lastAttemptAt: new Date().toISOString(), lastError: null, lastCloudPullAt: new Date().toISOString(), lastCloudPullRows: snapshot.summary ? Object.values(snapshot.summary).filter(v => typeof v === 'number').reduce((a, b) => a + b, 0) : 0, lastCloudPullSheets: snapshot.summary?.sheets || 0, message: 'Data berhasil dimuat ulang dari Local Storage Server.' });
-                    }
-                    return { ok: true, snapshot };
-                } catch (error) {
-                    console.error('Local Storage Server hydrate failed:', error);
                     return { ok: false, error };
                 }
             }
@@ -2439,14 +2430,6 @@ function jsonOutput_(obj) {
                 if (status === 'warning') return 'text-yellow-400 border-yellow-500/20';
                 if (status === 'error') return 'text-red-400 border-red-500/20';
                 return 'text-gray-400 border-white/10';
-            }
-            function getConnectivityState() {
-                const queue = getSyncQueue();
-                const meta = getSyncMeta();
-                let state = { key: 'local-storage-server', label: 'Local Storage', textClass: 'text-green-400', borderClass: 'border-green-500/30', dotClass: 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,.8)]', icon: queue.pending ? 'fa-database fa-beat-fade' : 'fa-database', detail: queue.pending ? 'Data tersimpan di browser dan checkpoint localStorage sedang menunggu dibuat.' : 'Server aplikasi aktif di localStorage browser ini. Tidak ada koneksi Google Sheet yang digunakan.' };
-                if (meta.status === 'syncing') state = Object.assign(state, { key: 'local-saving', label: 'Menyimpan Lokal', textClass: 'text-blue-300', borderClass: 'border-blue-500/30', dotClass: 'bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,.8)]', icon: 'fa-rotate fa-spin', detail: 'Aplikasi sedang membuat checkpoint Local Storage Server.' });
-                if (meta.status === 'error') state = Object.assign(state, { key: 'local-error', label: 'Storage Error', textClass: 'text-red-400', borderClass: 'border-red-500/30', dotClass: 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,.8)]', icon: 'fa-circle-exclamation', detail: 'Penyimpanan localStorage terakhir gagal. Cek kapasitas storage browser atau mode private/incognito.' });
-                return Object.assign(state, { browserOnline: navigator.onLine === true, networkEnabled: false, cloudFirst: false, realtimeEnabled: false, queue, meta });
             }
             function updateConnectivityStatus() {
                 const state = getConnectivityState();
@@ -2520,23 +2503,6 @@ function jsonOutput_(obj) {
                 });
                 setInterval(updateConnectivityStatus, 15000);
             }
-
-            function renderSyncStatus() {
-                const el = byId('syncStatus');
-                if (!el) return;
-                const meta = getSyncMeta();
-                const queue = getSyncQueue();
-                const snapshot = readLocalServerSnapshot();
-                const cls = getSyncStatusClass(meta.status);
-                const icon = meta.status === 'success' ? 'fa-circle-check' : meta.status === 'syncing' ? 'fa-rotate fa-spin' : meta.status === 'error' ? 'fa-circle-xmark' : meta.status === 'warning' ? 'fa-triangle-exclamation' : 'fa-database';
-                const lastSuccess = meta.lastSuccessAt ? new Date(meta.lastSuccessAt).toLocaleString('id-ID') : (snapshot?.savedAt ? new Date(snapshot.savedAt).toLocaleString('id-ID') : '-');
-                const lastAttempt = meta.lastAttemptAt ? new Date(meta.lastAttemptAt).toLocaleString('id-ID') : '-';
-                const nextAutoRun = queue.nextRunAt ? new Date(queue.nextRunAt).toLocaleString('id-ID') : '-';
-                const lastAutoRun = queue.lastRunAt ? new Date(queue.lastRunAt).toLocaleString('id-ID') : '-';
-                const summary = snapshot?.summary || {};
-                el.innerHTML = `<div class="flex items-start gap-2"><i class="fa-solid ${icon} mt-0.5 ${cls.split(' ')[0]}"></i><div class="min-w-0"><p class="text-white text-[11px]">${escapeHtml(meta.message || 'Mode Local Storage Server aktif.')}</p><p>Storage terakhir: ${escapeHtml(meta.sheetName || 'Local Storage Server')}</p><p>Mode: ${escapeHtml(meta.mode || 'local-storage-only')}</p><p>Checkpoint terakhir: ${escapeHtml(lastSuccess)}</p><p>Percobaan terakhir: ${escapeHtml(lastAttempt)}</p><div class="mt-2 pt-2 border-t border-white/5"><p>Auto-checkpoint: <span class="${getAutoSyncEnabled() ? 'text-green-400' : 'text-red-400'}">${getAutoSyncEnabled() ? 'Aktif' : 'Nonaktif'}</span></p><p>Antrean checkpoint: <span class="${queue.pending ? 'text-yellow-400' : 'text-green-400'}">${queue.pending ? 'Menunggu disimpan' : 'Kosong'}</span></p><p>Alasan antrean: ${escapeHtml(queue.lastReason || '-')}</p><p>Terakhir auto-checkpoint: ${escapeHtml(lastAutoRun)}</p><p>Checkpoint berikutnya: ${escapeHtml(nextAutoRun)}</p><p>Ringkasan snapshot: ${Number(summary.employees || 0)} karyawan, ${Number(summary.attendance || 0)} absensi, ${Number(summary.userAccounts || 0)} akun login.</p></div>${meta.lastError ? `<p class="mt-1 text-red-400 break-words">Error: ${escapeHtml(meta.lastError)}</p>` : ''}</div></div>`;
-                el.className = `p-3 rounded-lg bg-surface-100 border ${cls} text-[10px] leading-relaxed`;
-            }
             function getAutoSyncEnabled() {
                 return settings.autoSyncEnabled !== false;
             }
@@ -2571,11 +2537,11 @@ function jsonOutput_(obj) {
                 const queue = saveSyncQueue({ pending: true, requestedAt: now.toISOString(), nextRunAt, lastReason: reason, lastResult: 'queued-local' });
                 persistLocalServerSnapshot(reason, { silent: true, mode: 'local-save-immediate' });
                 if (!getAutoSyncEnabled()) {
-                    saveSyncMeta({ status: 'success', sheetName: 'Local Storage Server', mode: 'auto-checkpoint-disabled', lastAttemptAt: now.toISOString(), lastSuccessAt: now.toISOString(), lastError: null, message: 'Data tersimpan di localStorage. Auto-checkpoint sedang nonaktif.' });
+                    saveSyncMeta({ status: 'success', sheetName: 'Cache Lokal', mode: 'auto-checkpoint-disabled', lastAttemptAt: now.toISOString(), lastSuccessAt: now.toISOString(), lastError: null, message: 'Data tersimpan di localStorage. Auto-checkpoint sedang nonaktif.' });
                     return queue;
                 }
                 scheduleAutoSync(AUTO_SYNC_DEBOUNCE_MS);
-                saveSyncMeta({ status: 'success', sheetName: 'Local Storage Server', mode: 'auto-checkpoint-queued', lastAttemptAt: now.toISOString(), lastSuccessAt: now.toISOString(), lastError: null, message: 'Data tersimpan di localStorage. Checkpoint otomatis masuk antrean lokal.' });
+                saveSyncMeta({ status: 'success', sheetName: 'Cache Lokal', mode: 'auto-checkpoint-queued', lastAttemptAt: now.toISOString(), lastSuccessAt: now.toISOString(), lastError: null, message: 'Data tersimpan di localStorage. Checkpoint otomatis masuk antrean lokal.' });
                 return queue;
             }
             function scheduleAutoSync(delayMs = AUTO_SYNC_DEBOUNCE_MS) {
@@ -2589,7 +2555,7 @@ function jsonOutput_(obj) {
                 if (!force && !queue.pending) return { ok: true, skipped: true, reason: 'empty-queue' };
                 if (!force && !getAutoSyncEnabled()) return { ok: false, skipped: true, reason: 'auto-sync-disabled' };
                 if (syncInProgress) { scheduleAutoSync(10000); return { ok: false, skipped: true, reason: 'sync-in-progress' }; }
-                saveSyncMeta({ status: 'syncing', sheetName: 'Local Storage Server', mode: 'auto-local-checkpoint', lastAttemptAt: new Date().toISOString(), lastError: null, message: 'Auto-checkpoint sedang menyimpan semua data ke localStorage.' });
+                saveSyncMeta({ status: 'syncing', sheetName: 'Cache Lokal', mode: 'auto-local-checkpoint', lastAttemptAt: new Date().toISOString(), lastError: null, message: 'Auto-checkpoint sedang menyimpan semua data ke localStorage.' });
                 const result = await syncAllToCloud({ source: 'auto', silent: true });
                 if (result && result.ok) saveSyncQueue({ pending: false, nextRunAt: null, lastRunAt: new Date().toISOString(), retryCount: 0, lastResult: 'success-local' });
                 else {
@@ -2599,16 +2565,6 @@ function jsonOutput_(obj) {
                     scheduleAutoSync(retryDelay);
                 }
                 return result;
-            }
-            function requestAutoSyncAfterLocalSave(reason) {
-                persistLocalServerSnapshot(reason || 'Data aplikasi berubah', { silent: true, mode: 'local-save-immediate' });
-                markAutoSyncDirty(reason);
-                updateStorageStatus();
-                renderSyncStatus();
-            }
-            function runAutoSyncNow() {
-                markAutoSyncDirty('Checkpoint lokal dijalankan dari tombol Pengaturan');
-                runAutoSyncQueue(true).then(result => { if (result && result.ok) showToast('Checkpoint Local Storage berhasil dibuat', 'success'); });
             }
             function startAutoSyncService() {
                 if (autoSyncServiceStarted) return;
@@ -2678,130 +2634,6 @@ function jsonOutput_(obj) {
                     jobs: normalizedJobs
                 };
             }
-            async function postToAppsScript(payload, allowOpaqueFallback = false) {
-                const url = getConfiguredWebAppUrl();
-                if (!isWebAppUrlConfigured()) throw new Error('Apps Script Web App URL belum valid. Tempel URL deploy Web App dari Apps Script.');
-                const maxAttempts = Number(payload?.action || '').toLowerCase().includes('read') ? 2 : 4;
-                let lastError = null;
-                for (let attempt = 0; attempt < maxAttempts; attempt++) {
-                    const body = Object.assign({}, payload || {}, {
-                        spreadsheetId: (payload && payload.spreadsheetId) || getConfiguredSpreadsheetId(),
-                        driveRootFolderName: getDriveRootFolderName(),
-                        deviceId: getDeviceId(),
-                        clientTime: new Date().toISOString(),
-                        appVersion: APP_VERSION,
-                        requestId: `${getDeviceId()}_${Date.now()}_${Math.random().toString(16).slice(2)}`
-                    });
-                    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-                    const timeout = controller ? setTimeout(() => controller.abort(), 55000) : null;
-                    try {
-                        const response = await fetch(url, {
-                            method: 'POST',
-                            mode: 'cors',
-                            redirect: 'follow',
-                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                            body: JSON.stringify(body),
-                            signal: controller ? controller.signal : undefined
-                        });
-                        if (timeout) clearTimeout(timeout);
-                        const responseText = await response.text();
-                        let parsed;
-                        try { parsed = JSON.parse(responseText); }
-                        catch (error) { throw new Error(`Response Apps Script bukan JSON: ${responseText.slice(0, 220)}`); }
-                        if (!response.ok || parsed.ok === false || parsed.status === 'error' || parsed.status === 'busy') {
-                            const message = parsed.message || parsed.error || `HTTP ${response.status}`;
-                            const err = new Error(message);
-                            err.parsed = parsed;
-                            err.retriable = parsed.retriable === true || parsed.code === 'LOCK_BUSY' || parsed.status === 'busy' || isLockBusyMessage(message);
-                            throw err;
-                        }
-                        return { ok: true, verified: true, mode: 'google-sheet', result: parsed, raw: parsed };
-                    } catch (error) {
-                        if (timeout) clearTimeout(timeout);
-                        lastError = error;
-                        const retriable = error?.retriable === true || isLockBusyMessage(error?.message) || error?.name === 'AbortError';
-                        if (retriable && attempt < maxAttempts - 1) {
-                            const delay = getRetryDelayMs(attempt, error?.parsed);
-                            await sleep(delay);
-                            continue;
-                        }
-                        throw error;
-                    }
-                }
-                throw lastError || new Error('Request Google Sheet gagal tanpa detail error.');
-            }
-            async function postToAppsScriptOpaque(payload) { return postToAppsScript(payload, false); }
-            async function autoSyncToCloud(sheetName, payloadData, overwrite = true, options = {}) {
-                const silent = options.silent === true;
-                const persisted = persistLocalServerSnapshot(`${sheetName || 'Data'} disimpan ke Local Storage Server`, { silent: true, mode: 'local-sheet-save' });
-                const now = new Date().toISOString();
-                saveSyncMeta({ status: persisted.ok ? 'success' : 'error', sheetName: sheetName || 'Local Storage Server', mode: 'local-storage-save', lastSuccessAt: persisted.ok ? now : getSyncMeta().lastSuccessAt, lastAttemptAt: now, lastError: persisted.ok ? null : (persisted.error?.message || String(persisted.error || 'Unknown error')), message: persisted.ok ? `${sheetName || 'Data'} tersimpan di Local Storage Server.` : `${sheetName || 'Data'} gagal disimpan di Local Storage Server.` });
-                if (!silent) showToast(persisted.ok ? `${sheetName || 'Data'} tersimpan lokal` : `${sheetName || 'Data'} gagal tersimpan`, persisted.ok ? 'success' : 'error');
-                return { ok: persisted.ok, verified: true, response: persisted };
-            }
-            async function testGoogleSheetConnection() {
-                const testKey = `luxehr_local_storage_test_${Date.now()}`;
-                try {
-                    localStorage.setItem(testKey, JSON.stringify({ ok: true, at: new Date().toISOString() }));
-                    const ok = Boolean(safeParse(localStorage.getItem(testKey), null)?.ok);
-                    localStorage.removeItem(testKey);
-                    const persisted = persistLocalServerSnapshot('Test koneksi Local Storage Server', { silent: true, mode: 'local-storage-test' });
-                    saveSyncMeta({ status: ok && persisted.ok ? 'success' : 'error', sheetName: 'Local Storage Server', mode: 'connection-test-local-storage', lastSuccessAt: ok && persisted.ok ? new Date().toISOString() : getSyncMeta().lastSuccessAt, lastAttemptAt: new Date().toISOString(), lastError: ok && persisted.ok ? null : 'localStorage tidak bisa ditulis.', message: ok && persisted.ok ? 'Local Storage Server aktif dan bisa menyimpan data.' : 'Local Storage Server tidak bisa digunakan.' });
-                    showToast(ok && persisted.ok ? 'Local Storage aktif' : 'Local Storage bermasalah', ok && persisted.ok ? 'success' : 'error');
-                    return { ok: ok && persisted.ok };
-                } catch (error) {
-                    saveSyncMeta({ status: 'error', sheetName: 'Local Storage Server', mode: 'connection-test-local-storage', lastAttemptAt: new Date().toISOString(), lastError: error.message || String(error), message: 'Test Local Storage gagal.' });
-                    showToast('Test Local Storage gagal', 'error');
-                    return { ok: false, error };
-                }
-            }
-            async function syncAllToCloud(options = {}) {
-                const isAuto = options.source === 'auto';
-                const silent = options.silent === true || isAuto;
-                if (syncInProgress) {
-                    if (!silent) showToast('Sync Google Sheet sedang berjalan', 'warning');
-                    return { ok: false, skipped: true, reason: 'sync-in-progress', verifiedCount: 0, fallbackCount: 0, failedCount: 0 };
-                }
-                if (!requireNetworkAccess(isAuto ? 'auto-sync' : 'manual-sync')) {
-                    if (!silent) showToast('Isi Web App URL dan Spreadsheet ID dulu, lalu klik Test Database.', 'warning');
-                    return { ok: false, skipped: true, reason: 'network-or-config-missing', verifiedCount: 0, fallbackCount: 0, failedCount: 0 };
-                }
-                syncInProgress = true;
-                applyDeleteMarkersToMemory();
-                const jobs = getFullCloudSyncJobs();
-                const now = new Date().toISOString();
-                saveSyncMeta({ status: 'syncing', sheetName: 'Semua Data', mode: isAuto ? 'auto-google-sheet-sync' : 'manual-google-sheet-sync', lastAttemptAt: now, lastError: null, message: `${isAuto ? 'Auto-sync' : 'Sync manual'} sedang mengirim ${jobs.length} tabel ke Google Sheet...` });
-                try {
-                    const payload = buildBatchSyncPayload(jobs, 'batchSync', { overwrite: false });
-                    payload.driveUploads = getPendingDriveUploads();
-                    const response = await postToAppsScript(payload);
-                    const result = response.result || {};
-                    applyDriveUploadResults(result.driveUploads || []);
-                    persistLocalServerSnapshot(isAuto ? 'Cache setelah auto-sync Google Sheet' : 'Cache setelah sync manual Google Sheet', { silent: true, mode: 'google-sheet-cache' });
-                    const summary = result.summary || {};
-                    const totalRows = Number(summary.totalRows || 0);
-                    const failedCount = Number(summary.failedCount || 0);
-                    if (failedCount > 0) throw new Error(`${failedCount} tabel gagal disinkronkan.`);
-
-                    // Auto-sync tidak langsung melakukan audit lock-heavy. Manual sync tetap read-back dengan readAll read-only.
-                    const audit = isAuto ? { ok: true, totalRows, counts: {}, lightweight: true } : await verifyDatabaseAfterWrite(jobs, result, { silent: true });
-                    saveSyncMeta({ status: 'success', sheetName: 'Semua Data', mode: isAuto ? 'auto-google-sheet-sync-sent' : 'manual-google-sheet-sync-verified', lastSuccessAt: new Date().toISOString(), lastAttemptAt: now, lastError: null, lastCloudPullAt: isAuto ? getSyncMeta().lastCloudPullAt : new Date().toISOString(), lastCloudPullRows: Number(audit.totalRows || totalRows || 0), lastCloudPullSheets: isAuto ? getSyncMeta().lastCloudPullSheets : Object.keys(audit.counts || {}).length, message: isAuto ? `Auto-sync berhasil dikirim ke Google Sheet. ${jobs.length} tabel terkirim; verifikasi detail akan dilakukan oleh realtime pull read-only.` : `Sync manual berhasil dan terverifikasi. ${jobs.length} tabel terkirim; ${Number(audit.totalRows || totalRows || 0)} baris terbaca ulang dari Google Sheet.` });
-                    saveSyncQueue({ pending: false, nextRunAt: null, lastRunAt: new Date().toISOString(), retryCount: 0, lastResult: isAuto ? 'success-google-sheet-sent' : 'success-google-sheet-verified' });
-                    if (!silent) showToast('Semua data berhasil disimpan dan diverifikasi di Google Sheet', 'success');
-                    return { ok: true, verifiedCount: jobs.length, fallbackCount: 0, failedCount: 0, totalRows: Number(audit.totalRows || totalRows || 0), audit };
-                } catch (error) {
-                    const lockBusy = isLockBusyMessage(error.message || String(error));
-                    saveSyncMeta({ status: lockBusy ? 'warning' : 'error', sheetName: 'Semua Data', mode: isAuto ? 'auto-google-sheet-sync-failed' : 'manual-google-sheet-sync-failed', lastAttemptAt: now, lastError: error.message || String(error), message: lockBusy ? 'Database sedang sibuk memproses request lain. Sync akan dicoba ulang otomatis.' : 'Sync ke Google Sheet gagal. Data tetap aman sebagai cache lokal.' });
-                    saveSyncQueue({ ...getSyncQueue(), pending: true, nextRunAt: new Date(Date.now() + (lockBusy ? 30000 : 60000)).toISOString(), retryCount: Number(getSyncQueue().retryCount || 0) + 1, lastResult: lockBusy ? 'lock-busy-retry' : 'error' });
-                    if (!silent) showToast(`${lockBusy ? 'Database sedang sibuk, sync akan retry otomatis' : 'Sync Google Sheet gagal'}: ${error.message || error}`, lockBusy ? 'warning' : 'error');
-                    return { ok: false, error, verifiedCount: 0, fallbackCount: 0, failedCount: jobs.length };
-                } finally {
-                    syncInProgress = false;
-                    updateConnectivityStatus();
-                    renderSyncStatus();
-                    renderRealtimeStatus();
-                }
-            }
             function migrateCabangTerminology() {
                 let changed = false;
 
@@ -2870,71 +2702,6 @@ function jsonOutput_(obj) {
                 }
                 return changed;
             }
-            function initStorage() {
-                employees = readBestLocalArray(STORAGE_KEYS.employees, ['employees', 'employeeList', 'employeeData', 'dataEmployees', 'data_karyawan', 'luxehr_employee', 'luxe_hr_employees'], safeRead(STORAGE_KEYS.employees, [], Array.isArray));
-                attendance = readBestLocalArray(STORAGE_KEYS.attendance, ['attendance', 'attendanceList', 'dataAbsensi', 'data_absensi', 'luxehr_absensi'], safeRead(STORAGE_KEYS.attendance, [], Array.isArray));
-                leaves = readBestLocalArray(STORAGE_KEYS.leaves, ['leaves', 'leaveList', 'dataCuti', 'data_cuti', 'luxehr_cuti'], safeRead(STORAGE_KEYS.leaves, [], Array.isArray));
-                shifts = readBestLocalArray(STORAGE_KEYS.shifts, ['shifts', 'shiftList', 'dataShift', 'data_shift', 'luxehr_shift'], safeRead(STORAGE_KEYS.shifts, [], Array.isArray));
-                shiftAssignments = readBestLocalArray(STORAGE_KEYS.shiftAssignments, ['shiftAssignments', 'shiftAssignmentList', 'dataShiftAssignment', 'data_shift_assignment', 'luxehr_shift_assignment'], safeRead(STORAGE_KEYS.shiftAssignments, [], Array.isArray));
-                resignRecords = safeRead(STORAGE_KEYS.resignRecords, [], Array.isArray);
-                blacklistRecords = safeRead(STORAGE_KEYS.blacklistRecords, [], Array.isArray);
-                maintenanceLogs = safeRead(STORAGE_KEYS.maintenanceLogs, [], Array.isArray);
-                deletedRecords = safeRead(STORAGE_KEYS.deletedRecords, [], Array.isArray);
-                settings = safeRead(STORAGE_KEYS.settings, {
-                    companyName: '',
-                    companyAddress: '',
-                    standardStartTime: '08:00',
-                    googleSheetId: '',
-                    driveRootFolderName: 'LuxeHR Uploads',
-                    spreadsheetTimeZone: DEFAULT_SPREADSHEET_TIME_ZONE,
-                    branchOptions: [],
-                    employeeStatusOptions: DEFAULT_EMPLOYEE_STATUSES,
-                    offboardingFeatureInitialized: false,
-                    autoSyncEnabled: true,
-                    autoSyncIntervalSeconds: 60,
-                    networkAccessEnabled: false,
-                    previewNetworkGuardEnabled: false,
-                    cloudFirstEnabled: false,
-                    realtimePullEnabled: false,
-                    localStorageServerEnabled: true,
-                    realtimePullIntervalSeconds: REALTIME_PULL_DEFAULT_SECONDS,
-                    accessControlEnabled: true,
-                    userAccounts: []
-                }, value => value && typeof value === 'object' && !Array.isArray(value));
-
-                if (!settings.driveRootFolderName) settings.driveRootFolderName = 'LuxeHR Uploads';
-                // Mode localStorage-only: tidak ada request Google Sheet/Drive.
-                settings.networkAccessEnabled = false;
-                settings.previewNetworkGuardEnabled = false;
-                settings.cloudFirstEnabled = false;
-                settings.realtimePullEnabled = false;
-                settings.localStorageServerEnabled = true;
-                settings.realtimePullIntervalSeconds = Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS);
-                ensureAuthSettings();
-                normalizeMasterDropdowns();
-                ensureOffboardingStatusesOnce();
-                migrateCabangTerminology();
-                migrateEmployeeImages();
-                migrateShiftData();
-                normalizeLocalBusinessData({ write: false });
-                migrateOffboardingData();
-                deletedRecords = normalizeDeleteLog(deletedRecords);
-                applyDeleteMarkersToMemory();
-                normalizeMasterDropdowns();
-                const shouldKeepBusinessLocal = !isCloudFirstEnabled() || !navigator.onLine || getSyncQueue().pending;
-                if (shouldKeepBusinessLocal) {
-                    if (!hasStorageValue(STORAGE_KEYS.employees)) safeWrite(STORAGE_KEYS.employees, employees, Array.isArray);
-                    if (!hasStorageValue(STORAGE_KEYS.attendance)) safeWrite(STORAGE_KEYS.attendance, attendance, Array.isArray);
-                    if (!hasStorageValue(STORAGE_KEYS.leaves)) safeWrite(STORAGE_KEYS.leaves, leaves, Array.isArray);
-                    if (!hasStorageValue(STORAGE_KEYS.shifts)) safeWrite(STORAGE_KEYS.shifts, shifts, Array.isArray);
-                    if (!hasStorageValue(STORAGE_KEYS.shiftAssignments)) safeWrite(STORAGE_KEYS.shiftAssignments, shiftAssignments, Array.isArray);
-                    if (!hasStorageValue(STORAGE_KEYS.resignRecords)) safeWrite(STORAGE_KEYS.resignRecords, resignRecords, Array.isArray);
-                    if (!hasStorageValue(STORAGE_KEYS.blacklistRecords)) safeWrite(STORAGE_KEYS.blacklistRecords, blacklistRecords, Array.isArray);
-                    if (!hasStorageValue(STORAGE_KEYS.maintenanceLogs)) safeWrite(STORAGE_KEYS.maintenanceLogs, maintenanceLogs, Array.isArray);
-                    if (!hasStorageValue(STORAGE_KEYS.deletedRecords)) safeWrite(STORAGE_KEYS.deletedRecords, deletedRecords, Array.isArray);
-                }
-                safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
-            }
             
             // --- SAVE & AUTO-SYNC OTOMATIS ---
             // Setiap fungsi save menulis ke localStorage, lalu menandai antrean full auto-sync.
@@ -2976,22 +2743,6 @@ function jsonOutput_(obj) {
                 maintenanceLogs = Array.isArray(maintenanceLogs) ? maintenanceLogs.slice(0, 300) : [];
                 safeWrite(STORAGE_KEYS.maintenanceLogs, maintenanceLogs, Array.isArray);
                 requestAutoSyncAfterLocalSave(reason);
-            }
-            function saveSettings() {
-                normalizeMasterDropdowns();
-                settings.autoSyncEnabled = settings.autoSyncEnabled !== false;
-                settings.autoSyncIntervalSeconds = Number(settings.autoSyncIntervalSeconds || 60);
-                settings.networkAccessEnabled = false;
-                settings.previewNetworkGuardEnabled = false;
-                settings.cloudFirstEnabled = false;
-                settings.realtimePullEnabled = false;
-                settings.localStorageServerEnabled = true;
-                settings.realtimePullIntervalSeconds = Math.max(REALTIME_PULL_MIN_SECONDS, Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS));
-                settings.driveRootFolderName = String(settings.driveRootFolderName || 'LuxeHR Local Images').trim() || 'LuxeHR Local Images';
-                settings.spreadsheetTimeZone = String(settings.spreadsheetTimeZone || DEFAULT_SPREADSHEET_TIME_ZONE).trim() || DEFAULT_SPREADSHEET_TIME_ZONE;
-                ensureAuthSettings();
-                safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
-                requestAutoSyncAfterLocalSave('Pengaturan aplikasi disimpan');
             }
             function todayKey() { return new Date().toISOString().slice(0, 10); }
             function isValidDateKey(value) { return /^\d{4}-\d{2}-\d{2}$/.test(String(value || '')); }
@@ -3132,14 +2883,12 @@ function jsonOutput_(obj) {
                 updateAuthUI();
             }
             function clearCurrentUser() { try { localStorage.removeItem(STORAGE_KEYS.authSession); } catch (error) {} updateAuthUI(); }
-            function isOwnerUser(account = getCurrentUser()) { return account && account.role === 'owner'; }
             function isEmployeeScoped(account = getCurrentUser()) {
                 if (!account) return false;
                 // Owner selalu full-scope, walaupun data lama pernah menyimpan permission selfOnly.
                 if (account.role === 'owner') return false;
                 return account.role === 'employee' || account.permissions?.includes('selfOnly');
             }
-            function getCurrentEmployeeId() { const user = getCurrentUser(); return user?.employeeId ? String(user.employeeId) : ''; }
             function hasPermission(permission, account = getCurrentUser()) {
                 if (!account) return false;
                 if (account.role === 'owner') return true;
@@ -3179,12 +2928,6 @@ function jsonOutput_(obj) {
                 if (!isEmployeeScoped()) return leaves;
                 const visibleIds = new Set(getVisibleEmployees().map(emp => String(emp.id)));
                 return leaves.filter(item => visibleIds.has(String(item.employeeId)));
-            }
-            function getVisibleShiftAssignmentsScoped() {
-                const rows = getVisibleShiftAssignments();
-                if (!isEmployeeScoped()) return rows;
-                const visibleIds = new Set(getVisibleEmployees().map(emp => String(emp.id)));
-                return rows.filter(item => visibleIds.has(String(item.employeeId)));
             }
             function formatRoleLabel(role) {
                 const map = { owner: 'Owner', admin: 'Admin/HR', supervisor: 'Supervisor', employee: 'Karyawan' };
@@ -3624,15 +3367,6 @@ function jsonOutput_(obj) {
                     .replace(/^_+|_+$/g, '')
                     .slice(0, 80) || fallback;
             }
-            function buildDriveFileName(emp, type, dataUrl) {
-                const hash = hashString(dataUrl);
-                const ext = dataUrlExtension(dataUrl);
-                const label = type === 'ktp' ? 'KTP' : 'FOTO';
-                const nik = sanitizeFilePart(emp?.nik || emp?.id || 'karyawan');
-                const name = sanitizeFilePart(emp?.name || 'karyawan');
-                return `${nik}_${name}_${label}_${hash}.${ext}`;
-            }
-            function getPendingDriveUploads() { return []; }
             function getDriveFileSheetRows() {
                 const rows = [];
                 employees.forEach(emp => {
@@ -3669,69 +3403,6 @@ function jsonOutput_(obj) {
                 });
                 if (!rows.length) rows.push({ employeeId: '', nik: '', employeeName: '', type: 'empty', fileId: '', fileUrl: '', syncedAt: '', updatedAt: new Date().toISOString() });
                 return rows;
-            }
-            function applyDriveUploadResultsToLocal(uploadResults = []) {
-                const success = (uploadResults || []).filter(item => item && item.status === 'success' && item.employeeId);
-                if (!success.length) return 0;
-                let changed = false;
-                success.forEach(file => {
-                    const emp = getEmployee(file.employeeId);
-                    if (!emp) return;
-                    if (file.type === 'photo') {
-                        emp.photoDriveUrl = file.fileUrl || '';
-                        emp.photoDriveFileId = file.fileId || '';
-                        emp.photoDriveDownloadUrl = file.downloadUrl || '';
-                        emp.photoDriveThumbnailUrl = file.thumbnailUrl || file.downloadUrl || '';
-                        emp.photoDriveHash = file.dataHash || '';
-                        emp.photoDriveSyncedAt = file.uploadedAt || new Date().toISOString();
-                        changed = true;
-                    }
-                    if (file.type === 'ktp') {
-                        emp.ktpDriveUrl = file.fileUrl || '';
-                        emp.ktpDriveFileId = file.fileId || '';
-                        emp.ktpDriveDownloadUrl = file.downloadUrl || '';
-                        emp.ktpDriveThumbnailUrl = file.thumbnailUrl || file.downloadUrl || '';
-                        emp.ktpDriveHash = file.dataHash || '';
-                        emp.ktpDriveSyncedAt = file.uploadedAt || new Date().toISOString();
-                        changed = true;
-                    }
-                });
-                if (changed) {
-                    safeWrite(STORAGE_KEYS.employees, employees, Array.isArray);
-                    renderCompanyIdentity();
-                    if (activeView === 'employees') renderEmployees();
-                    if (activeView === 'settings') renderSettings();
-                }
-                return success.length;
-            }
-            function prepareEmployeeForSheet(emp) {
-                const photo = emp?.photo || '';
-                const ktpImage = emp?.ktpImage || '';
-                const photoHash = isDataUrl(photo) ? hashString(photo) : '';
-                const ktpHash = isDataUrl(ktpImage) ? hashString(ktpImage) : '';
-                return {
-                    ...emp,
-                    photo: isDataUrl(photo) ? (emp.photoDriveDownloadUrl || emp.photoDriveThumbnailUrl || emp.photoDriveUrl || '[FOTO MENUNGGU UPLOAD GOOGLE DRIVE]') : photo,
-                    photoStorage: getImageStorageType(photo),
-                    photoSizeKb: imageSizeKb(photo),
-                    photoLocalHash: photoHash,
-                    photoDriveUrl: emp.photoDriveUrl || '',
-                    photoDriveFileId: emp.photoDriveFileId || '',
-                    photoDriveDownloadUrl: emp.photoDriveDownloadUrl || '',
-                    photoDriveThumbnailUrl: emp.photoDriveThumbnailUrl || '',
-                    photoDriveHash: emp.photoDriveHash || '',
-                    photoDriveSyncedAt: emp.photoDriveSyncedAt || '',
-                    ktpImage: isDataUrl(ktpImage) ? (emp.ktpDriveDownloadUrl || emp.ktpDriveThumbnailUrl || emp.ktpDriveUrl || '[KTP MENUNGGU UPLOAD GOOGLE DRIVE]') : ktpImage,
-                    ktpStorage: getImageStorageType(ktpImage),
-                    ktpSizeKb: imageSizeKb(ktpImage),
-                    ktpLocalHash: ktpHash,
-                    ktpDriveUrl: emp.ktpDriveUrl || '',
-                    ktpDriveFileId: emp.ktpDriveFileId || '',
-                    ktpDriveDownloadUrl: emp.ktpDriveDownloadUrl || '',
-                    ktpDriveThumbnailUrl: emp.ktpDriveThumbnailUrl || '',
-                    ktpDriveHash: emp.ktpDriveHash || '',
-                    ktpDriveSyncedAt: emp.ktpDriveSyncedAt || ''
-                };
             }
             function prepareSyncData(sheetName, payloadData) {
                 const rows = Array.isArray(payloadData) ? payloadData : (payloadData ? [payloadData] : []);
@@ -3831,24 +3502,6 @@ function jsonOutput_(obj) {
                 return [
                     ...getBranchSheetRows(),
                     ...getStatusSheetRows()
-                ];
-            }
-            function getIntegrationSheetRows() {
-                return [
-                    { key: 'webAppUrl', value: GOOGLE_APPS_SCRIPT_URL, jenis: 'Apps Script Web App URL', updatedAt: new Date().toISOString() },
-                    { key: 'spreadsheetId', value: getConfiguredSpreadsheetId(), jenis: 'Google Sheet Spreadsheet ID', updatedAt: new Date().toISOString() },
-                    { key: 'driveRootFolderName', value: getDriveRootFolderName(), jenis: 'Google Drive Root Folder', updatedAt: new Date().toISOString() },
-                    { key: 'pendingDriveUploads', value: getPendingDriveUploads().length, jenis: 'Antrean Upload Gambar Google Drive', updatedAt: new Date().toISOString() },
-                    { key: 'syncStatus', value: getSyncMeta().status || 'idle', jenis: 'Status Sync Terakhir', updatedAt: new Date().toISOString() },
-                    { key: 'lastSuccessAt', value: getSyncMeta().lastSuccessAt || '', jenis: 'Sync Terakhir Berhasil', updatedAt: new Date().toISOString() },
-                    { key: 'lastAttemptAt', value: getSyncMeta().lastAttemptAt || '', jenis: 'Sync Terakhir Dicoba', updatedAt: new Date().toISOString() },
-                    { key: 'autoSyncEnabled', value: getAutoSyncEnabled(), jenis: 'Status Auto Sync', updatedAt: new Date().toISOString() },
-                    { key: 'autoSyncQueuePending', value: getSyncQueue().pending, jenis: 'Antrean Auto Sync', updatedAt: new Date().toISOString() },
-                    { key: 'autoSyncLastReason', value: getSyncQueue().lastReason || '', jenis: 'Alasan Antrean Auto Sync', updatedAt: new Date().toISOString() },
-                    { key: 'cloudFirstEnabled', value: isCloudFirstEnabled(), jenis: 'Mode Cloud First', updatedAt: new Date().toISOString() },
-                    { key: 'realtimePullEnabled', value: isRealtimePullEnabled(), jenis: 'Status Realtime Pull', updatedAt: new Date().toISOString() },
-                    { key: 'realtimePullIntervalSeconds', value: Math.round(getRealtimePullIntervalMs() / 1000), jenis: 'Interval Pull Cloud Detik', updatedAt: new Date().toISOString() },
-                    { key: 'lastCloudPullAt', value: getSyncMeta().lastCloudPullAt || '', jenis: 'Terakhir Muat Ulang Data Lokal', updatedAt: new Date().toISOString() }
                 ];
             }
             function getAppMetadataRows() {
@@ -3964,27 +3617,6 @@ function jsonOutput_(obj) {
             function syncSettingsToCloud() {
                 requestAutoSyncAfterLocalSave('Pengaturan/master data berubah');
             }
-
-            function isLikelyPreviewRuntime() {
-                try {
-                    const host = String(window.location.hostname || '').toLowerCase();
-                    const href = String(window.location.href || '').toLowerCase();
-                    const protocol = String(window.location.protocol || '').toLowerCase();
-                    const embedded = window.self !== window.top;
-                    const previewHints = ['oaiusercontent', 'chatgpt', 'openai', 'sandbox', 'srcdoc', 'preview', 'pratinjau', 'blob:'];
-                    return embedded || previewHints.some(hint => host.includes(hint) || href.includes(hint) || protocol.includes(hint));
-                } catch (error) {
-                    return true;
-                }
-            }
-            function isPreviewNetworkGuardActive() { return false; }
-            function isNetworkAccessEnabled() { return false; }
-            function getNetworkDisabledResult(mode = 'local-storage-only') {
-                const message = 'Mode server sudah diganti ke Local Storage. Tidak ada request Google Sheet/Drive yang dikirim.';
-                saveSyncMeta({ status: 'success', sheetName: 'Local Storage Server', mode, lastAttemptAt: new Date().toISOString(), lastSuccessAt: new Date().toISOString(), lastError: null, message });
-                return { ok: true, skipped: true, reason: 'local-storage-only', message };
-            }
-            function requireNetworkAccess(mode = 'local-storage-request') { return true; }
             function getDeviceId() {
                 const key = 'luxehr_device_id';
                 let id = localStorage.getItem(key);
@@ -3994,25 +3626,10 @@ function jsonOutput_(obj) {
                 }
                 return id;
             }
-            function isCloudFirstEnabled() { return false; }
-            function isRealtimePullEnabled() { return false; }
             function getRealtimePullIntervalMs() {
                 const seconds = Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS);
                 const safeSeconds = Number.isFinite(seconds) ? Math.max(REALTIME_PULL_MIN_SECONDS, seconds) : REALTIME_PULL_DEFAULT_SECONDS;
                 return safeSeconds * 1000;
-            }
-            function getBusinessStorageKeys() {
-                return [
-                    STORAGE_KEYS.employees,
-                    STORAGE_KEYS.attendance,
-                    STORAGE_KEYS.leaves,
-                    STORAGE_KEYS.shifts,
-                    STORAGE_KEYS.shiftAssignments,
-                    STORAGE_KEYS.resignRecords,
-                    STORAGE_KEYS.blacklistRecords,
-                    STORAGE_KEYS.maintenanceLogs,
-                    STORAGE_KEYS.deletedRecords
-                ].filter(Boolean);
             }
             function hasUnsyncedOfflineData() { return Boolean(getSyncQueue().pending); }
             function purgeSyncedLocalBusinessData(options = {}) {
@@ -4077,15 +3694,6 @@ function jsonOutput_(obj) {
                 }
                 return rows;
             }
-            function dedupeRowsByCloudKey(sheetName, rows = []) {
-                const map = new Map();
-                cleanCloudRows(rows, []).forEach((row, index) => {
-                    const key = String(cloudSheetRecordKey(sheetName, row) || `${sheetName}|row-${index}`);
-                    const existing = map.get(key);
-                    if (!existing || recordVersionTime(row) >= recordVersionTime(existing)) map.set(key, row);
-                });
-                return Array.from(map.values());
-            }
 
             function normalizeCloudHeaderKey(key) {
                 return String(key || '')
@@ -4115,9 +3723,6 @@ function jsonOutput_(obj) {
                     if (String(value ?? '').trim() !== '') return value;
                 }
                 return fallback;
-            }
-            function hasAnyCloudField(row = {}, aliases = []) {
-                return String(readCloudField(row, aliases, '') ?? '').trim() !== '';
             }
             function stableNumericIdFromText(value, salt = '') {
                 const text = String(value || '').trim() || `row-${salt || Date.now()}`;
@@ -4456,10 +4061,6 @@ function jsonOutput_(obj) {
                 deletedRecords = normalizeDeleteLog([...(deletedRecords || []), marker]);
                 return marker;
             }
-            function addDeleteMarkers(moduleName, records = [], options = {}) {
-                (Array.isArray(records) ? records : []).forEach(record => addDeleteMarker(moduleName, record, options));
-                return deletedRecords;
-            }
             function getDeleteLogSheetRows() {
                 deletedRecords = normalizeDeleteLog(deletedRecords);
                 return deletedRecords.length ? deletedRecords : [{ id: 'empty', sheetName: '', moduleName: '', recordKey: '', recordId: '', recordLabel: '', deletedAt: '', deletedByDeviceId: getDeviceId(), reason: 'empty', updatedAt: new Date().toISOString(), tombstone: true }];
@@ -4574,24 +4175,6 @@ function jsonOutput_(obj) {
                     return false;
                 }
             }
-            async function startCloudFirstStartupSync() {
-                const snapshot = readLocalServerSnapshot();
-                const primaryEmpty = !(employees.length || attendance.length || leaves.length || shifts.length || shiftAssignments.length || resignRecords.length || blacklistRecords.length || maintenanceLogs.length);
-                if (snapshot && primaryEmpty) hydrateStateFromLocalServerSnapshot({ silent: true });
-                persistLocalServerSnapshot('Startup Local Storage Server', { silent: true, mode: 'startup-local-storage' });
-                saveSyncMeta({ status: 'success', sheetName: 'Local Storage Server', mode: 'startup-local-storage', lastSuccessAt: new Date().toISOString(), lastAttemptAt: new Date().toISOString(), lastError: null, message: 'Aplikasi berjalan dengan server Local Storage. Data dibaca dari browser ini.' });
-                return { ok: true, mode: 'local-storage-only' };
-            }
-            function getCloudFingerprint(sheets) {
-                try {
-                    const counts = Object.keys(sheets || {}).sort().map(name => `${name}:${Array.isArray(sheets[name]) ? sheets[name].length : 0}`).join('|');
-                    const stateRows = sheets?.Data_Realtime_State || [];
-                    const stateText = JSON.stringify(stateRows.slice(-3));
-                    return `${counts}::${hashString(stateText)}`;
-                } catch (error) {
-                    return String(Date.now());
-                }
-            }
             function hydrateStateFromCloud(sheets = {}) {
                 cloudHydrationInProgress = true;
                 try {
@@ -4673,73 +4256,6 @@ function jsonOutput_(obj) {
                 } finally {
                     cloudHydrationInProgress = false;
                 }
-            }
-            async function pullCloudDataNow(options = {}) {
-                const silent = options.silent === true;
-                const force = options.force === true;
-                const verifyMode = options.verifyMode === true;
-                if (!requireNetworkAccess('read-all')) {
-                    if (!silent) showToast('Belum bisa baca database. Cek URL, Spreadsheet ID, dan internet.', 'warning');
-                    return { ok: false, skipped: true, reason: 'network-or-config-missing' };
-                }
-                const nowMs = Date.now();
-                if (!force && realtimePullInProgress) return { ok: false, skipped: true, reason: 'pull-in-progress' };
-                if (!force && cloudReadBackoffUntil && nowMs < cloudReadBackoffUntil) return { ok: false, skipped: true, reason: 'pull-backoff' };
-                const minGap = Math.max(12000, Math.min(getRealtimePullIntervalMs(), 60000) - 2000);
-                if (!force && silent && lastCloudPullStartedAt && nowMs - lastCloudPullStartedAt < minGap) return { ok: false, skipped: true, reason: 'pull-cooldown' };
-
-                realtimePullInProgress = true;
-                lastCloudPullStartedAt = nowMs;
-                const now = new Date().toISOString();
-                if (!silent || verifyMode) saveSyncMeta({ status: 'syncing', sheetName: 'Google Sheet Database', mode: verifyMode ? 'read-back-verification' : 'read-all', lastAttemptAt: now, lastError: null, message: verifyMode ? 'Memverifikasi data yang baru ditulis dengan read-back read-only...' : 'Membaca data terbaru dari Google Sheet...' });
-                try {
-                    const response = await postToAppsScript({ action: 'readAll', sheetNames: getCloudReadSheetRequestList() });
-                    const result = response.result || {};
-                    const sheets = result.sheets || {};
-                    const counts = {};
-                    Object.keys(sheets).forEach(name => { counts[name] = Array.isArray(sheets[name]) ? sheets[name].length : 0; });
-                    const totalRows = Number(result.totalRows || Object.values(counts).reduce((sum, value) => sum + Number(value || 0), 0));
-                    cloudReadBackoffUntil = 0;
-                    if (totalRows > 0) {
-                        hydrateStateFromCloud(sheets);
-                        persistLocalServerSnapshot('Cache setelah membaca Google Sheet', { silent: true, mode: 'google-sheet-read-cache' });
-                        saveSyncMeta({ status: 'success', sheetName: 'Google Sheet Database', mode: verifyMode ? 'read-back-success' : 'read-all-success', lastSuccessAt: new Date().toISOString(), lastAttemptAt: now, lastCloudPullAt: new Date().toISOString(), lastCloudPullRows: totalRows, lastCloudPullSheets: Object.keys(sheets).length, lastError: null, message: verifyMode ? `Read-back berhasil: ${totalRows} baris terbaca dari Google Sheet.` : `Data terbaru berhasil dibaca dari Google Sheet: ${totalRows} baris.` });
-                        if (!silent) showToast('Data terbaru berhasil dimuat dari Google Sheet', 'success');
-                        return { ok: true, changed: true, rows: totalRows, counts, sheets };
-                    }
-                    saveSyncMeta({ status: 'warning', sheetName: 'Google Sheet Database', mode: 'read-all-empty', lastAttemptAt: now, lastCloudPullAt: now, lastCloudPullRows: 0, lastCloudPullSheets: Object.keys(sheets).length, lastError: null, message: 'Google Sheet masih kosong. Data lokal dapat dijadikan seed dengan Sync Manual.' });
-                    if (!silent) showToast('Google Sheet masih kosong. Klik Sync Manual untuk mengisi database awal.', 'warning');
-                    return { ok: true, changed: false, rows: 0, counts, sheets };
-                } catch (error) {
-                    const lockBusy = isLockBusyMessage(error.message || String(error));
-                    if (lockBusy) cloudReadBackoffUntil = Date.now() + Math.max(30000, getRealtimePullIntervalMs());
-                    saveSyncMeta({ status: lockBusy ? 'warning' : 'error', sheetName: 'Google Sheet Database', mode: lockBusy ? 'read-all-busy-retry' : 'read-all-failed', lastAttemptAt: now, lastError: error.message || String(error), message: lockBusy ? 'Database sedang sibuk memproses sync perangkat lain. Cache lokal tetap digunakan dan pull akan dicoba ulang otomatis.' : 'Gagal membaca Google Sheet. Cache lokal tetap digunakan.' });
-                    if (!silent) showToast(`${lockBusy ? 'Database sedang sibuk, akan dicoba ulang' : 'Gagal membaca Google Sheet'}: ${error.message || error}`, lockBusy ? 'warning' : 'error');
-                    return { ok: false, error };
-                } finally {
-                    realtimePullInProgress = false;
-                    renderSyncStatus();
-                    renderRealtimeStatus();
-                    updateConnectivityStatus();
-                }
-            }
-            function renderRealtimeStatus() {
-                const el = byId('cloudRealtimeStatus'); if (!el) return;
-                const meta = getSyncMeta(); const queue = getSyncQueue(); const snapshot = readLocalServerSnapshot();
-                const lastSaved = snapshot?.savedAt ? new Date(snapshot.savedAt).toLocaleString('id-ID') : '-';
-                const localPolicy = queue.pending ? 'Ada perubahan menunggu checkpoint lokal' : 'Semua data aktif tersimpan di localStorage';
-                const summary = snapshot?.summary || {};
-                el.innerHTML = `<div class="flex items-start gap-2"><i class="fa-solid fa-database text-gold-500 mt-0.5"></i><div><p class="text-white text-[11px]">Mode: Local Storage Server / single browser.</p><p>Google Sheet/Drive: <span class="text-gray-400">Dinonaktifkan</span></p><p>Realtime cloud pull: <span class="text-gray-400">Tempel Spreadsheet ID</span></p><p>Checkpoint lokal terakhir: ${escapeHtml(lastSaved)}</p><p>Jumlah karyawan di snapshot: ${Number(summary.employees || 0)}</p><p>Jumlah akun login di snapshot: ${Number(summary.userAccounts || 0)}</p><p>Status storage: <span class="${queue.pending ? 'text-yellow-400' : 'text-green-400'}">${escapeHtml(localPolicy)}</span></p>${meta.lastError ? `<p class="mt-1 text-red-400 break-words">Error: ${escapeHtml(meta.lastError)}</p>` : ''}</div></div>`;
-            }
-                        function startRealtimeCloudService() {
-                if (realtimePullTimer) clearInterval(realtimePullTimer);
-                const run = () => {
-                    if (document.hidden) return;
-                    if (isRealtimePullEnabled() && !getSyncQueue().pending && !syncInProgress && !realtimePullInProgress && Date.now() >= cloudReadBackoffUntil) pullCloudDataNow({ silent: true });
-                    else { renderRealtimeStatus(); renderSyncStatus(); updateConnectivityStatus(); }
-                };
-                realtimePullTimer = setInterval(run, getRealtimePullIntervalMs());
-                renderRealtimeStatus();
             }
             function formatMinutesToHHMM(totalMinutes) {
                 const safeMinutes = ((Math.round(Number(totalMinutes || 0)) % 1440) + 1440) % 1440;
@@ -7019,55 +6535,12 @@ function jsonOutput_(obj) {
                     }
                 });
             }
-
-            function renderSettings() {
-                byId('companyName').value = settings.companyName || '';
-                byId('companyAddress').value = settings.companyAddress || '';
-                byId('standardStartTime').value = settings.standardStartTime || '08:00';
-                byId('webAppUrl').value = 'LOCAL_STORAGE_ONLY';
-                const sheetInput = byId('googleSheetId');
-                if (sheetInput) sheetInput.value = 'Tempel Spreadsheet ID - server localStorage';
-                const driveInput = byId('driveRootFolderName');
-                if (driveInput) driveInput.value = settings.driveRootFolderName || 'LuxeHR Local Images';
-                const networkSelect = byId('networkAccessEnabled');
-                if (networkSelect) networkSelect.value = 'false';
-                const cloudFirstSelect = byId('cloudFirstEnabled');
-                if (cloudFirstSelect) cloudFirstSelect.value = 'false';
-                const realtimeSelect = byId('realtimePullEnabled');
-                if (realtimeSelect) realtimeSelect.value = 'false';
-                const intervalInput = byId('realtimePullIntervalSeconds');
-                if (intervalInput) intervalInput.value = Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS);
-                updateStorageStatus();
-                renderSyncStatus();
-                renderRealtimeStatus();
-                updateConnectivityStatus();
-                renderMasterDropdowns();
-            }
             function handleSettingsSubmit(e) {
                 e.preventDefault();
                 if (!requirePermission('manageSettings')) return;
                 const previous = settings || {};
                 settings = { ...previous, companyName: byId('companyName').value.trim(), companyAddress: byId('companyAddress').value.trim(), standardStartTime: byId('standardStartTime').value || '08:00', googleSheetId: '', driveRootFolderName: 'LuxeHR Local Images', branchOptions: previous.branchOptions || [], employeeStatusOptions: Array.isArray(previous.employeeStatusOptions) ? previous.employeeStatusOptions : [], offboardingFeatureInitialized: previous.offboardingFeatureInitialized || false, autoSyncEnabled: previous.autoSyncEnabled !== false, autoSyncIntervalSeconds: Number(previous.autoSyncIntervalSeconds || 60), networkAccessEnabled: false, previewNetworkGuardEnabled: false, cloudFirstEnabled: false, realtimePullEnabled: false, localStorageServerEnabled: true, realtimePullIntervalSeconds: Number(previous.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS), accessControlEnabled: previous.accessControlEnabled !== false, userAccounts: Array.isArray(previous.userAccounts) ? previous.userAccounts : [] };
                 saveSettings(); renderCompanyIdentity(); updateStorageStatus(); showToast('Pengaturan lokal berhasil disimpan', 'success');
-            }
-            
-            function saveIntegrationSettings() {
-                settings.googleSheetId = '';
-                settings.driveRootFolderName = 'LuxeHR Local Images';
-                settings.networkAccessEnabled = false; settings.previewNetworkGuardEnabled = false; settings.cloudFirstEnabled = false; settings.realtimePullEnabled = false; settings.localStorageServerEnabled = true;
-                saveSettings(); startRealtimeCloudService(); updateConnectivityStatus(); showToast('Mode Local Storage disimpan. Google Sheet/Drive tidak digunakan.', 'success'); renderSettings();
-            }
-            function copyAppScript() {
-                const textArea = byId('appScriptTemplate');
-                textArea.select();
-                textArea.setSelectionRange(0, 99999);
-                try {
-                    document.execCommand('copy');
-                    showToast('Kode App Script disalin ke clipboard', 'success');
-                } catch (err) {
-                    showToast('Gagal menyalin kode', 'error');
-                }
-                window.getSelection().removeAllRanges();
             }
             function copyTextToClipboard(text, successMessage, errorMessage) {
                 if (navigator.clipboard && window.isSecureContext) {
@@ -7090,16 +6563,6 @@ function jsonOutput_(obj) {
                     showToast(errorMessage, 'error');
                 }
                 document.body.removeChild(temp);
-            }
-            function copyWebAppUrl() {
-                copyTextToClipboard(GOOGLE_APPS_SCRIPT_URL, 'URL Web App disalin', 'Gagal menyalin URL');
-            }
-            function openWebAppUrl() {
-                if (!GOOGLE_APPS_SCRIPT_URL || GOOGLE_APPS_SCRIPT_URL.includes('GANTI_DENGAN')) {
-                    showToast('URL Web App belum dikonfigurasi', 'error');
-                    return;
-                }
-                window.open(GOOGLE_APPS_SCRIPT_URL, '_blank', 'noopener,noreferrer');
             }
 
             function renderCompanyIdentity() { byId('sidebarCompany').textContent = settings.companyName || 'LuxeHR'; updateAuthUI(); }
@@ -7135,7 +6598,7 @@ function jsonOutput_(obj) {
 
             function downloadBackupJSON() {
                 const localSnapshot = persistLocalServerSnapshot('Backup JSON dibuat', { silent: true, mode: 'backup-json' }).snapshot || readLocalServerSnapshot();
-                const backup = { app: 'LuxeHR Premium', version: APP_VERSION, storageMode: 'localStorage-server', exportedAt: new Date().toISOString(), employees, attendance, leaves, shifts, shiftAssignments, resignRecords, blacklistRecords, maintenanceLogs, deletedRecords, settings, userAccounts: settings.userAccounts || [], accessPermissions: getAccessPermissionSheetRows(), masterDropdowns: { branchOptions: settings.branchOptions || [], employeeStatusOptions: settings.employeeStatusOptions || [] }, syncMeta: getSyncMeta(), localServerSnapshot: localSnapshot };
+                const backup = { app: 'LuxeHR Premium', version: APP_VERSION, storageMode: 'google-sheet-db-cache', exportedAt: new Date().toISOString(), employees, attendance, leaves, shifts, shiftAssignments, resignRecords, blacklistRecords, maintenanceLogs, deletedRecords, settings, userAccounts: settings.userAccounts || [], accessPermissions: getAccessPermissionSheetRows(), masterDropdowns: { branchOptions: settings.branchOptions || [], employeeStatusOptions: settings.employeeStatusOptions || [] }, syncMeta: getSyncMeta(), localServerSnapshot: localSnapshot };
                 downloadFile(`luxehr_local_storage_backup_${todayKey()}.json`, JSON.stringify(backup, null, 2));
                 showToast('Backup JSON lokal berhasil diunduh', 'success');
             }
@@ -7181,48 +6644,6 @@ function jsonOutput_(obj) {
                     updateStorageStatus();
                     showToast('Backup berhasil direstore', 'success');
                 });
-            }
-            function updateStorageStatus() {
-                const el = byId('storageStatus');
-                if (!el) return;
-                const meta = safeParse(localStorage.getItem(META_KEY), {});
-                const empMain = readDirect(STORAGE_KEYS.employees);
-                const empBackup = readDirect(getBackupKey(STORAGE_KEYS.employees));
-                const attMain = readDirect(STORAGE_KEYS.attendance);
-                const leaveMain = readDirect(STORAGE_KEYS.leaves);
-                const shiftMain = readDirect(STORAGE_KEYS.shifts);
-                const shiftAssignmentMain = readDirect(STORAGE_KEYS.shiftAssignments);
-                const resignMain = readDirect(STORAGE_KEYS.resignRecords);
-                const blacklistMain = readDirect(STORAGE_KEYS.blacklistRecords);
-                const mainStatus = empMain.ok && Array.isArray(empMain.value) ? `${empMain.value.length} karyawan` : 'data utama bermasalah';
-                const backupStatus = empBackup.ok && Array.isArray(empBackup.value) ? `${empBackup.value.length} karyawan` : 'backup belum tersedia';
-                const attendanceStatus = attMain.ok && Array.isArray(attMain.value) ? `${attMain.value.length} log absensi` : 'absensi bermasalah';
-                const leaveStatus = leaveMain.ok && Array.isArray(leaveMain.value) ? `${leaveMain.value.length} pengajuan` : 'cuti bermasalah';
-                const shiftStatus = shiftMain.ok && Array.isArray(shiftMain.value) ? `${shiftMain.value.length} master shift` : 'shift bermasalah';
-                const shiftAssignStatus = shiftAssignmentMain.ok && Array.isArray(shiftAssignmentMain.value) ? `${shiftAssignmentMain.value.length} assignment` : 'assignment shift bermasalah';
-                const resignStatus = resignMain.ok && Array.isArray(resignMain.value) ? `${resignMain.value.length} catatan resign` : 'resign bermasalah';
-                const blacklistStatus = blacklistMain.ok && Array.isArray(blacklistMain.value) ? `${blacklistMain.value.length} catatan blacklist` : 'blacklist bermasalah';
-                const maintenanceStatus = readDirect(STORAGE_KEYS.maintenanceLogs);
-                const maintenanceText = maintenanceStatus.ok && Array.isArray(maintenanceStatus.value) ? `${maintenanceStatus.value.length} log maintenance` : 'maintenance bermasalah';
-                const photoCount = employees.filter(emp => emp.photo).length;
-                const ktpCount = employees.filter(emp => emp.ktpImage).length;
-                const branchMasterCount = (settings.branchOptions || []).length;
-                const statusMasterCount = (settings.employeeStatusOptions || []).length;
-                el.innerHTML = `
-                    <div class="flex items-start gap-2"><i class="fa-solid fa-shield-halved text-gold-500 mt-0.5"></i><div>
-                        <p class="text-white text-[11px]">Data utama: ${escapeHtml(mainStatus)}</p>
-                        <p>Absensi: ${escapeHtml(attendanceStatus)}</p>
-                        <p>Cuti/Izin: ${escapeHtml(leaveStatus)}</p>
-                        <p>Shift: ${escapeHtml(shiftStatus)} / ${escapeHtml(shiftAssignStatus)}</p>
-                        <p>Resign/Blacklist: ${escapeHtml(resignStatus)} / ${escapeHtml(blacklistStatus)}</p>
-                        <p>Master dropdown: ${branchMasterCount} cabang / ${statusMasterCount} status</p>
-                        <p>Dokumen gambar: ${photoCount} foto / ${ktpCount} KTP</p>
-                        <p>Backup terakhir: ${escapeHtml(backupStatus)}</p>
-                        <p>Update lokal: ${escapeHtml(meta.updatedAt ? new Date(meta.updatedAt).toLocaleString('id-ID') : '-')}</p>
-                        <p>Maintenance: ${escapeHtml(maintenanceText)}</p>
-                        <p class="mt-1 ${storageRecovered ? 'text-yellow-400' : 'text-gray-500'}">${storageRecovered ? 'Sistem pernah memulihkan data dari backup.' : 'Storage lokal normal.'}</p>
-                    </div></div>`;
-                renderSyncStatus();
             }
 
             function showConfirm(message, callback) {
@@ -7425,7 +6846,7 @@ function jsonOutput_(obj) {
                 });
             }
 
-            // --- GOOGLE SHEET DATABASE PATCH v6.1 LOCK-SAFE ---
+            // --- GOOGLE SHEET DATABASE PATCH v6.3 CLEAN COMPACT-COLUMN LOCK-SAFE ---
             // Patch ini mengubah Local Storage menjadi cache/offline fallback.
             // Database utama: Google Sheet via Apps Script Web App.
             function getConfiguredWebAppUrl() {
@@ -7613,7 +7034,6 @@ function jsonOutput_(obj) {
                 }
                 throw lastError || new Error('Request Google Sheet gagal tanpa detail error.');
             }
-            async function postToAppsScriptOpaque(payload) { return postToAppsScript(payload, false); }
 
             function applyDriveUploadResults(uploadResults = []) {
                 const successful = (Array.isArray(uploadResults) ? uploadResults : []).filter(item => item && item.ok);
@@ -7727,8 +7147,11 @@ function jsonOutput_(obj) {
                     return { ok: false, skipped: true, reason: 'network-or-config-missing' };
                 }
                 const startedAt = new Date().toISOString();
-                saveSyncMeta({ status: 'syncing', sheetName: 'Google Sheet Database', mode: 'database-audit', lastAttemptAt: startedAt, lastError: null, message: 'Audit database: memastikan header, sheet, dan data dapat dibaca dari Google Sheet...' });
+                saveSyncMeta({ status: 'syncing', sheetName: 'Google Sheet Database', mode: 'database-audit', lastAttemptAt: startedAt, lastError: null, message: 'Audit database: merapikan kolom mulai A, memastikan header, sheet, dan data dapat dibaca dari Google Sheet...' });
                 try {
+                    const compactResponse = await postToAppsScript({ action: 'compact_sheets', sheetNames: getCloudReadSheetRequestList() });
+                    const compactResult = compactResponse.result || compactResponse;
+                    if (!compactResult.ok) throw new Error(compactResult.message || 'Gagal merapikan layout database.');
                     const response = await postToAppsScript({ action: 'audit', sheetNames: getCloudReadSheetRequestList() });
                     const result = response.result || {};
                     const counts = result.counts || {};
@@ -7736,7 +7159,7 @@ function jsonOutput_(obj) {
                     const requiredSheets = getCloudReadSheetRequestList().map(canonicalCloudSheetName).filter((value, index, arr) => value && arr.indexOf(value) === index);
                     const missingSheets = requiredSheets.filter(name => counts[name] === undefined && !(result.headers || {})[name]);
                     if (missingSheets.length) throw new Error(`Sheet belum terbaca: ${missingSheets.join(', ')}`);
-                    saveSyncMeta({ status: 'success', sheetName: 'Google Sheet Database', mode: 'database-audit-success', lastSuccessAt: new Date().toISOString(), lastAttemptAt: startedAt, lastCloudPullAt: getSyncMeta().lastCloudPullAt, lastCloudPullRows: getSyncMeta().lastCloudPullRows, lastCloudPullSheets: getSyncMeta().lastCloudPullSheets, lastError: null, message: `Audit database berhasil. ${Object.keys(counts).length || result.totalSheets || 0} sheet terbaca, ${totalRows} baris terdeteksi. Header aman berbasis nama kolom.` });
+                    saveSyncMeta({ status: 'success', sheetName: 'Google Sheet Database', mode: 'database-audit-success', lastSuccessAt: new Date().toISOString(), lastAttemptAt: startedAt, lastCloudPullAt: getSyncMeta().lastCloudPullAt, lastCloudPullRows: getSyncMeta().lastCloudPullRows, lastCloudPullSheets: getSyncMeta().lastCloudPullSheets, lastError: null, message: `Audit database berhasil. ${Object.keys(counts).length || result.totalSheets || 0} sheet terbaca, ${totalRows} baris terdeteksi. Header aman berbasis nama kolom dan layout dimulai dari kolom A.` });
                     if (!silent) showToast(`Audit database berhasil: ${totalRows} baris terbaca`, 'success');
                     renderSyncStatus();
                     renderRealtimeStatus();
