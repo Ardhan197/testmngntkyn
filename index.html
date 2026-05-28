@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>LuxeHR Premium Cloud Sheet v5.9 - Aplikasi Management Karyawan</title>
+<title>LuxeHR Premium Cloud Sheet v6.1 - Aplikasi Management Karyawan</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css';" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
@@ -1004,14 +1004,14 @@
 <!-- NEW CARD: Google Apps Script Template -->
 <div class="premium-card rounded-xl p-4 lg:col-span-2 mt-2">
 <div class="flex justify-between items-center mb-1">
-<h3 class="font-serif font-bold text-white text-base">Google Apps Script Database Template v5.9 Header-Safe</h3>
+<h3 class="font-serif font-bold text-white text-base">Google Apps Script Database Template v6.1 Lock-Safe Header-Safe</h3>
 <button class="border border-white/10 text-gray-300 hover:text-white hover:border-gold-500/40 py-1.5 px-3 text-[9px] uppercase tracking-widest rounded-lg transition-all flex items-center gap-1.5" onclick="copyAppScript()" type="button">
 <i class="fa-solid fa-copy"></i> Salin Script
                         </button>
 </div>
-<p class="text-[10px] text-gray-500 mb-4">Copy script ini ke Google Apps Script. Script v5.9 akan membuat header otomatis dan membaca data berdasarkan nama header, sehingga urutan kolom di Google Sheet boleh berubah tanpa merusak data.</p>
+<p class="text-[10px] text-gray-500 mb-4">Copy script ini ke Google Apps Script. Script v6.1 Lock-Safe akan membuat header otomatis dan membaca data berdasarkan nama header, sehingga urutan kolom di Google Sheet boleh berubah tanpa merusak data.</p>
 <textarea class="field min-h-[420px] font-mono text-[10px] leading-relaxed resize-y bg-surface-100/80 cursor-text" id="appScriptTemplate" readonly="" spellcheck="false">/**
- * LuxeHR Premium v5.9 - Advanced Google Sheet Database Connector
+ * LuxeHR Premium v6.1 - Lock-Safe Advanced Google Sheet Database Connector
  * Fokus utama:
  * - Header dibuat otomatis untuk semua sheet inti.
  * - Read/write memakai nama header, bukan posisi kolom.
@@ -1028,9 +1028,11 @@
  * 5) Copy Web App URL ke aplikasi LuxeHR, lalu isi Spreadsheet ID.
  */
 
-const LUXEHR_CONNECTOR_VERSION = '6.0.0-verified-header-safe';
+const LUXEHR_CONNECTOR_VERSION = '6.1.0-lock-safe-header-safe';
 const DEFAULT_ROOT_FOLDER_NAME = 'LuxeHR Uploads';
 const HEADER_ROW = 1;
+const MUTATION_LOCK_WAIT_MS = 5000;
+const LOCK_BUSY_RETRY_AFTER_MS = 3000;
 
 const LUXEHR_SCHEMAS = {
   Data_Karyawan: {
@@ -1123,22 +1125,76 @@ const SHEET_ALIASES = {
   Data_Delete_Log: ['Data Delete Log','Delete Log','Tombstone']
 };
 
+
+function normalizeActionName_(payload) {
+  return String((payload &amp;&amp; (payload.action || payload.mode)) || 'ping').toLowerCase().replace(/[-\s]+/g, '').replace(/_/g, '');
+}
+
+function isReadOnlyAction_(action) {
+  return ['readall', 'read'].indexOf(normalizeActionName_({ action: action })) &gt;= 0;
+}
+
+function getBestLock_() {
+  try {
+    const documentLock = LockService.getDocumentLock();
+    if (documentLock) return documentLock;
+  } catch (err) {}
+  return LockService.getScriptLock();
+}
+
+function busyResponse_(action) {
+  return {
+    ok: false,
+    status: 'busy',
+    code: 'LOCK_BUSY',
+    retriable: true,
+    action: action,
+    retryAfterMs: LOCK_BUSY_RETRY_AFTER_MS,
+    message: 'Database sedang memproses request lain. Coba ulang otomatis sebentar lagi.',
+    connectorVersion: LUXEHR_CONNECTOR_VERSION,
+    serverTime: new Date().toISOString()
+  };
+}
+
 function doGet(e) {
   return jsonOutput_({ ok: true, status: 'success', connector: 'LuxeHR Google Sheet Database', version: LUXEHR_CONNECTOR_VERSION, serverTime: new Date().toISOString() });
 }
 
 function doPost(e) {
-  const lock = LockService.getScriptLock();
+  let lock = null;
+  let locked = false;
   try {
-    lock.waitLock(30000);
     const raw = e &amp;&amp; e.postData &amp;&amp; e.postData.contents ? e.postData.contents : '{}';
-    const payload = JSON.parse(raw);
+    const payload = JSON.parse(raw || '{}');
+    const action = normalizeActionName_(payload || {});
+
+    // Read-only realtime pull tidak memakai LockService. Ini mencegah read-all setiap perangkat
+    // memblokir sync/write yang sedang berjalan.
+    if (isReadOnlyAction_(action)) {
+      return jsonOutput_(handleRequest_(payload || {}));
+    }
+
+    // Semua request yang dapat mengubah Sheet/Drive memakai lock pendek dan fail-fast.
+    // Client akan retry otomatis sehingga tidak muncul error lock timeout panjang.
+    lock = getBestLock_();
+    locked = lock.tryLock(MUTATION_LOCK_WAIT_MS);
+    if (!locked) return jsonOutput_(busyResponse_(action));
+
     const result = handleRequest_(payload || {});
     return jsonOutput_(result);
   } catch (err) {
-    return jsonOutput_({ ok: false, status: 'error', message: err &amp;&amp; err.message ? err.message : String(err), stack: err &amp;&amp; err.stack ? err.stack : '', version: LUXEHR_CONNECTOR_VERSION });
+    return jsonOutput_({
+      ok: false,
+      status: 'error',
+      message: err &amp;&amp; err.message ? err.message : String(err),
+      stack: err &amp;&amp; err.stack ? err.stack : '',
+      version: LUXEHR_CONNECTOR_VERSION,
+      serverTime: new Date().toISOString()
+    });
   } finally {
-    try { lock.releaseLock(); } catch (releaseErr) {}
+    if (locked &amp;&amp; lock) {
+      try { lock.releaseLock(); } catch (releaseErr) {}
+    }
   }
 }
 
@@ -1157,9 +1213,8 @@ function handleRequest_(payload) {
   }
 
   if (action === 'readall' || action === 'read_all' || action === 'read') {
-    ensureCoreSheets_(ss);
-    const sheets = readSheets_(ss, payload.sheetNames || payload.sheets || []);
-    return { ok: true, status: 'success', action: 'readAll', spreadsheetId: ss.getId(), sheets, totalSheets: Object.keys(sheets).length, totalRows: Object.keys(sheets).reduce(function(sum, name){ return sum + sheets[name].length; }, 0), connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: new Date().toISOString() };
+    const sheets = readSheetsReadOnly_(ss, payload.sheetNames || payload.sheets || []);
+    return { ok: true, status: 'success', action: 'readAll', spreadsheetId: ss.getId(), sheets, totalSheets: Object.keys(sheets).length, totalRows: Object.keys(sheets).reduce(function(sum, name){ return sum + sheets[name].length; }, 0), readOnly: true, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: new Date().toISOString() };
   }
 
   if (action === 'audit' || action === 'diagnostics' || action === 'verify') {
@@ -1394,6 +1449,36 @@ function clearBody_(sheet) {
   const cols = Math.max(sheet.getLastColumn(), 1);
   if (rows &gt; 1) sheet.getRange(2, 1, rows - 1, cols).clearContent();
 }
+
+function findSheetByCanonicalOrAlias_(ss, name) {
+  const canonical = canonicalSheetName_(name);
+  const direct = ss.getSheetByName(canonical);
+  if (direct) return direct;
+  const aliases = SHEET_ALIASES[canonical] || [];
+  for (let i = 0; i &lt; aliases.length; i++) {
+    const aliasSheet = ss.getSheetByName(aliases[i]);
+    if (aliasSheet) return aliasSheet;
+  }
+  const sheets = ss.getSheets();
+  const targetNorm = normalizeToken_(canonical);
+  for (let j = 0; j &lt; sheets.length; j++) {
+    if (normalizeToken_(sheets[j].getName()) === targetNorm) return sheets[j];
+  }
+  return null;
+}
+
+function readSheetsReadOnly_(ss, requestedNames) {
+  const sheets = {};
+  const request = Array.isArray(requestedNames) ? requestedNames.filter(Boolean).map(canonicalSheetName_) : [];
+  const sourceNames = request.length ? request : Object.keys(LUXEHR_SCHEMAS);
+  sourceNames.forEach(function(name) {
+    const canonical = canonicalSheetName_(name);
+    const sheet = findSheetByCanonicalOrAlias_(ss, canonical);
+    sheets[canonical] = sheet ? readSheetAsObjects_(sheet, canonical, { ensure: false }) : [];
+  });
+  return sheets;
+}
+
 
 function readSheets_(ss, requestedNames) {
   const sheets = {};
@@ -1867,7 +1952,7 @@ function jsonOutput_(obj) {
             // Aplikasi v5.7 berjalan localStorage-only. Tidak ada request Google Sheet, Apps Script, atau Google Drive.
             const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzgZxX7HaFDE1z1FzFmuaMZpbLGLiyah7H9F_PgST6xPHXYGR_7NYjqE0mL0nbcO3iElw/exec";
 
-            const APP_VERSION = '6.0.0-google-sheet-verified-sync';
+            const APP_VERSION = '6.1.0-google-sheet-lock-safe-sync';
             const PAYROLL_MONTH_DAYS = 30;
             const STANDARD_WORKDAY_HOURS = 12;
             const STANDARD_WORKDAY_MINUTES = STANDARD_WORKDAY_HOURS * 60;
@@ -1943,8 +2028,8 @@ function jsonOutput_(obj) {
             let autoSyncServiceStarted = false;
             const AUTO_SYNC_DEBOUNCE_MS = 5000;
             const AUTO_SYNC_MIN_RETRY_MS = 30000;
-            const REALTIME_PULL_DEFAULT_SECONDS = 15;
-            const REALTIME_PULL_MIN_SECONDS = 5;
+            const REALTIME_PULL_DEFAULT_SECONDS = 60;
+            const REALTIME_PULL_MIN_SECONDS = 30;
             const CLOUD_FIRST_PURGE_DELAY_MS = 350;
             const DEFAULT_SPREADSHEET_TIME_ZONE = 'Asia/Jakarta';
             const CLOUD_SHEET_ALIASES = {
@@ -1971,6 +2056,8 @@ function jsonOutput_(obj) {
             };
             let realtimePullTimer = null;
             let realtimePullInProgress = false;
+            let lastCloudPullStartedAt = 0;
+            let cloudReadBackoffUntil = 0;
             let cloudHydrationInProgress = false;
             let lastCloudFingerprint = '';
 
@@ -2524,14 +2611,57 @@ function jsonOutput_(obj) {
                     jobs: normalizedJobs
                 };
             }
-            async function postToAppsScript(payload, allowOpaqueFallback = true) {
-                const action = String(payload?.action || payload?.mode || '').toLowerCase();
-                if (action === 'readall') {
-                    const snapshot = readLocalServerSnapshot() || persistLocalServerSnapshot('Read local server snapshot', { silent: true }).snapshot;
-                    return { ok: true, verified: true, mode: 'local-storage-read-all', result: { status: 'success', message: 'Data dibaca dari Local Storage Server.', sheets: snapshot?.sheets || {}, totalRows: Object.values(snapshot?.sheets || {}).reduce((sum, rows) => sum + (Array.isArray(rows) ? rows.length : 0), 0), totalSheets: Object.keys(snapshot?.sheets || {}).length, connectorVersion: APP_VERSION, serverTime: new Date().toISOString() } };
+            async function postToAppsScript(payload, allowOpaqueFallback = false) {
+                const url = getConfiguredWebAppUrl();
+                if (!isWebAppUrlConfigured()) throw new Error('Apps Script Web App URL belum valid. Tempel URL deploy Web App dari Apps Script.');
+                const maxAttempts = Number(payload?.action || '').toLowerCase().includes('read') ? 2 : 4;
+                let lastError = null;
+                for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                    const body = Object.assign({}, payload || {}, {
+                        spreadsheetId: (payload && payload.spreadsheetId) || getConfiguredSpreadsheetId(),
+                        driveRootFolderName: getDriveRootFolderName(),
+                        deviceId: getDeviceId(),
+                        clientTime: new Date().toISOString(),
+                        appVersion: APP_VERSION,
+                        requestId: `${getDeviceId()}_${Date.now()}_${Math.random().toString(16).slice(2)}`
+                    });
+                    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+                    const timeout = controller ? setTimeout(() => controller.abort(), 55000) : null;
+                    try {
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            mode: 'cors',
+                            redirect: 'follow',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify(body),
+                            signal: controller ? controller.signal : undefined
+                        });
+                        if (timeout) clearTimeout(timeout);
+                        const responseText = await response.text();
+                        let parsed;
+                        try { parsed = JSON.parse(responseText); }
+                        catch (error) { throw new Error(`Response Apps Script bukan JSON: ${responseText.slice(0, 220)}`); }
+                        if (!response.ok || parsed.ok === false || parsed.status === 'error' || parsed.status === 'busy') {
+                            const message = parsed.message || parsed.error || `HTTP ${response.status}`;
+                            const err = new Error(message);
+                            err.parsed = parsed;
+                            err.retriable = parsed.retriable === true || parsed.code === 'LOCK_BUSY' || parsed.status === 'busy' || isLockBusyMessage(message);
+                            throw err;
+                        }
+                        return { ok: true, verified: true, mode: 'google-sheet', result: parsed, raw: parsed };
+                    } catch (error) {
+                        if (timeout) clearTimeout(timeout);
+                        lastError = error;
+                        const retriable = error?.retriable === true || isLockBusyMessage(error?.message) || error?.name === 'AbortError';
+                        if (retriable && attempt < maxAttempts - 1) {
+                            const delay = getRetryDelayMs(attempt, error?.parsed);
+                            await sleep(delay);
+                            continue;
+                        }
+                        throw error;
+                    }
                 }
-                const persisted = persistLocalServerSnapshot('Request disimpan ke Local Storage Server', { silent: true, mode: 'local-storage-request' });
-                return { ok: persisted.ok, verified: true, mode: 'local-storage-server', result: { status: persisted.ok ? 'success' : 'error', message: persisted.ok ? 'Data berhasil disimpan ke Local Storage Server.' : 'Gagal menyimpan ke Local Storage Server.', summary: { successCount: getFullCloudSyncJobs().length, failedCount: persisted.ok ? 0 : 1, totalRows: Object.values(persisted.snapshot?.sheets || {}).reduce((sum, rows) => sum + (Array.isArray(rows) ? rows.length : 0), 0) }, driveUploads: [], connectorVersion: APP_VERSION, serverTime: new Date().toISOString() } };
+                throw lastError || new Error('Request Google Sheet gagal tanpa detail error.');
             }
             async function postToAppsScriptOpaque(payload) { return postToAppsScript(payload, false); }
             async function autoSyncToCloud(sheetName, payloadData, overwrite = true, options = {}) {
@@ -2561,26 +2691,49 @@ function jsonOutput_(obj) {
             async function syncAllToCloud(options = {}) {
                 const isAuto = options.source === 'auto';
                 const silent = options.silent === true || isAuto;
-                if (syncInProgress) { if (!silent) showToast('Checkpoint lokal sedang berjalan', 'warning'); return { ok: false, skipped: true, reason: 'sync-in-progress', verifiedCount: 0, fallbackCount: 0, failedCount: 0 }; }
+                if (syncInProgress) {
+                    if (!silent) showToast('Sync Google Sheet sedang berjalan', 'warning');
+                    return { ok: false, skipped: true, reason: 'sync-in-progress', verifiedCount: 0, fallbackCount: 0, failedCount: 0 };
+                }
+                if (!requireNetworkAccess(isAuto ? 'auto-sync' : 'manual-sync')) {
+                    if (!silent) showToast('Isi Web App URL dan Spreadsheet ID dulu, lalu klik Test Database.', 'warning');
+                    return { ok: false, skipped: true, reason: 'network-or-config-missing', verifiedCount: 0, fallbackCount: 0, failedCount: 0 };
+                }
                 syncInProgress = true;
                 applyDeleteMarkersToMemory();
                 const jobs = getFullCloudSyncJobs();
                 const now = new Date().toISOString();
-                saveSyncMeta({ status: 'syncing', sheetName: 'Semua Data', mode: isAuto ? 'auto-local-checkpoint' : 'manual-local-checkpoint', lastAttemptAt: now, lastError: null, message: `${isAuto ? 'Auto-checkpoint' : 'Checkpoint manual'} sedang menyimpan ${jobs.length} tabel ke Local Storage Server...` });
+                saveSyncMeta({ status: 'syncing', sheetName: 'Semua Data', mode: isAuto ? 'auto-google-sheet-sync' : 'manual-google-sheet-sync', lastAttemptAt: now, lastError: null, message: `${isAuto ? 'Auto-sync' : 'Sync manual'} sedang mengirim ${jobs.length} tabel ke Google Sheet...` });
                 try {
-                    const persisted = persistLocalServerSnapshot(isAuto ? 'Auto-checkpoint semua data' : 'Checkpoint manual semua data', { silent: true, mode: isAuto ? 'auto-local-checkpoint' : 'manual-local-checkpoint' });
-                    if (!persisted.ok) throw persisted.error || new Error('Gagal menyimpan snapshot lokal.');
-                    const snapshot = persisted.snapshot || {};
-                    const totalRows = Object.values(snapshot.sheets || {}).reduce((sum, rows) => sum + (Array.isArray(rows) ? rows.length : 0), 0);
-                    saveSyncMeta({ status: 'success', sheetName: 'Semua Data', mode: isAuto ? 'auto-local-checkpoint-success' : 'manual-local-checkpoint-success', lastSuccessAt: new Date().toISOString(), lastAttemptAt: now, lastError: null, lastCloudPullAt: new Date().toISOString(), lastCloudPullRows: totalRows, lastCloudPullSheets: Object.keys(snapshot.sheets || {}).length, message: `${isAuto ? 'Auto-checkpoint' : 'Checkpoint manual'} berhasil. ${jobs.length} tabel dan ${totalRows} baris tersimpan di localStorage browser ini.` });
-                    saveSyncQueue({ pending: false, nextRunAt: null, lastRunAt: new Date().toISOString(), retryCount: 0, lastResult: 'success-local' });
-                    if (!silent) showToast('Semua data berhasil disimpan lokal', 'success');
-                    return { ok: true, verifiedCount: jobs.length, fallbackCount: 0, failedCount: 0, totalRows };
+                    const payload = buildBatchSyncPayload(jobs, 'batchSync', { overwrite: false });
+                    payload.driveUploads = getPendingDriveUploads();
+                    const response = await postToAppsScript(payload);
+                    const result = response.result || {};
+                    applyDriveUploadResults(result.driveUploads || []);
+                    persistLocalServerSnapshot(isAuto ? 'Cache setelah auto-sync Google Sheet' : 'Cache setelah sync manual Google Sheet', { silent: true, mode: 'google-sheet-cache' });
+                    const summary = result.summary || {};
+                    const totalRows = Number(summary.totalRows || 0);
+                    const failedCount = Number(summary.failedCount || 0);
+                    if (failedCount > 0) throw new Error(`${failedCount} tabel gagal disinkronkan.`);
+
+                    // Auto-sync tidak langsung melakukan audit lock-heavy. Manual sync tetap read-back dengan readAll read-only.
+                    const audit = isAuto ? { ok: true, totalRows, counts: {}, lightweight: true } : await verifyDatabaseAfterWrite(jobs, result, { silent: true });
+                    saveSyncMeta({ status: 'success', sheetName: 'Semua Data', mode: isAuto ? 'auto-google-sheet-sync-sent' : 'manual-google-sheet-sync-verified', lastSuccessAt: new Date().toISOString(), lastAttemptAt: now, lastError: null, lastCloudPullAt: isAuto ? getSyncMeta().lastCloudPullAt : new Date().toISOString(), lastCloudPullRows: Number(audit.totalRows || totalRows || 0), lastCloudPullSheets: isAuto ? getSyncMeta().lastCloudPullSheets : Object.keys(audit.counts || {}).length, message: isAuto ? `Auto-sync berhasil dikirim ke Google Sheet. ${jobs.length} tabel terkirim; verifikasi detail akan dilakukan oleh realtime pull read-only.` : `Sync manual berhasil dan terverifikasi. ${jobs.length} tabel terkirim; ${Number(audit.totalRows || totalRows || 0)} baris terbaca ulang dari Google Sheet.` });
+                    saveSyncQueue({ pending: false, nextRunAt: null, lastRunAt: new Date().toISOString(), retryCount: 0, lastResult: isAuto ? 'success-google-sheet-sent' : 'success-google-sheet-verified' });
+                    if (!silent) showToast('Semua data berhasil disimpan dan diverifikasi di Google Sheet', 'success');
+                    return { ok: true, verifiedCount: jobs.length, fallbackCount: 0, failedCount: 0, totalRows: Number(audit.totalRows || totalRows || 0), audit };
                 } catch (error) {
-                    saveSyncMeta({ status: 'error', sheetName: 'Semua Data', mode: isAuto ? 'auto-local-checkpoint-failed' : 'manual-local-checkpoint-failed', lastAttemptAt: now, lastError: error.message || String(error), message: 'Checkpoint Local Storage gagal. Cek kapasitas storage browser.' });
-                    if (!silent) showToast('Checkpoint Local Storage gagal', 'error');
-                    return { ok: false, verifiedCount: 0, fallbackCount: 0, failedCount: jobs.length, error };
-                } finally { syncInProgress = false; renderSyncStatus(); updateConnectivityStatus(); }
+                    const lockBusy = isLockBusyMessage(error.message || String(error));
+                    saveSyncMeta({ status: lockBusy ? 'warning' : 'error', sheetName: 'Semua Data', mode: isAuto ? 'auto-google-sheet-sync-failed' : 'manual-google-sheet-sync-failed', lastAttemptAt: now, lastError: error.message || String(error), message: lockBusy ? 'Database sedang sibuk memproses request lain. Sync akan dicoba ulang otomatis.' : 'Sync ke Google Sheet gagal. Data tetap aman sebagai cache lokal.' });
+                    saveSyncQueue({ ...getSyncQueue(), pending: true, nextRunAt: new Date(Date.now() + (lockBusy ? 30000 : 60000)).toISOString(), retryCount: Number(getSyncQueue().retryCount || 0) + 1, lastResult: lockBusy ? 'lock-busy-retry' : 'error' });
+                    if (!silent) showToast(`${lockBusy ? 'Database sedang sibuk, sync akan retry otomatis' : 'Sync Google Sheet gagal'}: ${error.message || error}`, lockBusy ? 'warning' : 'error');
+                    return { ok: false, error, verifiedCount: 0, fallbackCount: 0, failedCount: jobs.length };
+                } finally {
+                    syncInProgress = false;
+                    updateConnectivityStatus();
+                    renderSyncStatus();
+                    renderRealtimeStatus();
+                }
             }
             function migrateCabangTerminology() {
                 let changed = false;
@@ -4456,19 +4609,52 @@ function jsonOutput_(obj) {
             }
             async function pullCloudDataNow(options = {}) {
                 const silent = options.silent === true;
-                const result = hydrateStateFromLocalServerSnapshot({ silent: true });
-                const now = new Date().toISOString();
-                if (result.ok) {
-                    renderCompanyIdentity(); renderAllSelectors(); setupPremiumSelects(document); refreshPremiumSelects(document); renderActiveView(); updateStorageStatus(); renderRealtimeStatus();
-                    const rows = Object.values(result.snapshot?.sheets || {}).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
-                    saveSyncMeta({ status: 'success', sheetName: 'Local Storage Server', mode: 'local-storage-reload', lastSuccessAt: now, lastAttemptAt: now, lastCloudPullAt: now, lastCloudPullRows: rows, lastCloudPullSheets: Object.keys(result.snapshot?.sheets || {}).length, lastError: null, message: 'Data berhasil dimuat ulang dari Local Storage Server.' });
-                    if (!silent) showToast('Data lokal berhasil dimuat ulang', 'success');
-                    return { ok: true, changed: true, rows };
+                const force = options.force === true;
+                const verifyMode = options.verifyMode === true;
+                if (!requireNetworkAccess('read-all')) {
+                    if (!silent) showToast('Belum bisa baca database. Cek URL, Spreadsheet ID, dan internet.', 'warning');
+                    return { ok: false, skipped: true, reason: 'network-or-config-missing' };
                 }
-                persistLocalServerSnapshot('Membuat snapshot Local Storage Server pertama', { silent: true, mode: 'local-storage-initial' });
-                saveSyncMeta({ status: 'success', sheetName: 'Local Storage Server', mode: 'local-storage-initial', lastSuccessAt: now, lastAttemptAt: now, lastError: null, message: 'Snapshot Local Storage Server dibuat dari data aktif aplikasi.' });
-                if (!silent) showToast('Snapshot lokal dibuat dari data aktif', 'success');
-                return { ok: true, changed: false, rows: 0 };
+                const nowMs = Date.now();
+                if (!force && realtimePullInProgress) return { ok: false, skipped: true, reason: 'pull-in-progress' };
+                if (!force && cloudReadBackoffUntil && nowMs < cloudReadBackoffUntil) return { ok: false, skipped: true, reason: 'pull-backoff' };
+                const minGap = Math.max(12000, Math.min(getRealtimePullIntervalMs(), 60000) - 2000);
+                if (!force && silent && lastCloudPullStartedAt && nowMs - lastCloudPullStartedAt < minGap) return { ok: false, skipped: true, reason: 'pull-cooldown' };
+
+                realtimePullInProgress = true;
+                lastCloudPullStartedAt = nowMs;
+                const now = new Date().toISOString();
+                if (!silent || verifyMode) saveSyncMeta({ status: 'syncing', sheetName: 'Google Sheet Database', mode: verifyMode ? 'read-back-verification' : 'read-all', lastAttemptAt: now, lastError: null, message: verifyMode ? 'Memverifikasi data yang baru ditulis dengan read-back read-only...' : 'Membaca data terbaru dari Google Sheet...' });
+                try {
+                    const response = await postToAppsScript({ action: 'readAll', sheetNames: getCloudReadSheetRequestList() });
+                    const result = response.result || {};
+                    const sheets = result.sheets || {};
+                    const counts = {};
+                    Object.keys(sheets).forEach(name => { counts[name] = Array.isArray(sheets[name]) ? sheets[name].length : 0; });
+                    const totalRows = Number(result.totalRows || Object.values(counts).reduce((sum, value) => sum + Number(value || 0), 0));
+                    cloudReadBackoffUntil = 0;
+                    if (totalRows > 0) {
+                        hydrateStateFromCloud(sheets);
+                        persistLocalServerSnapshot('Cache setelah membaca Google Sheet', { silent: true, mode: 'google-sheet-read-cache' });
+                        saveSyncMeta({ status: 'success', sheetName: 'Google Sheet Database', mode: verifyMode ? 'read-back-success' : 'read-all-success', lastSuccessAt: new Date().toISOString(), lastAttemptAt: now, lastCloudPullAt: new Date().toISOString(), lastCloudPullRows: totalRows, lastCloudPullSheets: Object.keys(sheets).length, lastError: null, message: verifyMode ? `Read-back berhasil: ${totalRows} baris terbaca dari Google Sheet.` : `Data terbaru berhasil dibaca dari Google Sheet: ${totalRows} baris.` });
+                        if (!silent) showToast('Data terbaru berhasil dimuat dari Google Sheet', 'success');
+                        return { ok: true, changed: true, rows: totalRows, counts, sheets };
+                    }
+                    saveSyncMeta({ status: 'warning', sheetName: 'Google Sheet Database', mode: 'read-all-empty', lastAttemptAt: now, lastCloudPullAt: now, lastCloudPullRows: 0, lastCloudPullSheets: Object.keys(sheets).length, lastError: null, message: 'Google Sheet masih kosong. Data lokal dapat dijadikan seed dengan Sync Manual.' });
+                    if (!silent) showToast('Google Sheet masih kosong. Klik Sync Manual untuk mengisi database awal.', 'warning');
+                    return { ok: true, changed: false, rows: 0, counts, sheets };
+                } catch (error) {
+                    const lockBusy = isLockBusyMessage(error.message || String(error));
+                    if (lockBusy) cloudReadBackoffUntil = Date.now() + Math.max(30000, getRealtimePullIntervalMs());
+                    saveSyncMeta({ status: lockBusy ? 'warning' : 'error', sheetName: 'Google Sheet Database', mode: lockBusy ? 'read-all-busy-retry' : 'read-all-failed', lastAttemptAt: now, lastError: error.message || String(error), message: lockBusy ? 'Database sedang sibuk memproses sync perangkat lain. Cache lokal tetap digunakan dan pull akan dicoba ulang otomatis.' : 'Gagal membaca Google Sheet. Cache lokal tetap digunakan.' });
+                    if (!silent) showToast(`${lockBusy ? 'Database sedang sibuk, akan dicoba ulang' : 'Gagal membaca Google Sheet'}: ${error.message || error}`, lockBusy ? 'warning' : 'error');
+                    return { ok: false, error };
+                } finally {
+                    realtimePullInProgress = false;
+                    renderSyncStatus();
+                    renderRealtimeStatus();
+                    updateConnectivityStatus();
+                }
             }
             function renderRealtimeStatus() {
                 const el = byId('cloudRealtimeStatus'); if (!el) return;
@@ -4478,9 +4664,14 @@ function jsonOutput_(obj) {
                 const summary = snapshot?.summary || {};
                 el.innerHTML = `<div class="flex items-start gap-2"><i class="fa-solid fa-database text-gold-500 mt-0.5"></i><div><p class="text-white text-[11px]">Mode: Local Storage Server / single browser.</p><p>Google Sheet/Drive: <span class="text-gray-400">Dinonaktifkan</span></p><p>Realtime cloud pull: <span class="text-gray-400">Tempel Spreadsheet ID</span></p><p>Checkpoint lokal terakhir: ${escapeHtml(lastSaved)}</p><p>Jumlah karyawan di snapshot: ${Number(summary.employees || 0)}</p><p>Jumlah akun login di snapshot: ${Number(summary.userAccounts || 0)}</p><p>Status storage: <span class="${queue.pending ? 'text-yellow-400' : 'text-green-400'}">${escapeHtml(localPolicy)}</span></p>${meta.lastError ? `<p class="mt-1 text-red-400 break-words">Error: ${escapeHtml(meta.lastError)}</p>` : ''}</div></div>`;
             }
-            function startRealtimeCloudService() {
+                        function startRealtimeCloudService() {
                 if (realtimePullTimer) clearInterval(realtimePullTimer);
-                realtimePullTimer = setInterval(() => { if (!document.hidden) { renderRealtimeStatus(); renderSyncStatus(); updateConnectivityStatus(); } }, 15000);
+                const run = () => {
+                    if (document.hidden) return;
+                    if (isRealtimePullEnabled() && !getSyncQueue().pending && !syncInProgress && !realtimePullInProgress && Date.now() >= cloudReadBackoffUntil) pullCloudDataNow({ silent: true });
+                    else { renderRealtimeStatus(); renderSyncStatus(); updateConnectivityStatus(); }
+                };
+                realtimePullTimer = setInterval(run, getRealtimePullIntervalMs());
                 renderRealtimeStatus();
             }
             function formatMinutesToHHMM(totalMinutes) {
@@ -7167,7 +7358,7 @@ function jsonOutput_(obj) {
                 });
             }
 
-            // --- GOOGLE SHEET DATABASE PATCH v5.9 ---
+            // --- GOOGLE SHEET DATABASE PATCH v6.1 LOCK-SAFE ---
             // Patch ini mengubah Local Storage menjadi cache/offline fallback.
             // Database utama: Google Sheet via Apps Script Web App.
             function getConfiguredWebAppUrl() {
@@ -7220,7 +7411,7 @@ function jsonOutput_(obj) {
                     employeeStatusOptions: DEFAULT_EMPLOYEE_STATUSES,
                     offboardingFeatureInitialized: false,
                     autoSyncEnabled: true,
-                    autoSyncIntervalSeconds: 15,
+                    autoSyncIntervalSeconds: 60,
                     networkAccessEnabled: true,
                     previewNetworkGuardEnabled: false,
                     cloudFirstEnabled: true,
@@ -7258,7 +7449,7 @@ function jsonOutput_(obj) {
             function saveSettings() {
                 normalizeMasterDropdowns();
                 settings.autoSyncEnabled = settings.autoSyncEnabled !== false;
-                settings.autoSyncIntervalSeconds = Math.max(5, Number(settings.autoSyncIntervalSeconds || 15));
+                settings.autoSyncIntervalSeconds = Math.max(30, Number(settings.autoSyncIntervalSeconds || 60));
                 settings.networkAccessEnabled = settings.networkAccessEnabled !== false;
                 settings.previewNetworkGuardEnabled = false;
                 settings.cloudFirstEnabled = settings.cloudFirstEnabled !== false;
@@ -7294,31 +7485,66 @@ function jsonOutput_(obj) {
                 return Object.assign(state, { browserOnline: navigator.onLine === true, networkEnabled: isNetworkAccessEnabled(), cloudFirst: isCloudFirstEnabled(), realtimeEnabled: isRealtimePullEnabled(), queue, meta });
             }
 
-            async function postToAppsScript(payload, allowOpaqueFallback = false) {
+            function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+            function isLockBusyMessage(value) {
+                return /LOCK_BUSY|lock\s*busy|penguncian|menahan kunci|proses request lain|database sedang memproses|Service invoked too many times|Too many simultaneous|busy/i.test(String(value || ''));
+            }
+            function getRetryDelayMs(attempt, parsed) {
+                const explicit = Number(parsed?.retryAfterMs || 0);
+                if (Number.isFinite(explicit) && explicit > 0) return Math.min(12000, explicit + attempt * 1200);
+                return [1200, 3000, 6500, 10000][attempt] || 12000;
+            }
+
+                        async function postToAppsScript(payload, allowOpaqueFallback = false) {
                 const url = getConfiguredWebAppUrl();
                 if (!isWebAppUrlConfigured()) throw new Error('Apps Script Web App URL belum valid. Tempel URL deploy Web App dari Apps Script.');
-                const body = Object.assign({}, payload || {}, {
-                    spreadsheetId: (payload && payload.spreadsheetId) || getConfiguredSpreadsheetId(),
-                    driveRootFolderName: getDriveRootFolderName(),
-                    deviceId: getDeviceId(),
-                    clientTime: new Date().toISOString(),
-                    appVersion: APP_VERSION
-                });
-                const response = await fetch(url, {
-                    method: 'POST',
-                    mode: 'cors',
-                    redirect: 'follow',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(body)
-                });
-                const responseText = await response.text();
-                let parsed;
-                try { parsed = JSON.parse(responseText); }
-                catch (error) { throw new Error(`Response Apps Script bukan JSON: ${responseText.slice(0, 220)}`); }
-                if (!response.ok || parsed.ok === false || parsed.status === 'error') {
-                    throw new Error(parsed.message || parsed.error || `HTTP ${response.status}`);
+                const maxAttempts = String(payload?.action || '').toLowerCase().includes('read') ? 2 : 4;
+                let lastError = null;
+                for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                    const body = Object.assign({}, payload || {}, {
+                        spreadsheetId: (payload && payload.spreadsheetId) || getConfiguredSpreadsheetId(),
+                        driveRootFolderName: getDriveRootFolderName(),
+                        deviceId: getDeviceId(),
+                        clientTime: new Date().toISOString(),
+                        appVersion: APP_VERSION,
+                        requestId: `${getDeviceId()}_${Date.now()}_${Math.random().toString(16).slice(2)}`
+                    });
+                    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+                    const timeout = controller ? setTimeout(() => controller.abort(), 55000) : null;
+                    try {
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            mode: 'cors',
+                            redirect: 'follow',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify(body),
+                            signal: controller ? controller.signal : undefined
+                        });
+                        if (timeout) clearTimeout(timeout);
+                        const responseText = await response.text();
+                        let parsed;
+                        try { parsed = JSON.parse(responseText); }
+                        catch (error) { throw new Error(`Response Apps Script bukan JSON: ${responseText.slice(0, 220)}`); }
+                        if (!response.ok || parsed.ok === false || parsed.status === 'error' || parsed.status === 'busy') {
+                            const message = parsed.message || parsed.error || `HTTP ${response.status}`;
+                            const err = new Error(message);
+                            err.parsed = parsed;
+                            err.retriable = parsed.retriable === true || parsed.code === 'LOCK_BUSY' || parsed.status === 'busy' || isLockBusyMessage(message);
+                            throw err;
+                        }
+                        return { ok: true, verified: true, mode: 'google-sheet', result: parsed, raw: parsed };
+                    } catch (error) {
+                        if (timeout) clearTimeout(timeout);
+                        lastError = error;
+                        const retriable = error?.retriable === true || isLockBusyMessage(error?.message) || error?.name === 'AbortError';
+                        if (retriable && attempt < maxAttempts - 1) {
+                            await sleep(getRetryDelayMs(attempt, error?.parsed));
+                            continue;
+                        }
+                        throw error;
+                    }
                 }
-                return { ok: true, verified: true, mode: 'google-sheet', result: parsed, raw: parsed };
+                throw lastError || new Error('Request Google Sheet gagal tanpa detail error.');
             }
             async function postToAppsScriptOpaque(payload) { return postToAppsScript(payload, false); }
 
@@ -7475,15 +7701,15 @@ function jsonOutput_(obj) {
                 return aliases[name] || String(name || '').trim().replace(/\s+/g, '_');
             }
 
-            async function verifyDatabaseAfterWrite(jobs, writeResult, options = {}) {
+                        async function verifyDatabaseAfterWrite(jobs, writeResult, options = {}) {
                 const expectedRows = (jobs || []).reduce((sum, item) => sum + (Array.isArray(item?.[1]) ? item[1].length : 0), 0);
                 const summary = writeResult?.summary || {};
                 const failedCount = Number(summary.failedCount || 0);
                 if (failedCount > 0) throw new Error(`${failedCount} tabel gagal dari response Apps Script.`);
-                const audit = await verifyDatabaseIntegrity({ silent: true });
-                if (!audit.ok) throw new Error(audit.error?.message || 'Audit database setelah sync gagal.');
-                if (expectedRows > 0 && Number(audit.totalRows || 0) <= 0) throw new Error('Data sudah dikirim tetapi tidak terbaca kembali dari Google Sheet.');
-                return audit;
+                const readBack = await pullCloudDataNow({ silent: true, force: true, verifyMode: true });
+                if (!readBack.ok) throw new Error(readBack.error?.message || 'Read-back database setelah sync gagal.');
+                if (expectedRows > 0 && Number(readBack.rows || 0) <= 0) throw new Error('Data sudah dikirim tetapi tidak terbaca kembali dari Google Sheet.');
+                return { ok: true, totalRows: Number(readBack.rows || 0), counts: readBack.counts || {}, result: readBack };
             }
 
             async function autoSyncToCloud(sheetName, payloadData, overwrite = false, options = {}) {
@@ -7503,7 +7729,7 @@ function jsonOutput_(obj) {
                 return { ok: true, verified: true, response: result };
             }
 
-            async function syncAllToCloud(options = {}) {
+                        async function syncAllToCloud(options = {}) {
                 const isAuto = options.source === 'auto';
                 const silent = options.silent === true || isAuto;
                 if (syncInProgress) {
@@ -7530,14 +7756,16 @@ function jsonOutput_(obj) {
                     const totalRows = Number(summary.totalRows || 0);
                     const failedCount = Number(summary.failedCount || 0);
                     if (failedCount > 0) throw new Error(`${failedCount} tabel gagal disinkronkan.`);
-                    const audit = await verifyDatabaseAfterWrite(jobs, result, { silent: true });
-                    saveSyncMeta({ status: 'success', sheetName: 'Semua Data', mode: isAuto ? 'auto-google-sheet-sync-verified' : 'manual-google-sheet-sync-verified', lastSuccessAt: new Date().toISOString(), lastAttemptAt: now, lastError: null, lastCloudPullAt: new Date().toISOString(), lastCloudPullRows: Number(audit.totalRows || totalRows || 0), lastCloudPullSheets: Object.keys(audit.counts || {}).length, message: `${isAuto ? 'Auto-sync' : 'Sync manual'} berhasil dan terverifikasi. ${jobs.length} tabel terkirim; ${Number(audit.totalRows || totalRows || 0)} baris terbaca ulang dari Google Sheet.` });
-                    saveSyncQueue({ pending: false, nextRunAt: null, lastRunAt: new Date().toISOString(), retryCount: 0, lastResult: 'success-google-sheet-verified' });
+                    const audit = isAuto ? { ok: true, totalRows, counts: {}, lightweight: true } : await verifyDatabaseAfterWrite(jobs, result, { silent: true });
+                    saveSyncMeta({ status: 'success', sheetName: 'Semua Data', mode: isAuto ? 'auto-google-sheet-sync-sent' : 'manual-google-sheet-sync-verified', lastSuccessAt: new Date().toISOString(), lastAttemptAt: now, lastError: null, lastCloudPullAt: isAuto ? getSyncMeta().lastCloudPullAt : new Date().toISOString(), lastCloudPullRows: Number(audit.totalRows || totalRows || 0), lastCloudPullSheets: isAuto ? getSyncMeta().lastCloudPullSheets : Object.keys(audit.counts || {}).length, message: isAuto ? `Auto-sync berhasil dikirim ke Google Sheet. ${jobs.length} tabel terkirim; verifikasi detail akan dilakukan oleh realtime pull read-only.` : `Sync manual berhasil dan terverifikasi. ${jobs.length} tabel terkirim; ${Number(audit.totalRows || totalRows || 0)} baris terbaca ulang dari Google Sheet.` });
+                    saveSyncQueue({ pending: false, nextRunAt: null, lastRunAt: new Date().toISOString(), retryCount: 0, lastResult: isAuto ? 'success-google-sheet-sent' : 'success-google-sheet-verified' });
                     if (!silent) showToast('Semua data berhasil disimpan dan diverifikasi di Google Sheet', 'success');
                     return { ok: true, verifiedCount: jobs.length, fallbackCount: 0, failedCount: 0, totalRows: Number(audit.totalRows || totalRows || 0), audit };
                 } catch (error) {
-                    saveSyncMeta({ status: 'error', sheetName: 'Semua Data', mode: isAuto ? 'auto-google-sheet-sync-failed' : 'manual-google-sheet-sync-failed', lastAttemptAt: now, lastError: error.message || String(error), message: 'Sync ke Google Sheet gagal. Data tetap aman sebagai cache lokal.' });
-                    if (!silent) showToast(`Sync Google Sheet gagal: ${error.message || error}`, 'error');
+                    const lockBusy = isLockBusyMessage(error.message || String(error));
+                    saveSyncMeta({ status: lockBusy ? 'warning' : 'error', sheetName: 'Semua Data', mode: isAuto ? 'auto-google-sheet-sync-failed' : 'manual-google-sheet-sync-failed', lastAttemptAt: now, lastError: error.message || String(error), message: lockBusy ? 'Database sedang sibuk memproses request lain. Sync akan dicoba ulang otomatis.' : 'Sync ke Google Sheet gagal. Data tetap aman sebagai cache lokal.' });
+                    saveSyncQueue({ ...getSyncQueue(), pending: true, nextRunAt: new Date(Date.now() + (lockBusy ? 30000 : 60000)).toISOString(), retryCount: Number(getSyncQueue().retryCount || 0) + 1, lastResult: lockBusy ? 'lock-busy-retry' : 'error' });
+                    if (!silent) showToast(`${lockBusy ? 'Database sedang sibuk, sync akan retry otomatis' : 'Sync Google Sheet gagal'}: ${error.message || error}`, lockBusy ? 'warning' : 'error');
                     return { ok: false, error, verifiedCount: 0, fallbackCount: 0, failedCount: jobs.length };
                 } finally {
                     syncInProgress = false;
@@ -7567,33 +7795,52 @@ function jsonOutput_(obj) {
                 }
             }
 
-            async function pullCloudDataNow(options = {}) {
+                        async function pullCloudDataNow(options = {}) {
                 const silent = options.silent === true;
+                const force = options.force === true;
+                const verifyMode = options.verifyMode === true;
                 if (!requireNetworkAccess('read-all')) {
                     if (!silent) showToast('Belum bisa baca database. Cek URL, Spreadsheet ID, dan internet.', 'warning');
                     return { ok: false, skipped: true, reason: 'network-or-config-missing' };
                 }
+                const nowMs = Date.now();
+                if (!force && realtimePullInProgress) return { ok: false, skipped: true, reason: 'pull-in-progress' };
+                if (!force && cloudReadBackoffUntil && nowMs < cloudReadBackoffUntil) return { ok: false, skipped: true, reason: 'pull-backoff' };
+                const minGap = Math.max(12000, Math.min(getRealtimePullIntervalMs(), 60000) - 2000);
+                if (!force && silent && lastCloudPullStartedAt && nowMs - lastCloudPullStartedAt < minGap) return { ok: false, skipped: true, reason: 'pull-cooldown' };
+                realtimePullInProgress = true;
+                lastCloudPullStartedAt = nowMs;
                 const now = new Date().toISOString();
-                saveSyncMeta({ status: 'syncing', sheetName: 'Google Sheet Database', mode: 'read-all', lastAttemptAt: now, lastError: null, message: 'Membaca data terbaru dari Google Sheet...' });
+                if (!silent || verifyMode) saveSyncMeta({ status: 'syncing', sheetName: 'Google Sheet Database', mode: verifyMode ? 'read-back-verification' : 'read-all', lastAttemptAt: now, lastError: null, message: verifyMode ? 'Memverifikasi data yang baru ditulis dengan read-back read-only...' : 'Membaca data terbaru dari Google Sheet...' });
                 try {
                     const response = await postToAppsScript({ action: 'readAll', sheetNames: getCloudReadSheetRequestList() });
                     const result = response.result || {};
                     const sheets = result.sheets || {};
-                    const totalRows = Number(result.totalRows || Object.values(sheets).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0));
+                    const counts = {};
+                    Object.keys(sheets).forEach(name => { counts[name] = Array.isArray(sheets[name]) ? sheets[name].length : 0; });
+                    const totalRows = Number(result.totalRows || Object.values(counts).reduce((sum, value) => sum + Number(value || 0), 0));
+                    cloudReadBackoffUntil = 0;
                     if (totalRows > 0) {
                         hydrateStateFromCloud(sheets);
                         persistLocalServerSnapshot('Cache setelah membaca Google Sheet', { silent: true, mode: 'google-sheet-read-cache' });
-                        saveSyncMeta({ status: 'success', sheetName: 'Google Sheet Database', mode: 'read-all-success', lastSuccessAt: new Date().toISOString(), lastAttemptAt: now, lastCloudPullAt: new Date().toISOString(), lastCloudPullRows: totalRows, lastCloudPullSheets: Object.keys(sheets).length, lastError: null, message: `Data terbaru berhasil dibaca dari Google Sheet: ${totalRows} baris.` });
+                        saveSyncMeta({ status: 'success', sheetName: 'Google Sheet Database', mode: verifyMode ? 'read-back-success' : 'read-all-success', lastSuccessAt: new Date().toISOString(), lastAttemptAt: now, lastCloudPullAt: new Date().toISOString(), lastCloudPullRows: totalRows, lastCloudPullSheets: Object.keys(sheets).length, lastError: null, message: verifyMode ? `Read-back berhasil: ${totalRows} baris terbaca dari Google Sheet.` : `Data terbaru berhasil dibaca dari Google Sheet: ${totalRows} baris.` });
                         if (!silent) showToast('Data terbaru berhasil dimuat dari Google Sheet', 'success');
-                        return { ok: true, changed: true, rows: totalRows, sheets };
+                        return { ok: true, changed: true, rows: totalRows, counts, sheets };
                     }
                     saveSyncMeta({ status: 'warning', sheetName: 'Google Sheet Database', mode: 'read-all-empty', lastAttemptAt: now, lastCloudPullAt: now, lastCloudPullRows: 0, lastCloudPullSheets: Object.keys(sheets).length, lastError: null, message: 'Google Sheet masih kosong. Data lokal dapat dijadikan seed dengan Sync Manual.' });
                     if (!silent) showToast('Google Sheet masih kosong. Klik Sync Manual untuk mengisi database awal.', 'warning');
-                    return { ok: true, changed: false, rows: 0, sheets };
+                    return { ok: true, changed: false, rows: 0, counts, sheets };
                 } catch (error) {
-                    saveSyncMeta({ status: 'error', sheetName: 'Google Sheet Database', mode: 'read-all-failed', lastAttemptAt: now, lastError: error.message || String(error), message: 'Gagal membaca Google Sheet. Cache lokal tetap digunakan.' });
-                    if (!silent) showToast(`Gagal membaca Google Sheet: ${error.message || error}`, 'error');
+                    const lockBusy = isLockBusyMessage(error.message || String(error));
+                    if (lockBusy) cloudReadBackoffUntil = Date.now() + Math.max(30000, getRealtimePullIntervalMs());
+                    saveSyncMeta({ status: lockBusy ? 'warning' : 'error', sheetName: 'Google Sheet Database', mode: lockBusy ? 'read-all-busy-retry' : 'read-all-failed', lastAttemptAt: now, lastError: error.message || String(error), message: lockBusy ? 'Database sedang sibuk memproses sync perangkat lain. Cache lokal tetap digunakan dan pull akan dicoba ulang otomatis.' : 'Gagal membaca Google Sheet. Cache lokal tetap digunakan.' });
+                    if (!silent) showToast(`${lockBusy ? 'Database sedang sibuk, akan dicoba ulang' : 'Gagal membaca Google Sheet'}: ${error.message || error}`, lockBusy ? 'warning' : 'error');
                     return { ok: false, error };
+                } finally {
+                    realtimePullInProgress = false;
+                    renderSyncStatus();
+                    renderRealtimeStatus();
+                    updateConnectivityStatus();
                 }
             }
 
@@ -7657,11 +7904,11 @@ function jsonOutput_(obj) {
                 el.innerHTML = `<div class="flex items-start gap-2"><i class="fa-solid fa-cloud text-gold-500 mt-0.5"></i><div><p class="text-white text-[11px]">Mode: Google Sheet Database / Cloud First.</p><p>Google Sheet: <span class="${isWebAppUrlConfigured() ? 'text-green-400' : 'text-yellow-400'}">${isWebAppUrlConfigured() ? 'Aktif' : 'Belum dikonfigurasi'}</span></p><p>Realtime pull: <span class="${isRealtimePullEnabled() ? 'text-green-400' : 'text-gray-400'}">${isRealtimePullEnabled() ? `Aktif setiap ${Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS)} detik` : 'Nonaktif / menunggu konfigurasi'}</span></p><p>Pull terakhir: ${escapeHtml(lastPull)}</p><p>Baris terakhir dibaca: ${rowCount}</p><p>Status antrean: <span class="${queue.pending ? 'text-yellow-400' : 'text-green-400'}">${queue.pending ? 'Ada perubahan menunggu sync' : 'Semua perubahan tersinkron'}</span></p>${meta.lastError ? `<p class="mt-1 text-red-400 break-words">Error: ${escapeHtml(meta.lastError)}</p>` : ''}</div></div>`;
             }
 
-            function startRealtimeCloudService() {
+                        function startRealtimeCloudService() {
                 if (realtimePullTimer) clearInterval(realtimePullTimer);
                 const run = () => {
                     if (document.hidden) return;
-                    if (isRealtimePullEnabled() && !getSyncQueue().pending && !syncInProgress) pullCloudDataNow({ silent: true });
+                    if (isRealtimePullEnabled() && !getSyncQueue().pending && !syncInProgress && !realtimePullInProgress && Date.now() >= cloudReadBackoffUntil) pullCloudDataNow({ silent: true });
                     else { renderRealtimeStatus(); renderSyncStatus(); updateConnectivityStatus(); }
                 };
                 realtimePullTimer = setInterval(run, getRealtimePullIntervalMs());
