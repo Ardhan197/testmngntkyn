@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LuxeHR Premium Cloud Sheet v5.8 - Aplikasi Management Karyawan</title>
+    <title>LuxeHR Premium Cloud Sheet v5.9 - Aplikasi Management Karyawan</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css';">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -1035,14 +1035,22 @@
                 <!-- NEW CARD: Google Apps Script Template -->
                 <div class="premium-card rounded-xl p-4 lg:col-span-2 mt-2">
                     <div class="flex justify-between items-center mb-1">
-                        <h3 class="font-serif font-bold text-white text-base">Google Apps Script Database Template</h3>
+                        <h3 class="font-serif font-bold text-white text-base">Google Apps Script Database Template v5.9 Header-Safe</h3>
                         <button type="button" onclick="copyAppScript()" class="border border-white/10 text-gray-300 hover:text-white hover:border-gold-500/40 py-1.5 px-3 text-[9px] uppercase tracking-widest rounded-lg transition-all flex items-center gap-1.5">
                             <i class="fa-solid fa-copy"></i> Salin Script
                         </button>
                     </div>
-                    <p class="text-[10px] text-gray-500 mb-4">Copy script ini ke Google Apps Script, deploy sebagai Web App, lalu tempel URL Web App dan Spreadsheet ID di atas.</p>
+                    <p class="text-[10px] text-gray-500 mb-4">Copy script ini ke Google Apps Script. Script v5.9 akan membuat header otomatis dan membaca data berdasarkan nama header, sehingga urutan kolom di Google Sheet boleh berubah tanpa merusak data.</p>
                     <textarea id="appScriptTemplate" class="field min-h-[420px] font-mono text-[10px] leading-relaxed resize-y bg-surface-100/80 cursor-text" readonly spellcheck="false">/**
- * LuxeHR Premium v5.8 - Google Sheet Database Connector
+ * LuxeHR Premium v5.9 - Advanced Google Sheet Database Connector
+ * Fokus utama:
+ * - Header dibuat otomatis untuk semua sheet inti.
+ * - Read/write memakai nama header, bukan posisi kolom.
+ * - Jika kolom di Google Sheet digeser, data tetap aman.
+ * - Jika ada header lama/alias seperti "Nama Karyawan", "Cabang", "NIK", script akan memetakan ke field canonical.
+ * - Header baru otomatis ditambahkan di kanan tanpa merusak urutan kolom manual.
+ * - Upsert memakai record key stabil dan timestamp updatedAt/deletedAt.
+ *
  * Cara pakai:
  * 1) Buat Google Sheet kosong untuk database.
  * 2) Extensions > Apps Script > paste seluruh kode ini.
@@ -1051,123 +1059,172 @@
  * 5) Copy Web App URL ke aplikasi LuxeHR, lalu isi Spreadsheet ID.
  */
 
-const LUXEHR_CONNECTOR_VERSION = '5.8.0';
+const LUXEHR_CONNECTOR_VERSION = '5.9.0-header-safe';
 const DEFAULT_ROOT_FOLDER_NAME = 'LuxeHR Uploads';
+const HEADER_ROW = 1;
+
+const LUXEHR_SCHEMAS = {
+  Data_Karyawan: {
+    key: ['id', 'nik', 'email', 'phone', 'name'],
+    headers: [
+      'id','legacyId','nik','name','branch','position','status','joinDate','phone','email','salary','defaultShiftId',
+      'photo','photoStorage','photoSizeKb','photoLocalHash','photoDriveUrl','photoDriveFileId','photoDriveDownloadUrl','photoDriveThumbnailUrl','photoDriveHash','photoDriveSyncedAt',
+      'ktpImage','ktpStorage','ktpSizeKb','ktpLocalHash','ktpDriveUrl','ktpDriveFileId','ktpDriveDownloadUrl','ktpDriveThumbnailUrl','ktpDriveHash','ktpDriveSyncedAt',
+      'address','createdAt','updatedAt'
+    ],
+    aliases: {
+      id: ['id','ID','Id','employeeId','Employee ID','ID Karyawan','Id Karyawan','Kode Karyawan','Kode'],
+      legacyId: ['legacyId','Legacy ID','ID Lama'],
+      nik: ['nik','NIK','employeeNik','No Induk','Nomor Induk','No Karyawan','Nomor Karyawan'],
+      name: ['name','Nama','Nama Karyawan','employeeName','Karyawan','Nama Lengkap','Full Name'],
+      branch: ['branch','Cabang','Nama Cabang','department','Departemen','Divisi','Unit','Area','Outlet'],
+      position: ['position','Jabatan','Posisi','Job Title','Title'],
+      status: ['status','Status','Status Karyawan','employeeStatus'],
+      joinDate: ['joinDate','Tanggal Masuk','Tgl Masuk','Mulai Kerja','Tanggal Bergabung','Join Date'],
+      phone: ['phone','No HP','No. HP','Nomor HP','Telepon','No Telp','No Telepon','Whatsapp','WA'],
+      email: ['email','Email','E-mail','Surel'],
+      salary: ['salary','Gaji','Gaji Pokok','Basic Salary','Upah','Honor'],
+      defaultShiftId: ['defaultShiftId','Shift Default','Default Shift','shiftId'],
+      photo: ['photo','Foto','Foto Karyawan','photoUrl','photoDriveUrl','photoDriveDownloadUrl','photoDriveThumbnailUrl'],
+      ktpImage: ['ktpImage','KTP','Foto KTP','Gambar KTP','ktpUrl','ktpDriveUrl','ktpDriveDownloadUrl','ktpDriveThumbnailUrl'],
+      address: ['address','Alamat','Alamat Lengkap','Domisili'],
+      createdAt: ['createdAt','Created At','Dibuat Pada','Tanggal Input'],
+      updatedAt: ['updatedAt','Updated At','Diupdate Pada','Terakhir Update','Last Update']
+    }
+  },
+  Data_Absensi: {
+    key: ['id', 'employeeId', 'employeeNik', 'employeeName', 'date'],
+    headers: ['id','date','employeeId','employeeName','employeeNik','employeeBranch','employeePosition','shiftId','shiftName','shiftStart','shiftEnd','toleranceMinutes','checkIn','checkOut','status','snapshotLocked','snapshotCreatedAt','createdAt','updatedAt'],
+    aliases: {
+      id: ['id','ID'], date: ['date','Tanggal','Tanggal Absensi'], employeeId: ['employeeId','ID Karyawan','idKaryawan'], employeeName: ['employeeName','Nama','Nama Karyawan','name'], employeeNik: ['employeeNik','NIK','nik','No Induk'], employeeBranch: ['employeeBranch','Cabang','branch','employeeDepartment','Divisi'], employeePosition: ['employeePosition','Jabatan','position'], shiftId: ['shiftId','ID Shift'], shiftName: ['shiftName','Shift','Nama Shift'], shiftStart: ['shiftStart','Jam Shift Masuk','Jam Masuk Shift'], shiftEnd: ['shiftEnd','Jam Shift Pulang','Jam Pulang Shift'], checkIn: ['checkIn','Masuk','Jam Masuk'], checkOut: ['checkOut','Pulang','Jam Pulang'], status: ['status','Status'], updatedAt: ['updatedAt','Updated At','Last Update']
+    }
+  },
+  Data_Cuti: {
+    key: ['id','employeeId','employeeName','startDate','endDate','type'],
+    headers: ['id','employeeId','employeeName','employeeNik','type','startDate','endDate','note','status','createdAt','updatedAt'],
+    aliases: { employeeId: ['employeeId','ID Karyawan'], employeeName: ['employeeName','Nama Karyawan','Nama'], employeeNik: ['employeeNik','NIK'], type: ['type','Jenis'], startDate: ['startDate','Tanggal Mulai','Mulai'], endDate: ['endDate','Tanggal Selesai','Selesai'], note: ['note','Catatan','Keterangan'], status: ['status','Status'] }
+  },
+  Data_Shift: {
+    key: ['id','name'],
+    headers: ['id','name','startTime','endTime','toleranceMinutes','status','description','createdAt','updatedAt'],
+    aliases: { name: ['name','Nama Shift','Shift'], startTime: ['startTime','Jam Masuk','Mulai'], endTime: ['endTime','Jam Pulang','Selesai'], toleranceMinutes: ['toleranceMinutes','Toleransi','Toleransi Menit'], description: ['description','Keterangan','Catatan'] }
+  },
+  Data_Shift_Assignment: {
+    key: ['id','employeeId','shiftId','startDate'],
+    headers: ['id','employeeId','shiftId','startDate','endDate','note','createdAt','updatedAt'],
+    aliases: { employeeId: ['employeeId','ID Karyawan'], shiftId: ['shiftId','ID Shift'], startDate: ['startDate','Mulai','Tanggal Mulai'], endDate: ['endDate','Selesai','Tanggal Selesai'], note: ['note','Catatan'] }
+  },
+  Data_Resign: {
+    key: ['id','employeeId','nik','date'],
+    headers: ['id','employeeId','name','nik','phone','email','branch','position','type','date','reason','level','revokedAt','createdAt','updatedAt'],
+    aliases: { employeeId: ['employeeId','ID Karyawan'], name: ['name','Nama'], nik: ['nik','NIK'], date: ['date','Tanggal'], reason: ['reason','Alasan'], branch: ['branch','Cabang'] }
+  },
+  Data_Blacklist: {
+    key: ['id','employeeId','nik','date'],
+    headers: ['id','employeeId','name','nik','phone','email','branch','position','type','date','reason','level','revokedAt','createdAt','updatedAt'],
+    aliases: { employeeId: ['employeeId','ID Karyawan'], name: ['name','Nama'], nik: ['nik','NIK'], date: ['date','Tanggal'], reason: ['reason','Alasan'], level: ['level','Level'], branch: ['branch','Cabang'] }
+  },
+  Data_Master_Cabang: { key: ['nama'], headers: ['no','tipe','nama','dipakaiKaryawan','updatedAt'], aliases: { nama: ['nama','Nama','Cabang','branch','name'] } },
+  Data_Master_Status: { key: ['nama'], headers: ['no','tipe','nama','dipakaiKaryawan','updatedAt'], aliases: { nama: ['nama','Nama','Status','status','name'] } },
+  Data_Master_Dropdown: { key: ['tipe','nama'], headers: ['no','tipe','nama','dipakaiKaryawan','updatedAt'], aliases: { tipe: ['tipe','type','Jenis'], nama: ['nama','name','Nama','Value','value'] } },
+  Data_Pengaturan: { key: ['settingKey','key'], headers: ['settingKey','settingValue','valueType','updatedAt'], aliases: { settingKey: ['settingKey','key','Nama Pengaturan'], settingValue: ['settingValue','value','Nilai'], valueType: ['valueType','type','Tipe'] } },
+  Data_Akun_Login: { key: ['id','username'], headers: ['no','id','username','displayName','role','roleLabel','employeeId','employeeName','employeeNik','isActive','status','permissions','permissionText','permissionCount','passwordHash','forceChangePassword','createdAt','updatedAt'], aliases: { username: ['username','User','Login'], displayName: ['displayName','Nama Tampilan','Nama'], employeeId: ['employeeId','ID Karyawan'], passwordHash: ['passwordHash','Password Hash'], isActive: ['isActive','active','Aktif'] } },
+  Data_Hak_Akses: { key: ['id','accountId','username','permission'], headers: ['id','accountId','username','displayName','role','permission','permissionKey','permissionLabel','permissionGroup','permissionDescription','order','isActive','updatedAt'], aliases: { accountId: ['accountId','ID Akun'], permission: ['permission','Hak Akses','akses'], permissionKey: ['permissionKey','Kunci Akses'] } },
+  Data_Integrasi: { key: ['key','jenis'], headers: ['key','value','jenis','updatedAt'], aliases: { key: ['key','settingKey','Kode'], value: ['value','Nilai'], jenis: ['jenis','type','Tipe'] } },
+  Data_App_Metadata: { key: ['key','name'], headers: ['key','value','name','description','updatedAt'], aliases: { key: ['key','Kode'], value: ['value','Nilai'] } },
+  Data_Storage_Index: { key: ['storageKey','key'], headers: ['storageKey','recordCount','size','existsInBrowser','backupKey','backupExistsInBrowser','updatedAt'], aliases: { storageKey: ['storageKey','key','Storage Key'] } },
+  Data_Drive_Files: { key: ['fileId','employeeId','type','hash'], headers: ['fileId','employeeId','nik','employeeName','type','hash','fileUrl','downloadUrl','thumbnailUrl','syncedAt','message','ok'], aliases: { fileId: ['fileId','ID File'], employeeId: ['employeeId','ID Karyawan'], type: ['type','Jenis'], ok: ['ok','status'] } },
+  Data_Maintenance_Log: { key: ['id','createdAt'], headers: ['id','moduleId','moduleLabel','action','issueCount','issues','createdAt','createdBy','updatedAt'], aliases: { moduleId: ['moduleId','Modul'], action: ['action','Aksi'], issueCount: ['issueCount','Jumlah Temuan'] } },
+  Data_Maintenance_Report: { key: ['module','finding','checkedAt'], headers: ['module','level','finding','solution','checkedAt','updatedAt'], aliases: { module: ['module','Modul'], level: ['level','Level'], finding: ['finding','Temuan'], solution: ['solution','Solusi'] } },
+  Data_Delete_Log: { key: ['sheetName','recordKey','deletedAt'], headers: ['id','sheetName','moduleName','recordKey','recordId','recordLabel','deletedAt','deletedByDeviceId','reason','updatedAt','tombstone'], aliases: { sheetName: ['sheetName','Sheet','Nama Sheet'], recordKey: ['recordKey','Key','Kunci Record'], deletedAt: ['deletedAt','Tanggal Hapus'] } },
+  Data_Sync_Manifest: { key: ['sheetName'], headers: ['no','sheetName','rowsSent','overwrite','mergeStrategy','includedInFullSync','updatedAt'], aliases: { sheetName: ['sheetName','Sheet'], rowsSent: ['rowsSent','Jumlah Baris'] } }
+};
+
+const SHEET_ALIASES = {
+  Data_Karyawan: ['Data Karyawan','Karyawan','Employees','Master Karyawan','Master Data Karyawan','Master_Data_Karyawan'],
+  Data_Absensi: ['Data Absensi','Absensi','Attendance'],
+  Data_Cuti: ['Data Cuti','Cuti','Izin','Leave','Leaves'],
+  Data_Shift: ['Data Shift','Shift','Master Shift'],
+  Data_Shift_Assignment: ['Data Shift Assignment','Assignment Shift','Shift Assignment','Jadwal Shift'],
+  Data_Resign: ['Data Resign','Resign'],
+  Data_Blacklist: ['Data Blacklist','Blacklist'],
+  Data_Pengaturan: ['Data Pengaturan','Pengaturan','Settings'],
+  Data_Akun_Login: ['Data Akun Login','Akun Login','Users','Login'],
+  Data_Hak_Akses: ['Data Hak Akses','Hak Akses','Permissions'],
+  Data_Delete_Log: ['Data Delete Log','Delete Log','Tombstone']
+};
 
 function doGet(e) {
-  return jsonOutput_({
-    ok: true,
-    status: 'success',
-    connector: 'LuxeHR Google Sheet Database',
-    version: LUXEHR_CONNECTOR_VERSION,
-    serverTime: new Date().toISOString()
-  });
+  return jsonOutput_({ ok: true, status: 'success', connector: 'LuxeHR Google Sheet Database', version: LUXEHR_CONNECTOR_VERSION, serverTime: new Date().toISOString() });
 }
 
 function doPost(e) {
+  const lock = LockService.getScriptLock();
   try {
+    lock.waitLock(30000);
     const raw = e && e.postData && e.postData.contents ? e.postData.contents : '{}';
     const payload = JSON.parse(raw);
-    const result = handleRequest_(payload);
+    const result = handleRequest_(payload || {});
     return jsonOutput_(result);
   } catch (err) {
-    return jsonOutput_({
-      ok: false,
-      status: 'error',
-      message: err && err.message ? err.message : String(err),
-      stack: err && err.stack ? err.stack : ''
-    });
+    return jsonOutput_({ ok: false, status: 'error', message: err && err.message ? err.message : String(err), stack: err && err.stack ? err.stack : '', version: LUXEHR_CONNECTOR_VERSION });
+  } finally {
+    try { lock.releaseLock(); } catch (releaseErr) {}
   }
 }
 
 function handleRequest_(payload) {
-  payload = payload || {};
   const action = String(payload.action || payload.mode || 'ping').toLowerCase();
   const ss = openDatabase_(payload.spreadsheetId);
 
   if (action === 'ping' || action === 'test') {
-    ensureCoreSheets_(ss);
-    return {
-      ok: true,
-      status: 'success',
-      action,
-      spreadsheetId: ss.getId(),
-      spreadsheetName: ss.getName(),
-      connectorVersion: LUXEHR_CONNECTOR_VERSION,
-      serverTime: new Date().toISOString()
-    };
+    const schema = ensureCoreSheets_(ss);
+    return { ok: true, status: 'success', action, spreadsheetId: ss.getId(), spreadsheetName: ss.getName(), schema, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: new Date().toISOString() };
+  }
+
+  if (action === 'schema' || action === 'ensureheaders' || action === 'ensure_headers') {
+    const schema = ensureCoreSheets_(ss);
+    return { ok: true, status: 'success', action: 'ensureHeaders', spreadsheetId: ss.getId(), schema, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: new Date().toISOString() };
   }
 
   if (action === 'readall' || action === 'read_all' || action === 'read') {
+    ensureCoreSheets_(ss);
     const sheets = readSheets_(ss, payload.sheetNames || payload.sheets || []);
-    return {
-      ok: true,
-      status: 'success',
-      action: 'readAll',
-      spreadsheetId: ss.getId(),
-      sheets,
-      totalSheets: Object.keys(sheets).length,
-      totalRows: Object.keys(sheets).reduce((sum, name) => sum + sheets[name].length, 0),
-      connectorVersion: LUXEHR_CONNECTOR_VERSION,
-      serverTime: new Date().toISOString()
-    };
+    return { ok: true, status: 'success', action: 'readAll', spreadsheetId: ss.getId(), sheets, totalSheets: Object.keys(sheets).length, totalRows: Object.keys(sheets).reduce(function(sum, name){ return sum + sheets[name].length; }, 0), connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: new Date().toISOString() };
   }
 
   if (action === 'sync' || action === 'upsert') {
-    const job = {
-      sheetName: payload.sheetName || 'Data',
-      data: payload.data || [],
-      overwrite: payload.overwrite === true,
-      mergeStrategy: payload.mergeStrategy || (payload.overwrite ? 'replace-all' : 'upsert-newer-by-key')
-    };
+    const job = normalizeJob_(payload);
     const uploads = handleDriveUploads_(payload.driveUploads || [], payload.driveRootFolderName || DEFAULT_ROOT_FOLDER_NAME);
     patchEmployeeRowsWithDriveUploads_([job], uploads);
-    const writeResult = writeJob_(ss, job);
-    return {
-      ok: true,
-      status: 'success',
-      action,
-      summary: { successCount: 1, failedCount: 0, totalRows: writeResult.rowsWritten },
-      results: [writeResult],
-      driveUploads: uploads,
-      connectorVersion: LUXEHR_CONNECTOR_VERSION,
-      serverTime: new Date().toISOString()
-    };
+    const result = writeJob_(ss, job);
+    return { ok: true, status: 'success', action, summary: { successCount: 1, failedCount: 0, totalRows: result.rowsWritten }, results: [result], driveUploads: uploads, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: new Date().toISOString() };
   }
 
   if (action === 'batchsync' || action === 'batchupsert' || action === 'batch_sync') {
-    const jobs = Array.isArray(payload.jobs) ? payload.jobs : [];
+    const jobs = Array.isArray(payload.jobs) ? payload.jobs.map(normalizeJob_) : [];
     const uploads = handleDriveUploads_(payload.driveUploads || [], payload.driveRootFolderName || DEFAULT_ROOT_FOLDER_NAME);
     patchEmployeeRowsWithDriveUploads_(jobs, uploads);
-
     const results = [];
     const errors = [];
-    jobs.forEach(job => {
-      try {
-        results.push(writeJob_(ss, job));
-      } catch (err) {
-        errors.push({ sheetName: job.sheetName || 'Unknown', message: err.message || String(err) });
-      }
+    jobs.forEach(function(job) {
+      try { results.push(writeJob_(ss, job)); }
+      catch (err) { errors.push({ sheetName: job.sheetName || 'Unknown', message: err.message || String(err) }); }
     });
-
-    return {
-      ok: errors.length === 0,
-      status: errors.length === 0 ? 'success' : 'partial',
-      action,
-      summary: {
-        successCount: results.length,
-        failedCount: errors.length,
-        totalRows: results.reduce((sum, item) => sum + Number(item.rowsWritten || 0), 0)
-      },
-      results,
-      errors,
-      driveUploads: uploads,
-      connectorVersion: LUXEHR_CONNECTOR_VERSION,
-      serverTime: new Date().toISOString()
-    };
+    return { ok: errors.length === 0, status: errors.length === 0 ? 'success' : 'partial', action, summary: { successCount: results.length, failedCount: errors.length, totalRows: results.reduce(function(sum, item){ return sum + Number(item.rowsWritten || 0); }, 0) }, results, errors, driveUploads: uploads, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: new Date().toISOString() };
   }
 
   throw new Error('Action tidak dikenal: ' + action);
+}
+
+function normalizeJob_(job) {
+  job = job || {};
+  return {
+    sheetName: canonicalSheetName_(job.sheetName || 'Data'),
+    data: Array.isArray(job.data) ? job.data : (Array.isArray(job.rows) ? job.rows : []),
+    overwrite: job.overwrite === true,
+    mergeStrategy: job.mergeStrategy || (job.overwrite ? 'replace-all' : 'upsert-newer-by-key')
+  };
 }
 
 function openDatabase_(spreadsheetId) {
@@ -1178,139 +1235,288 @@ function openDatabase_(spreadsheetId) {
 }
 
 function ensureCoreSheets_(ss) {
-  const names = [
-    'Data_Karyawan','Data_Absensi','Data_Cuti','Data_Shift','Data_Shift_Assignment',
-    'Data_Resign','Data_Blacklist','Data_Master_Cabang','Data_Master_Status',
-    'Data_Master_Dropdown','Data_Pengaturan','Data_Akun_Login','Data_Hak_Akses',
-    'Data_Integrasi','Data_App_Metadata','Data_Storage_Index','Data_Drive_Files',
-    'Data_Maintenance_Log','Data_Maintenance_Report','Data_Delete_Log','Data_Sync_Manifest'
-  ];
-  names.forEach(name => getOrCreateSheet_(ss, name));
+  const report = {};
+  Object.keys(LUXEHR_SCHEMAS).forEach(function(sheetName) {
+    const sheet = getOrCreateSheet_(ss, sheetName);
+    report[sheetName] = ensureHeaders_(sheet, sheetName);
+  });
+  return report;
+}
+
+function canonicalSheetName_(name) {
+  const raw = String(name || '').trim();
+  const rawNorm = normalizeToken_(raw);
+  const canonical = Object.keys(LUXEHR_SCHEMAS).find(function(sheetName) {
+    if (normalizeToken_(sheetName) === rawNorm) return true;
+    const aliases = SHEET_ALIASES[sheetName] || [];
+    return aliases.some(function(alias) { return normalizeToken_(alias) === rawNorm; });
+  });
+  return canonical || raw || 'Data';
 }
 
 function getOrCreateSheet_(ss, name) {
-  return ss.getSheetByName(name) || ss.insertSheet(name);
+  const canonical = canonicalSheetName_(name);
+  const direct = ss.getSheetByName(canonical);
+  if (direct) return direct;
+  const aliases = SHEET_ALIASES[canonical] || [];
+  for (let i = 0; i < aliases.length; i++) {
+    const aliasSheet = ss.getSheetByName(aliases[i]);
+    if (aliasSheet) {
+      try { aliasSheet.setName(canonical); } catch (renameErr) {}
+      return ss.getSheetByName(canonical) || aliasSheet;
+    }
+  }
+  return ss.insertSheet(canonical);
+}
+
+function ensureHeaders_(sheet, sheetName, extraRows) {
+  sheetName = canonicalSheetName_(sheetName || sheet.getName());
+  const schema = LUXEHR_SCHEMAS[sheetName] || { headers: [], aliases: {} };
+  const canonicalBase = schema.headers || [];
+  const extraHeaders = collectHeaders_(Array.isArray(extraRows) ? extraRows : [], sheetName);
+  const desired = uniqueHeaders_(canonicalBase.concat(extraHeaders));
+  if (!desired.length) return { headers: [], added: [], renamed: [], duplicateCount: 0 };
+
+  if (sheet.getMaxRows() < 1) sheet.insertRows(1, 1);
+  const existingLastColumn = Math.max(sheet.getLastColumn(), desired.length, 1);
+  const headerRange = sheet.getRange(HEADER_ROW, 1, 1, existingLastColumn);
+  const originalHeaders = headerRange.getValues()[0].map(function(v){ return String(v || '').trim(); });
+  let headers = originalHeaders.slice();
+  let changed = false;
+  const renamed = [];
+  const seenCanonical = {};
+
+  for (let i = 0; i < headers.length; i++) {
+    const raw = headers[i];
+    if (!raw) continue;
+    const canon = canonicalHeader_(sheetName, raw);
+    if (canon !== raw && !seenCanonical[canon]) {
+      headers[i] = canon;
+      renamed.push({ from: raw, to: canon, column: i + 1 });
+      changed = true;
+    }
+    const active = headers[i];
+    if (active) {
+      const activeNorm = normalizeToken_(active);
+      if (seenCanonical[activeNorm]) {
+        headers[i] = '__duplicate_' + active + '_' + (i + 1);
+        changed = true;
+      } else {
+        seenCanonical[activeNorm] = true;
+      }
+    }
+  }
+
+  const currentNorms = {};
+  headers.forEach(function(h){ if (h) currentNorms[normalizeToken_(h)] = true; });
+  const added = [];
+  desired.forEach(function(h) {
+    const canon = canonicalHeader_(sheetName, h);
+    const key = normalizeToken_(canon);
+    if (!currentNorms[key]) {
+      headers.push(canon);
+      currentNorms[key] = true;
+      added.push(canon);
+      changed = true;
+    }
+  });
+
+  headers = headers.filter(function(h, idx){ return h || idx < desired.length; });
+  if (!headers.length) headers = desired;
+  if (sheet.getMaxColumns() < headers.length) sheet.insertColumnsAfter(sheet.getMaxColumns(), headers.length - sheet.getMaxColumns());
+  if (changed || sheet.getLastColumn() < headers.length || originalHeaders.join('|') !== headers.join('|')) {
+    sheet.getRange(HEADER_ROW, 1, 1, headers.length).setValues([headers]);
+  }
+  try { sheet.setFrozenRows(1); } catch (err) {}
+  return { headers: headers, added: added, renamed: renamed, duplicateCount: headers.filter(function(h){ return /^__duplicate_/.test(h); }).length };
+}
+
+function getHeaderInfo_(sheet, sheetName, extraRows) {
+  const report = ensureHeaders_(sheet, sheetName, extraRows);
+  const headers = report.headers;
+  const index = {};
+  headers.forEach(function(h, i) {
+    const canon = canonicalHeader_(sheetName, h);
+    const key = normalizeToken_(canon);
+    if (!index[key]) index[key] = { header: canon, column: i + 1, index: i };
+  });
+  return { headers: headers, index: index, report: report };
 }
 
 function writeJob_(ss, job) {
-  const sheetName = String(job.sheetName || 'Data').trim();
-  const rows = Array.isArray(job.data) ? job.data : [];
+  const sheetName = canonicalSheetName_(job.sheetName || 'Data');
   const sheet = getOrCreateSheet_(ss, sheetName);
-  const overwrite = job.overwrite === true || String(job.mergeStrategy || '').toLowerCase() === 'replace-all';
-
-  if (overwrite) {
-    return replaceSheet_(sheet, rows, sheetName);
-  }
-  return upsertSheet_(sheet, rows, sheetName);
+  const rows = normalizeRowsForSheet_(sheetName, Array.isArray(job.data) ? job.data : []);
+  const strategy = String(job.mergeStrategy || '').toLowerCase();
+  const overwrite = job.overwrite === true || strategy === 'replace-all' || strategy === 'replace';
+  return overwrite ? replaceSheet_(sheet, rows, sheetName) : upsertSheet_(sheet, rows, sheetName);
 }
 
 function replaceSheet_(sheet, rows, sheetName) {
-  sheet.clearContents();
-  const headers = collectHeaders_(rows);
-  if (!headers.length) {
-    sheet.getRange(1, 1, 1, 1).setValue('empty');
-    return { sheetName, mode: 'replace-all', rowsWritten: 0, totalRows: 0 };
-  }
-  const values = [headers].concat(rows.map(row => headers.map(h => serializeCell_(row[h]))));
-  sheet.getRange(1, 1, values.length, headers.length).setValues(values);
-  return { sheetName, mode: 'replace-all', rowsWritten: rows.length, totalRows: rows.length };
+  const info = getHeaderInfo_(sheet, sheetName, rows);
+  clearBody_(sheet);
+  if (!rows.length) return { sheetName: sheetName, mode: 'replace-all', rowsWritten: 0, totalRows: 0, headerReport: info.report };
+  const values = rows.map(function(row){ return rowToValues_(row, info.headers, sheetName); });
+  sheet.getRange(2, 1, values.length, info.headers.length).setValues(values);
+  return { sheetName: sheetName, mode: 'replace-all', rowsWritten: rows.length, totalRows: rows.length, headerReport: info.report };
 }
 
 function upsertSheet_(sheet, incomingRows, sheetName) {
-  const existingRows = readSheetAsObjects_(sheet);
-  const headers = collectHeaders_(existingRows.concat(incomingRows));
-  const map = {};
+  const existingRows = readSheetAsObjects_(sheet, sheetName, { ensure: true });
+  const merged = {};
   const order = [];
 
-  existingRows.forEach((row, idx) => {
+  existingRows.forEach(function(row, idx) {
     const key = recordKey_(sheetName, row, idx);
-    if (!map[key]) order.push(key);
-    map[key] = row;
+    if (!merged[key]) order.push(key);
+    merged[key] = row;
   });
 
-  incomingRows.forEach((row, idx) => {
+  incomingRows.forEach(function(row, idx) {
     const key = recordKey_(sheetName, row, idx);
-    const old = map[key];
+    const old = merged[key];
     if (!old) {
       order.push(key);
-      map[key] = row;
+      merged[key] = row;
       return;
     }
-    const oldTime = versionTime_(old);
-    const newTime = versionTime_(row);
-    if (newTime >= oldTime) {
-      map[key] = Object.assign({}, old, row);
-    }
+    if (versionTime_(row) >= versionTime_(old)) merged[key] = Object.assign({}, old, row);
   });
 
-  const mergedRows = order.map(key => map[key]).filter(Boolean);
-  sheet.clearContents();
-  if (!headers.length) {
-    sheet.getRange(1, 1, 1, 1).setValue('empty');
-    return { sheetName, mode: 'upsert-newer-by-key', rowsWritten: 0, totalRows: 0 };
+  const mergedRows = order.map(function(key){ return merged[key]; }).filter(Boolean);
+  const info = getHeaderInfo_(sheet, sheetName, mergedRows.concat(incomingRows));
+  clearBody_(sheet);
+  if (mergedRows.length) {
+    const values = mergedRows.map(function(row){ return rowToValues_(row, info.headers, sheetName); });
+    sheet.getRange(2, 1, values.length, info.headers.length).setValues(values);
   }
-  const values = [headers].concat(mergedRows.map(row => headers.map(h => serializeCell_(row[h]))));
-  sheet.getRange(1, 1, values.length, headers.length).setValues(values);
-  return { sheetName, mode: 'upsert-newer-by-key', rowsWritten: incomingRows.length, totalRows: mergedRows.length };
+  return { sheetName: sheetName, mode: 'upsert-newer-by-key', rowsWritten: incomingRows.length, totalRows: mergedRows.length, headerReport: info.report };
+}
+
+function clearBody_(sheet) {
+  const rows = sheet.getMaxRows();
+  const cols = Math.max(sheet.getLastColumn(), 1);
+  if (rows > 1) sheet.getRange(2, 1, rows - 1, cols).clearContent();
 }
 
 function readSheets_(ss, requestedNames) {
   const sheets = {};
-  const request = Array.isArray(requestedNames) ? requestedNames.filter(Boolean) : [];
-  const source = request.length ? request.map(name => getOrCreateSheet_(ss, name)) : ss.getSheets();
-  source.forEach(sheet => {
-    sheets[sheet.getName()] = readSheetAsObjects_(sheet);
+  const request = Array.isArray(requestedNames) ? requestedNames.filter(Boolean).map(canonicalSheetName_) : [];
+  const source = request.length ? request.map(function(name){ return getOrCreateSheet_(ss, name); }) : Object.keys(LUXEHR_SCHEMAS).map(function(name){ return getOrCreateSheet_(ss, name); });
+  source.forEach(function(sheet) {
+    const canonical = canonicalSheetName_(sheet.getName());
+    sheets[canonical] = readSheetAsObjects_(sheet, canonical, { ensure: true });
   });
   return sheets;
 }
 
-function readSheetAsObjects_(sheet) {
-  const values = sheet.getDataRange().getValues();
-  if (!values || values.length < 2) return [];
-  const headers = values[0].map(v => String(v || '').trim());
-  return values.slice(1).map(row => {
+function readSheetAsObjects_(sheet, sheetName, options) {
+  sheetName = canonicalSheetName_(sheetName || sheet.getName());
+  if (!options || options.ensure !== false) ensureHeaders_(sheet, sheetName);
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+  if (!lastRow || lastRow < 2 || !lastCol) return [];
+  const values = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+  const headers = values[0].map(function(v){ return String(v || '').trim(); });
+  const rows = [];
+  for (let r = 1; r < values.length; r++) {
     const obj = {};
-    headers.forEach((h, i) => {
-      if (!h) return;
-      obj[h] = parseCell_(row[i]);
-    });
-    return obj;
-  }).filter(obj => Object.values(obj).some(v => String(v === null || v === undefined ? '' : v).trim() !== ''));
+    let hasValue = false;
+    for (let c = 0; c < headers.length; c++) {
+      const rawHeader = headers[c];
+      if (!rawHeader) continue;
+      const value = parseCell_(values[r][c]);
+      if (String(value === null || value === undefined ? '' : value).trim() !== '') hasValue = true;
+      const canon = canonicalHeader_(sheetName, rawHeader);
+      if (obj[canon] === undefined || obj[canon] === '') obj[canon] = value;
+      if (canon !== rawHeader && obj[rawHeader] === undefined) obj[rawHeader] = value;
+    }
+    if (hasValue) rows.push(obj);
+  }
+  return rows;
 }
 
-function collectHeaders_(rows) {
+function normalizeRowsForSheet_(sheetName, rows) {
+  return (Array.isArray(rows) ? rows : []).map(function(row) {
+    const normalized = {};
+    Object.keys(row || {}).forEach(function(key) {
+      const canon = canonicalHeader_(sheetName, key);
+      normalized[canon] = row[key];
+    });
+    if (!normalized.createdAt && !normalized.updatedAt) normalized.createdAt = new Date().toISOString();
+    if (!normalized.updatedAt) normalized.updatedAt = new Date().toISOString();
+    return normalized;
+  }).filter(function(row){ return Object.keys(row).some(function(k){ return String(row[k] === null || row[k] === undefined ? '' : row[k]).trim() !== ''; }); });
+}
+
+function rowToValues_(row, headers, sheetName) {
+  return headers.map(function(header) {
+    const canon = canonicalHeader_(sheetName, header);
+    return serializeCell_(row[canon] !== undefined ? row[canon] : row[header]);
+  });
+}
+
+function collectHeaders_(rows, sheetName) {
+  const out = [];
   const seen = {};
-  const headers = [];
-  rows.forEach(row => {
-    Object.keys(row || {}).forEach(key => {
-      if (seen[key]) return;
-      seen[key] = true;
-      headers.push(key);
+  (Array.isArray(rows) ? rows : []).forEach(function(row) {
+    Object.keys(row || {}).forEach(function(key) {
+      const canon = canonicalHeader_(sheetName, key);
+      const norm = normalizeToken_(canon);
+      if (!seen[norm]) {
+        seen[norm] = true;
+        out.push(canon);
+      }
     });
   });
-  return headers;
+  return out;
+}
+
+function uniqueHeaders_(headers) {
+  const seen = {};
+  const out = [];
+  (headers || []).forEach(function(h) {
+    const clean = String(h || '').trim();
+    if (!clean) return;
+    const key = normalizeToken_(clean);
+    if (seen[key]) return;
+    seen[key] = true;
+    out.push(clean);
+  });
+  return out;
+}
+
+function canonicalHeader_(sheetName, header) {
+  const raw = String(header || '').trim();
+  if (!raw) return '';
+  if (/^__duplicate_/i.test(raw)) return raw;
+  const schema = LUXEHR_SCHEMAS[canonicalSheetName_(sheetName)] || { aliases: {}, headers: [] };
+  const rawNorm = normalizeToken_(raw);
+  const direct = (schema.headers || []).find(function(h){ return normalizeToken_(h) === rawNorm; });
+  if (direct) return direct;
+  const aliases = schema.aliases || {};
+  const canonical = Object.keys(aliases).find(function(target) {
+    return (aliases[target] || []).some(function(alias) { return normalizeToken_(alias) === rawNorm; });
+  });
+  return canonical || raw;
+}
+
+function normalizeToken_(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 }
 
 function recordKey_(sheetName, row, idx) {
   row = row || {};
+  sheetName = canonicalSheetName_(sheetName);
   if (row.recordKey) return String(row.recordKey);
-  const name = String(sheetName || '').toLowerCase();
-
-  if (name === 'data_pengaturan') return 'setting:' + (row.settingKey || row.key || idx);
-  if (name === 'data_akun_login') return 'account:' + (row.id || row.username || idx);
-  if (name === 'data_hak_akses') return 'permission:' + (row.accountId || row.username || '') + '|' + (row.permission || row.permissionId || idx);
-  if (name === 'data_master_cabang') return 'branch:' + (row.nama || row.name || row.cabang || idx);
-  if (name === 'data_master_status') return 'status:' + (row.nama || row.name || row.status || idx);
-  if (name === 'data_absensi') return 'attendance:' + (row.id || ((row.employeeId || row.employeeNik || row.nik || row.employeeName || '') + '|' + (row.date || row.tanggal || '')));
-  if (name === 'data_shift_assignment') return 'shiftassign:' + (row.id || ((row.employeeId || '') + '|' + (row.shiftId || '') + '|' + (row.startDate || '')));
-  if (name === 'data_delete_log') return 'delete:' + (row.sheetName || '') + '|' + (row.recordKey || row.id || idx);
-
-  if (row.id) return 'id:' + row.id;
-  if (row.username) return 'username:' + row.username;
-  if (row.settingKey) return 'setting:' + row.settingKey;
-  if (row.key) return 'key:' + row.key;
-  if (row.nik) return 'nik:' + row.nik;
-  return 'row:' + Utilities.base64EncodeWebSafe(JSON.stringify(row)).slice(0, 120) + ':' + idx;
+  const schema = LUXEHR_SCHEMAS[sheetName] || {};
+  const fields = schema.key || [];
+  const parts = fields.map(function(field) { return String(row[field] || '').trim(); }).filter(Boolean);
+  if (parts.length) return sheetName + ':' + parts.join('|').toLowerCase();
+  if (row.id) return sheetName + ':id:' + row.id;
+  if (row.username) return sheetName + ':username:' + row.username;
+  if (row.nik) return sheetName + ':nik:' + row.nik;
+  return sheetName + ':row:' + Utilities.base64EncodeWebSafe(JSON.stringify(row)).slice(0, 120) + ':' + idx;
 }
 
 function versionTime_(row) {
@@ -1320,7 +1526,7 @@ function versionTime_(row) {
 }
 
 function parseCell_(value) {
-  if (value instanceof Date) return value.toISOString();
+  if (value instanceof Date) return Utilities.formatDate(value, Session.getScriptTimeZone() || 'Asia/Jakarta', "yyyy-MM-dd'T'HH:mm:ssXXX");
   if (value === null || value === undefined) return '';
   return value;
 }
@@ -1335,7 +1541,8 @@ function serializeCell_(value) {
 function handleDriveUploads_(uploads, rootFolderName) {
   if (!Array.isArray(uploads) || !uploads.length) return [];
   const root = getOrCreateFolder_(rootFolderName || DEFAULT_ROOT_FOLDER_NAME);
-  return uploads.map(item => {
+  const indexSheetName = 'Data_Drive_Files';
+  const results = uploads.map(function(item) {
     try {
       const dataUrl = String(item.dataUrl || '');
       const match = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
@@ -1345,30 +1552,16 @@ function handleDriveUploads_(uploads, rootFolderName) {
       const blob = Utilities.newBlob(bytes, mime, item.fileName || buildDriveFileName_(item, mime));
       const file = root.createFile(blob);
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-      return {
-        ok: true,
-        employeeId: item.employeeId || '',
-        nik: item.nik || '',
-        employeeName: item.employeeName || '',
-        type: item.type || '',
-        hash: item.hash || '',
-        fileId: file.getId(),
-        fileUrl: file.getUrl(),
-        downloadUrl: 'https://drive.google.com/uc?export=view&id=' + file.getId(),
-        thumbnailUrl: 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w600',
-        syncedAt: new Date().toISOString()
-      };
+      return { ok: true, employeeId: item.employeeId || '', nik: item.nik || '', employeeName: item.employeeName || '', type: item.type || '', hash: item.hash || '', fileId: file.getId(), fileUrl: file.getUrl(), downloadUrl: 'https://drive.google.com/uc?export=view&id=' + file.getId(), thumbnailUrl: 'https://drive.google.com/thumbnail?id=' + file.getId() + '&sz=w600', syncedAt: new Date().toISOString() };
     } catch (err) {
-      return {
-        ok: false,
-        employeeId: item.employeeId || '',
-        type: item.type || '',
-        hash: item.hash || '',
-        message: err.message || String(err),
-        syncedAt: new Date().toISOString()
-      };
+      return { ok: false, employeeId: item.employeeId || '', nik: item.nik || '', employeeName: item.employeeName || '', type: item.type || '', hash: item.hash || '', fileId: '', fileUrl: '', downloadUrl: '', thumbnailUrl: '', message: err.message || String(err), syncedAt: new Date().toISOString() };
     }
   });
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (ss) upsertSheet_(getOrCreateSheet_(ss, indexSheetName), results, indexSheetName);
+  } catch (err) {}
+  return results;
 }
 
 function getOrCreateFolder_(name) {
@@ -1382,17 +1575,17 @@ function buildDriveFileName_(item, mime) {
   const ext = String(mime || '').toLowerCase().indexOf('png') >= 0 ? 'png' : 'jpg';
   const nik = String(item.nik || item.employeeId || 'employee').replace(/[^\w-]+/g, '_');
   const type = String(item.type || 'image').replace(/[^\w-]+/g, '_');
-  return `${nik}_${type}_${Date.now()}.${ext}`;
+  return nik + '_' + type + '_' + Date.now() + '.' + ext;
 }
 
 function patchEmployeeRowsWithDriveUploads_(jobs, uploads) {
   if (!uploads || !uploads.length) return;
-  const success = uploads.filter(u => u.ok);
-  jobs.forEach(job => {
-    if (String(job.sheetName || '') !== 'Data_Karyawan') return;
+  const success = uploads.filter(function(u){ return u.ok; });
+  jobs.forEach(function(job) {
+    if (canonicalSheetName_(job.sheetName || '') !== 'Data_Karyawan') return;
     const rows = Array.isArray(job.data) ? job.data : [];
-    rows.forEach(row => {
-      success.forEach(file => {
+    rows.forEach(function(row) {
+      success.forEach(function(file) {
         if (String(file.employeeId) !== String(row.id || row.employeeId || '')) return;
         if (file.type === 'photo') {
           row.photo = file.downloadUrl;
@@ -1418,9 +1611,7 @@ function patchEmployeeRowsWithDriveUploads_(jobs, uploads) {
 }
 
 function jsonOutput_(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 </textarea>
                 </div>
@@ -1696,7 +1887,7 @@ function jsonOutput_(obj) {
             // Aplikasi v5.7 berjalan localStorage-only. Tidak ada request Google Sheet, Apps Script, atau Google Drive.
             const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzgZxX7HaFDE1z1FzFmuaMZpbLGLiyah7H9F_PgST6xPHXYGR_7NYjqE0mL0nbcO3iElw/exec";
 
-            const APP_VERSION = '5.8.0-google-sheet-database';
+            const APP_VERSION = '5.9.0-google-sheet-header-safe';
             const PAYROLL_MONTH_DAYS = 30;
             const STANDARD_WORKDAY_HOURS = 12;
             const STANDARD_WORKDAY_MINUTES = STANDARD_WORKDAY_HOURS * 60;
@@ -6996,7 +7187,7 @@ function jsonOutput_(obj) {
                 });
             }
 
-            // --- GOOGLE SHEET DATABASE PATCH v5.8 ---
+            // --- GOOGLE SHEET DATABASE PATCH v5.9 ---
             // Patch ini mengubah Local Storage menjadi cache/offline fallback.
             // Database utama: Google Sheet via Apps Script Web App.
             function getConfiguredWebAppUrl() {
