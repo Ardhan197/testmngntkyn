@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="id">
+<html lang="id" class="no-tailwind">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>LuxeHR Premium Google Sheet DB v6.3 - Clean Compact Column Database</title>
+<title>LuxeHR Premium Google Sheet DB v6.5 - Professional Sync + Style Base Guard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css';" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
+        window.tailwind = window.tailwind || {};
         tailwind.config = {
             theme: {
                 extend: {
@@ -310,6 +311,398 @@
             justify-content: center;
             transition: .2s;
         }
+
+        /* =========================================================
+           LuxeHR Style Base Guard v6.5
+           Fallback internal agar layout tetap premium jika CDN Tailwind
+           lambat, diblokir, atau perangkat membuka file tanpa internet.
+           Tailwind tetap menjadi styling utama; fallback ini aktif hanya
+           saat html memiliki class no-tailwind.
+           ========================================================= */
+        html.no-tailwind, html.no-tailwind body { margin: 0; min-height: 100%; font-family: Inter, Arial, sans-serif; background: #121212; color: #E5E5E5; }
+        html.no-tailwind * { box-sizing: border-box; }
+        html.no-tailwind body { height: 100vh; overflow: hidden; display: flex; flex-direction: column; font-size: 12px; background: radial-gradient(circle at 50% 0%, #1A1A1A 0%, #121212 100%); }
+        html.no-tailwind button, html.no-tailwind input, html.no-tailwind select, html.no-tailwind textarea { font: inherit; }
+        html.no-tailwind button { cursor: pointer; background: transparent; border: 0; }
+        html.no-tailwind table { border-collapse: collapse; width: 100%; }
+        html.no-tailwind th, html.no-tailwind td { vertical-align: middle; }
+        html.no-tailwind img { max-width: 100%; display: block; }
+        html.no-tailwind [class~="hidden"] { display: none !important; }
+        html.no-tailwind [class~="block"] { display: block; }
+        html.no-tailwind [class~="inline-block"] { display: inline-block; }
+        html.no-tailwind [class~="inline-flex"] { display: inline-flex; }
+        html.no-tailwind [class~="flex"] { display: flex; }
+        html.no-tailwind [class~="grid"] { display: grid; }
+        html.no-tailwind [class~="fixed"] { position: fixed; }
+        html.no-tailwind [class~="absolute"] { position: absolute; }
+        html.no-tailwind [class~="relative"] { position: relative; }
+        html.no-tailwind [class~="sticky"] { position: sticky; }
+        html.no-tailwind [class~="inset-0"] { inset: 0; }
+        html.no-tailwind [class~="inset-y-0"] { top: 0; bottom: 0; }
+        html.no-tailwind [class~="top-0"] { top: 0; }
+        html.no-tailwind [class~="top-5"] { top: 1.25rem; }
+        html.no-tailwind [class~="top-10"] { top: 2.5rem; }
+        html.no-tailwind [class~="top-16"] { top: 4rem; }
+        html.no-tailwind [class~="left-0"] { left: 0; }
+        html.no-tailwind [class~="left-1/2"] { left: 50%; }
+        html.no-tailwind [class~="-right-20"] { right: -5rem; }
+        html.no-tailwind [class~="-top-20"] { top: -5rem; }
+        html.no-tailwind [class~="z-10"] { z-index: 10; }
+        html.no-tailwind [class~="z-40"] { z-index: 40; }
+        html.no-tailwind [class~="z-50"] { z-index: 50; }
+        html.no-tailwind [class~="z-[70]"] { z-index: 70; }
+        html.no-tailwind [class~="z-[80]"] { z-index: 80; }
+        html.no-tailwind [class~="z-[85]"] { z-index: 85; }
+        html.no-tailwind [class~="z-[88]"] { z-index: 88; }
+        html.no-tailwind [class~="z-[90]"] { z-index: 90; }
+        html.no-tailwind [class~="z-[100]"] { z-index: 100; }
+        html.no-tailwind [class~="z-[140]"] { z-index: 140; }
+        html.no-tailwind [class~="transform"] { transform: translateZ(0); }
+        html.no-tailwind [class~="-translate-x-full"] { transform: translateX(-100%); }
+        html.no-tailwind [class~="translate-x-0"] { transform: translateX(0); }
+        html.no-tailwind [class~="-translate-x-1/2"] { transform: translateX(-50%); }
+        html.no-tailwind [class~="-translate-y-full"] { transform: translateY(-100%); }
+        html.no-tailwind [class~="scale-95"] { transform: scale(.95); }
+        html.no-tailwind [class~="opacity-0"] { opacity: 0; }
+        html.no-tailwind [class~="opacity-30"] { opacity: .3; }
+        html.no-tailwind [class~="opacity-80"] { opacity: .8; }
+        html.no-tailwind [class~="pointer-events-none"] { pointer-events: none; }
+        html.no-tailwind [class~="cursor-pointer"] { cursor: pointer; }
+        html.no-tailwind [class~="cursor-text"] { cursor: text; }
+        html.no-tailwind [class~="antialiased"] { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        html.no-tailwind [class~="flex-col"] { flex-direction: column; }
+        html.no-tailwind [class~="flex-1"] { flex: 1 1 0%; }
+        html.no-tailwind [class~="flex-shrink-0"], html.no-tailwind [class~="shrink-0"] { flex-shrink: 0; }
+        html.no-tailwind [class~="items-start"] { align-items: flex-start; }
+        html.no-tailwind [class~="items-center"] { align-items: center; }
+        html.no-tailwind [class~="items-end"] { align-items: flex-end; }
+        html.no-tailwind [class~="justify-center"] { justify-content: center; }
+        html.no-tailwind [class~="justify-between"] { justify-content: space-between; }
+        html.no-tailwind [class~="justify-end"] { justify-content: flex-end; }
+        html.no-tailwind [class~="grid-cols-1"] { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        html.no-tailwind [class~="grid-cols-2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        html.no-tailwind [class~="grid-cols-[1fr_auto]"] { grid-template-columns: 1fr auto; }
+        html.no-tailwind [class~="gap-1"] { gap: .25rem; }
+        html.no-tailwind [class~="gap-1.5"] { gap: .375rem; }
+        html.no-tailwind [class~="gap-2"] { gap: .5rem; }
+        html.no-tailwind [class~="gap-3"] { gap: .75rem; }
+        html.no-tailwind [class~="gap-4"] { gap: 1rem; }
+        html.no-tailwind [class~="space-y-2"] > :not([hidden]) ~ :not([hidden]) { margin-top: .5rem; }
+        html.no-tailwind [class~="space-y-3"] > :not([hidden]) ~ :not([hidden]) { margin-top: .75rem; }
+        html.no-tailwind [class~="space-y-4"] > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem; }
+        html.no-tailwind [class~="divide-y"] > :not([hidden]) ~ :not([hidden]) { border-top: 1px solid rgba(255,255,255,.05); }
+        html.no-tailwind [class~="overflow-hidden"] { overflow: hidden; }
+        html.no-tailwind [class~="overflow-y-auto"] { overflow-y: auto; }
+        html.no-tailwind [class~="overflow-x-auto"] { overflow-x: auto; }
+        html.no-tailwind [class~="h-screen"] { height: 100vh; }
+        html.no-tailwind [class~="h-full"] { height: 100%; }
+        html.no-tailwind [class~="h-2"] { height: .5rem; }
+        html.no-tailwind [class~="h-6"] { height: 1.5rem; }
+        html.no-tailwind [class~="h-7"] { height: 1.75rem; }
+        html.no-tailwind [class~="h-8"] { height: 2rem; }
+        html.no-tailwind [class~="h-9"] { height: 2.25rem; }
+        html.no-tailwind [class~="h-10"] { height: 2.5rem; }
+        html.no-tailwind [class~="h-12"] { height: 3rem; }
+        html.no-tailwind [class~="h-14"] { height: 3.5rem; }
+        html.no-tailwind [class~="h-16"] { height: 4rem; }
+        html.no-tailwind [class~="h-20"] { height: 5rem; }
+        html.no-tailwind [class~="h-32"] { height: 8rem; }
+        html.no-tailwind [class~="h-40"] { height: 10rem; }
+        html.no-tailwind [class~="h-64"] { height: 16rem; }
+        html.no-tailwind [class~="h-72"] { height: 18rem; }
+        html.no-tailwind [class~="w-full"] { width: 100%; }
+        html.no-tailwind [class~="w-[220px]"] { width: 220px; }
+        html.no-tailwind [class~="w-2"] { width: .5rem; }
+        html.no-tailwind [class~="w-5"] { width: 1.25rem; }
+        html.no-tailwind [class~="w-6"] { width: 1.5rem; }
+        html.no-tailwind [class~="w-7"] { width: 1.75rem; }
+        html.no-tailwind [class~="w-8"] { width: 2rem; }
+        html.no-tailwind [class~="w-9"] { width: 2.25rem; }
+        html.no-tailwind [class~="w-10"] { width: 2.5rem; }
+        html.no-tailwind [class~="w-12"] { width: 3rem; }
+        html.no-tailwind [class~="w-14"] { width: 3.5rem; }
+        html.no-tailwind [class~="w-20"] { width: 5rem; }
+        html.no-tailwind [class~="w-40"] { width: 10rem; }
+        html.no-tailwind [class~="w-64"] { width: 16rem; }
+        html.no-tailwind [class~="w-72"] { width: 18rem; }
+        html.no-tailwind [class~="max-w-xs"] { max-width: 20rem; }
+        html.no-tailwind [class~="max-w-sm"] { max-width: 24rem; }
+        html.no-tailwind [class~="max-w-md"] { max-width: 28rem; }
+        html.no-tailwind [class~="max-w-lg"] { max-width: 32rem; }
+        html.no-tailwind [class~="max-w-xl"] { max-width: 36rem; }
+        html.no-tailwind [class~="max-w-2xl"] { max-width: 42rem; }
+        html.no-tailwind [class~="max-w-4xl"] { max-width: 56rem; }
+        html.no-tailwind [class~="max-w-5xl"] { max-width: 64rem; }
+        html.no-tailwind [class~="max-w-[150px]"] { max-width: 150px; }
+        html.no-tailwind [class~="max-w-[240px]"] { max-width: 240px; }
+        html.no-tailwind [class~="max-w-[260px]"] { max-width: 260px; }
+        html.no-tailwind [class~="max-w-[280px]"] { max-width: 280px; }
+        html.no-tailwind [class~="max-w-[320px]"] { max-width: 320px; }
+        html.no-tailwind [class~="max-h-64"] { max-height: 16rem; }
+        html.no-tailwind [class~="max-h-[420px]"] { max-height: 420px; }
+        html.no-tailwind [class~="max-h-[92vh]"] { max-height: 92vh; }
+        html.no-tailwind [class~="min-w-0"] { min-width: 0; }
+        html.no-tailwind [class~="min-h-[38px]"] { min-height: 38px; }
+        html.no-tailwind [class~="min-h-[76px]"] { min-height: 76px; }
+        html.no-tailwind [class~="min-h-[78px]"] { min-height: 78px; }
+        html.no-tailwind [class~="min-h-[82px]"] { min-height: 82px; }
+        html.no-tailwind [class~="min-h-[84px]"] { min-height: 84px; }
+        html.no-tailwind [class~="min-h-[110px]"] { min-height: 110px; }
+        html.no-tailwind [class~="min-h-[180px]"] { min-height: 180px; }
+        html.no-tailwind [class~="min-h-[420px]"] { min-height: 420px; }
+        html.no-tailwind [class~="p-0.5"] { padding: .125rem; }
+        html.no-tailwind [class~="p-2"] { padding: .5rem; }
+        html.no-tailwind [class~="p-3"] { padding: .75rem; }
+        html.no-tailwind [class~="p-4"] { padding: 1rem; }
+        html.no-tailwind [class~="p-5"] { padding: 1.25rem; }
+        html.no-tailwind [class~="p-6"] { padding: 1.5rem; }
+        html.no-tailwind [class~="px-2"] { padding-left: .5rem; padding-right: .5rem; }
+        html.no-tailwind [class~="px-2.5"] { padding-left: .625rem; padding-right: .625rem; }
+        html.no-tailwind [class~="px-3"] { padding-left: .75rem; padding-right: .75rem; }
+        html.no-tailwind [class~="px-4"] { padding-left: 1rem; padding-right: 1rem; }
+        html.no-tailwind [class~="px-5"] { padding-left: 1.25rem; padding-right: 1.25rem; }
+        html.no-tailwind [class~="py-1"] { padding-top: .25rem; padding-bottom: .25rem; }
+        html.no-tailwind [class~="py-1.5"] { padding-top: .375rem; padding-bottom: .375rem; }
+        html.no-tailwind [class~="py-2"] { padding-top: .5rem; padding-bottom: .5rem; }
+        html.no-tailwind [class~="py-2.5"] { padding-top: .625rem; padding-bottom: .625rem; }
+        html.no-tailwind [class~="py-3"] { padding-top: .75rem; padding-bottom: .75rem; }
+        html.no-tailwind [class~="py-4"] { padding-top: 1rem; padding-bottom: 1rem; }
+        html.no-tailwind [class~="py-8"] { padding-top: 2rem; padding-bottom: 2rem; }
+        html.no-tailwind [class~="py-10"] { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+        html.no-tailwind [class~="pt-0"] { padding-top: 0; }
+        html.no-tailwind [class~="pt-1"] { padding-top: .25rem; }
+        html.no-tailwind [class~="pt-2"] { padding-top: .5rem; }
+        html.no-tailwind [class~="pl-4"] { padding-left: 1rem; }
+        html.no-tailwind [class~="pl-9"] { padding-left: 2.25rem; }
+        html.no-tailwind [class~="pr-1"] { padding-right: .25rem; }
+        html.no-tailwind [class~="pr-4"] { padding-right: 1rem; }
+        html.no-tailwind [class~="m-0"] { margin: 0; }
+        html.no-tailwind [class~="mx-auto"] { margin-left: auto; margin-right: auto; }
+        html.no-tailwind [class~="mx-4"] { margin-left: 1rem; margin-right: 1rem; }
+        html.no-tailwind [class~="mt-0.5"] { margin-top: .125rem; }
+        html.no-tailwind [class~="mt-1"] { margin-top: .25rem; }
+        html.no-tailwind [class~="mt-2"] { margin-top: .5rem; }
+        html.no-tailwind [class~="mt-3"] { margin-top: .75rem; }
+        html.no-tailwind [class~="mt-4"] { margin-top: 1rem; }
+        html.no-tailwind [class~="mb-1"] { margin-bottom: .25rem; }
+        html.no-tailwind [class~="mb-2"] { margin-bottom: .5rem; }
+        html.no-tailwind [class~="mb-3"] { margin-bottom: .75rem; }
+        html.no-tailwind [class~="mb-4"] { margin-bottom: 1rem; }
+        html.no-tailwind [class~="mb-5"] { margin-bottom: 1.25rem; }
+        html.no-tailwind [class~="mb-6"] { margin-bottom: 1.5rem; }
+        html.no-tailwind [class~="ml-2"] { margin-left: .5rem; }
+        html.no-tailwind [class~="ml-3"] { margin-left: .75rem; }
+        html.no-tailwind [class~="mr-1"] { margin-right: .25rem; }
+        html.no-tailwind [class~="mr-1.5"] { margin-right: .375rem; }
+        html.no-tailwind [class~="mr-2"] { margin-right: .5rem; }
+        html.no-tailwind [class~="mr-3"] { margin-right: .75rem; }
+        html.no-tailwind [class~="border"] { border-width: 1px; border-style: solid; }
+        html.no-tailwind [class~="border-2"] { border-width: 2px; border-style: solid; }
+        html.no-tailwind [class~="border-t"] { border-top: 1px solid; }
+        html.no-tailwind [class~="border-r"] { border-right: 1px solid; }
+        html.no-tailwind [class~="border-b"] { border-bottom: 1px solid; }
+        html.no-tailwind [class~="border-l"] { border-left: 1px solid; }
+        html.no-tailwind [class~="border-l-2"] { border-left: 2px solid; }
+        html.no-tailwind [class~="border-transparent"] { border-color: transparent; }
+        html.no-tailwind [class~="border-white/5"] { border-color: rgba(255,255,255,.05); }
+        html.no-tailwind [class~="border-white/10"] { border-color: rgba(255,255,255,.10); }
+        html.no-tailwind [class~="border-white/30"] { border-color: rgba(255,255,255,.30); }
+        html.no-tailwind [class~="border-gold-500"], html.no-tailwind [class~="border-gold-500/60"] { border-color: #D4AF37; }
+        html.no-tailwind [class~="border-gold-500/20"] { border-color: rgba(212,175,55,.20); }
+        html.no-tailwind [class~="border-gold-500/25"] { border-color: rgba(212,175,55,.25); }
+        html.no-tailwind [class~="border-gold-500/30"] { border-color: rgba(212,175,55,.30); }
+        html.no-tailwind [class~="border-gold-500/40"] { border-color: rgba(212,175,55,.40); }
+        html.no-tailwind [class~="border-gold-500/50"] { border-color: rgba(212,175,55,.50); }
+        html.no-tailwind [class~="border-blue-500/20"] { border-color: rgba(59,130,246,.20); }
+        html.no-tailwind [class~="border-blue-500/40"] { border-color: rgba(59,130,246,.40); }
+        html.no-tailwind [class~="border-emerald-500/40"] { border-color: rgba(16,185,129,.40); }
+        html.no-tailwind [class~="border-green-500/20"] { border-color: rgba(34,197,94,.20); }
+        html.no-tailwind [class~="border-green-500/40"] { border-color: rgba(34,197,94,.40); }
+        html.no-tailwind [class~="border-orange-500/20"] { border-color: rgba(249,115,22,.20); }
+        html.no-tailwind [class~="border-purple-500/40"] { border-color: rgba(168,85,247,.40); }
+        html.no-tailwind [class~="border-red-500/20"] { border-color: rgba(239,68,68,.20); }
+        html.no-tailwind [class~="border-red-500/30"] { border-color: rgba(239,68,68,.30); }
+        html.no-tailwind [class~="border-red-500/40"] { border-color: rgba(239,68,68,.40); }
+        html.no-tailwind [class~="border-red-500/50"] { border-color: rgba(239,68,68,.50); }
+        html.no-tailwind [class~="border-yellow-500/20"] { border-color: rgba(234,179,8,.20); }
+        html.no-tailwind [class~="border-yellow-500/40"] { border-color: rgba(234,179,8,.40); }
+        html.no-tailwind [class~="rounded-md"] { border-radius: .375rem; }
+        html.no-tailwind [class~="rounded-lg"] { border-radius: .5rem; }
+        html.no-tailwind [class~="rounded-r-lg"] { border-top-right-radius: .5rem; border-bottom-right-radius: .5rem; }
+        html.no-tailwind [class~="rounded-xl"] { border-radius: .75rem; }
+        html.no-tailwind [class~="rounded-2xl"] { border-radius: 1rem; }
+        html.no-tailwind [class~="rounded-full"] { border-radius: 9999px; }
+        html.no-tailwind [class~="bg-white"] { background: #fff; }
+        html.no-tailwind [class~="bg-white/5"] { background: rgba(255,255,255,.05); }
+        html.no-tailwind [class~="bg-black/60"] { background: rgba(0,0,0,.60); }
+        html.no-tailwind [class~="bg-black/80"] { background: rgba(0,0,0,.80); }
+        html.no-tailwind [class~="bg-black/85"] { background: rgba(0,0,0,.85); }
+        html.no-tailwind [class~="bg-black/90"] { background: rgba(0,0,0,.90); }
+        html.no-tailwind [class~="bg-gray-500"] { background: #6B7280; }
+        html.no-tailwind [class~="bg-surface-100"] { background: #222; }
+        html.no-tailwind [class~="bg-surface-100/45"] { background: rgba(34,34,34,.45); }
+        html.no-tailwind [class~="bg-surface-100/50"] { background: rgba(34,34,34,.50); }
+        html.no-tailwind [class~="bg-surface-100/60"] { background: rgba(34,34,34,.60); }
+        html.no-tailwind [class~="bg-surface-100/70"] { background: rgba(34,34,34,.70); }
+        html.no-tailwind [class~="bg-surface-100/80"] { background: rgba(34,34,34,.80); }
+        html.no-tailwind [class~="bg-surface-200"] { background: #1A1A1A; }
+        html.no-tailwind [class~="bg-surface-300"] { background: #121212; }
+        html.no-tailwind [class~="bg-surface-400/95"] { background: rgba(10,10,10,.95); }
+        html.no-tailwind [class~="bg-gold-500"] { background: #D4AF37; }
+        html.no-tailwind [class~="bg-gold-500/5"] { background: rgba(212,175,55,.05); }
+        html.no-tailwind [class~="bg-gold-500/10"], html.no-tailwind [class~="from-gold-500/10"] { background: rgba(212,175,55,.10); }
+        html.no-tailwind [class~="bg-gold-500/20"] { background: rgba(212,175,55,.20); }
+        html.no-tailwind [class~="bg-red-500/10"] { background: rgba(239,68,68,.10); }
+        html.no-tailwind [class~="bg-red-500/20"] { background: rgba(239,68,68,.20); }
+        html.no-tailwind [class~="bg-orange-500/10"] { background: rgba(249,115,22,.10); }
+        html.no-tailwind [class~="bg-gradient-to-br"] { background-image: linear-gradient(135deg, rgba(212,175,55,.12), rgba(10,10,10,.95)); }
+        html.no-tailwind [class~="bg-gradient-to-t"] { background-image: linear-gradient(to top, rgba(34,34,34,.8), transparent); }
+        html.no-tailwind [class~="bg-gradient-to-r"] { background-image: linear-gradient(to right, rgba(212,175,55,.10), transparent); }
+        html.no-tailwind [class~="text-left"] { text-align: left; }
+        html.no-tailwind [class~="text-center"] { text-align: center; }
+        html.no-tailwind [class~="text-right"] { text-align: right; }
+        html.no-tailwind [class~="text-xs"] { font-size: .75rem; line-height: 1rem; }
+        html.no-tailwind [class~="text-sm"] { font-size: .875rem; line-height: 1.25rem; }
+        html.no-tailwind [class~="text-base"] { font-size: 1rem; line-height: 1.5rem; }
+        html.no-tailwind [class~="text-lg"] { font-size: 1.125rem; line-height: 1.75rem; }
+        html.no-tailwind [class~="text-xl"] { font-size: 1.25rem; line-height: 1.75rem; }
+        html.no-tailwind [class~="text-2xl"] { font-size: 1.5rem; line-height: 2rem; }
+        html.no-tailwind [class~="text-3xl"] { font-size: 1.875rem; line-height: 2.25rem; }
+        html.no-tailwind [class~="text-[8px]"] { font-size: 8px; }
+        html.no-tailwind [class~="text-[9px]"] { font-size: 9px; }
+        html.no-tailwind [class~="text-[10px]"] { font-size: 10px; }
+        html.no-tailwind [class~="text-[11px]"] { font-size: 11px; }
+        html.no-tailwind [class~="text-[12px]"] { font-size: 12px; }
+        html.no-tailwind [class~="font-light"] { font-weight: 300; }
+        html.no-tailwind [class~="font-medium"] { font-weight: 500; }
+        html.no-tailwind [class~="font-semibold"] { font-weight: 600; }
+        html.no-tailwind [class~="font-bold"] { font-weight: 700; }
+        html.no-tailwind [class~="font-serif"] { font-family: 'Playfair Display', Georgia, serif; }
+        html.no-tailwind [class~="font-mono"] { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+        html.no-tailwind [class~="italic"] { font-style: italic; }
+        html.no-tailwind [class~="uppercase"] { text-transform: uppercase; }
+        html.no-tailwind [class~="tracking-wide"] { letter-spacing: .025em; }
+        html.no-tailwind [class~="tracking-wider"] { letter-spacing: .05em; }
+        html.no-tailwind [class~="tracking-widest"] { letter-spacing: .10em; }
+        html.no-tailwind [class~="tracking-[0.18em]"] { letter-spacing: .18em; }
+        html.no-tailwind [class~="tracking-[0.22em]"] { letter-spacing: .22em; }
+        html.no-tailwind [class~="tracking-[0.25em]"] { letter-spacing: .25em; }
+        html.no-tailwind [class~="tracking-[0.28em]"] { letter-spacing: .28em; }
+        html.no-tailwind [class~="leading-tight"] { line-height: 1.25; }
+        html.no-tailwind [class~="leading-relaxed"] { line-height: 1.625; }
+        html.no-tailwind [class~="truncate"] { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        html.no-tailwind [class~="whitespace-nowrap"] { white-space: nowrap; }
+        html.no-tailwind [class~="break-words"] { overflow-wrap: break-word; }
+        html.no-tailwind [class~="text-white"] { color: #fff; }
+        html.no-tailwind [class~="text-black"] { color: #000; }
+        html.no-tailwind [class~="text-surface-400"] { color: #0A0A0A; }
+        html.no-tailwind [class~="text-gold-500"] { color: #D4AF37; }
+        html.no-tailwind [class~="text-gray-200"] { color: #E5E7EB; }
+        html.no-tailwind [class~="text-gray-300"] { color: #D1D5DB; }
+        html.no-tailwind [class~="text-gray-400"] { color: #9CA3AF; }
+        html.no-tailwind [class~="text-gray-500"] { color: #6B7280; }
+        html.no-tailwind [class~="text-gray-600"] { color: #4B5563; }
+        html.no-tailwind [class~="text-green-300"] { color: #86EFAC; }
+        html.no-tailwind [class~="text-green-400"] { color: #4ADE80; }
+        html.no-tailwind [class~="text-red-300"] { color: #FCA5A5; }
+        html.no-tailwind [class~="text-red-400"] { color: #F87171; }
+        html.no-tailwind [class~="text-red-500"] { color: #EF4444; }
+        html.no-tailwind [class~="text-yellow-300"] { color: #FDE047; }
+        html.no-tailwind [class~="text-orange-300"] { color: #FDBA74; }
+        html.no-tailwind [class~="text-blue-300"] { color: #93C5FD; }
+        html.no-tailwind [class~="text-emerald-300"] { color: #6EE7B7; }
+        html.no-tailwind [class~="text-purple-300"] { color: #D8B4FE; }
+        html.no-tailwind [class~="object-cover"] { object-fit: cover; }
+        html.no-tailwind [class~="object-contain"] { object-fit: contain; }
+        html.no-tailwind [class~="resize-none"] { resize: none; }
+        html.no-tailwind [class~="resize-y"] { resize: vertical; }
+        html.no-tailwind [class~="shadow-inner"] { box-shadow: inset 0 2px 4px rgba(0,0,0,.25); }
+        html.no-tailwind [class~="shadow-2xl"] { box-shadow: 0 25px 50px rgba(0,0,0,.45); }
+        html.no-tailwind [class~="shadow-gold-glow"] { box-shadow: 0 0 20px rgba(212,175,55,.15); }
+        html.no-tailwind [class~="shadow-gold-glow-lg"] { box-shadow: 0 0 30px rgba(212,175,55,.25); }
+        html.no-tailwind [class~="shadow-[20px_0_40px_rgba(0,0,0,0.5)]"] { box-shadow: 20px 0 40px rgba(0,0,0,.5); }
+        html.no-tailwind [class~="shadow-[0_0_8px_rgba(107,114,128,.6)]"] { box-shadow: 0 0 8px rgba(107,114,128,.6); }
+        html.no-tailwind [class~="blur-3xl"], html.no-tailwind [class~="blur-[80px]"], html.no-tailwind [class~="blur-[90px]"] { filter: blur(64px); }
+        html.no-tailwind [class~="backdrop-blur-sm"] { backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+        html.no-tailwind [class~="backdrop-blur-md"] { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        html.no-tailwind [class~="backdrop-blur-xl"] { backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
+        html.no-tailwind [class~="transition-all"], html.no-tailwind [class~="transition-colors"], html.no-tailwind [class~="transition-opacity"], html.no-tailwind [class~="transition-transform"] { transition: all .25s ease; }
+        html.no-tailwind [class~="duration-300"] { transition-duration: .3s; }
+        html.no-tailwind [class~="duration-500"] { transition-duration: .5s; }
+        html.no-tailwind .glass-dark { background: rgba(26,26,26,.80); border-bottom: 1px solid rgba(255,255,255,.06); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+        html.no-tailwind .premium-card { background: linear-gradient(180deg, rgba(34,34,34,.92), rgba(26,26,26,.96)); border: 1px solid rgba(255,255,255,.06); box-shadow: 0 4px 24px rgba(0,0,0,.32); }
+        html.no-tailwind .premium-card-hover:hover { transform: translateY(-2px); border-color: rgba(212,175,55,.35); }
+        html.no-tailwind .nav-link { width: 100%; color: #9CA3AF; border-left-color: transparent; background: transparent; }
+        html.no-tailwind .nav-link:hover { color: #fff; background: rgba(255,255,255,.05); }
+        html.no-tailwind .nav-link.border-gold-500 { color: #D4AF37; background: linear-gradient(to right, rgba(212,175,55,.10), transparent); border-left-color: #D4AF37; }
+        html.no-tailwind .view { min-height: 0; }
+        html.no-tailwind main { min-width: 0; }
+        html.no-tailwind aside { max-width: 86vw; }
+        html.no-tailwind header { min-height: 4rem; }
+        html.no-tailwind th { color: #D4AF37; font-size: 9px; text-transform: uppercase; letter-spacing: .10em; font-weight: 500; padding: .625rem 1rem; background: rgba(34,34,34,.55); }
+        html.no-tailwind td { padding: .625rem 1rem; border-top: 1px solid rgba(255,255,255,.05); }
+        html.no-tailwind button:hover { filter: brightness(1.08); }
+        html.no-tailwind [class~="hover:bg-gold-500"]:hover { background: #D4AF37; }
+        html.no-tailwind [class~="hover:bg-gold-400"]:hover { background: #F4C45A; }
+        html.no-tailwind [class~="hover:bg-white/5"]:hover { background: rgba(255,255,255,.05); }
+        html.no-tailwind [class~="hover:bg-surface-100"]:hover { background: #222; }
+        html.no-tailwind [class~="hover:bg-red-500"]:hover { background: #EF4444; }
+        html.no-tailwind [class~="hover:bg-blue-500"]:hover { background: #3B82F6; }
+        html.no-tailwind [class~="hover:bg-green-500"]:hover { background: #22C55E; }
+        html.no-tailwind [class~="hover:bg-emerald-500"]:hover { background: #10B981; }
+        html.no-tailwind [class~="hover:bg-purple-500"]:hover { background: #A855F7; }
+        html.no-tailwind [class~="hover:bg-yellow-500"]:hover { background: #EAB308; }
+        html.no-tailwind [class~="hover:text-white"]:hover { color: #fff; }
+        html.no-tailwind [class~="hover:text-gold-500"]:hover { color: #D4AF37; }
+        html.no-tailwind [class~="hover:text-surface-400"]:hover { color: #0A0A0A; }
+        html.no-tailwind [class~="hover:text-red-300"]:hover { color: #FCA5A5; }
+        html.no-tailwind [class~="hover:text-red-400"]:hover { color: #F87171; }
+        html.no-tailwind [class~="hover:text-green-400"]:hover { color: #4ADE80; }
+        html.no-tailwind [class~="hover:text-orange-300"]:hover { color: #FDBA74; }
+        html.no-tailwind [class~="hover:text-yellow-300"]:hover { color: #FDE047; }
+        @media (min-width: 640px) {
+            html.no-tailwind [class~="sm:flex"] { display: flex; }
+            html.no-tailwind [class~="sm:grid-cols-2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (min-width: 768px) {
+            html.no-tailwind [class~="md:flex-row"] { flex-direction: row; }
+            html.no-tailwind [class~="md:block"] { display: block; }
+            html.no-tailwind [class~="md:inline"] { display: inline; }
+            html.no-tailwind [class~="md:grid-cols-2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            html.no-tailwind [class~="md:grid-cols-3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            html.no-tailwind [class~="md:grid-cols-4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+            html.no-tailwind [class~="md:grid-cols-6"] { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+            html.no-tailwind [class~="md:grid-cols-[1fr_auto]"] { grid-template-columns: 1fr auto; }
+            html.no-tailwind [class~="md:col-span-1"] { grid-column: span 1 / span 1; }
+            html.no-tailwind [class~="md:col-span-2"] { grid-column: span 2 / span 2; }
+            html.no-tailwind [class~="md:col-span-3"] { grid-column: span 3 / span 3; }
+            html.no-tailwind [class~="md:items-center"] { align-items: center; }
+            html.no-tailwind [class~="md:items-start"] { align-items: flex-start; }
+            html.no-tailwind [class~="md:items-end"] { align-items: flex-end; }
+            html.no-tailwind [class~="md:justify-between"] { justify-content: space-between; }
+            html.no-tailwind [class~="md:mx-0"] { margin-left: 0; margin-right: 0; }
+            html.no-tailwind [class~="md:p-6"] { padding: 1.5rem; }
+            html.no-tailwind [class~="md:w-32"] { width: 8rem; }
+            html.no-tailwind [class~="md:w-44"] { width: 11rem; }
+            html.no-tailwind [class~="md:w-auto"] { width: auto; }
+            html.no-tailwind [class~="md:text-xl"] { font-size: 1.25rem; line-height: 1.75rem; }
+            html.no-tailwind [class~="md:text-2xl"] { font-size: 1.5rem; line-height: 2rem; }
+        }
+        @media (min-width: 1024px) {
+            html.no-tailwind [class~="lg:grid-cols-2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            html.no-tailwind [class~="lg:grid-cols-3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            html.no-tailwind [class~="lg:grid-cols-4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+            html.no-tailwind [class~="lg:col-span-1"] { grid-column: span 1 / span 1; }
+            html.no-tailwind [class~="lg:col-span-2"] { grid-column: span 2 / span 2; }
+        }
+        @media (min-width: 1280px) {
+            html.no-tailwind [class~="xl:grid-cols-2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            html.no-tailwind [class~="xl:grid-cols-3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            html.no-tailwind [class~="xl:grid-cols-7"] { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+            html.no-tailwind [class~="xl:col-span-2"] { grid-column: span 2 / span 2; }
+            html.no-tailwind [class~="xl:col-span-3"] { grid-column: span 3 / span 3; }
+        }
+
         @media print {
             body { background: #fff !important; color: #000 !important; }
             body > *:not(#idCardModal) { display: none !important; }
@@ -318,6 +711,37 @@
             #idCardContent { box-shadow: none !important; border: none !important; transform: none !important; }
         }
     </style>
+
+<script>
+        (function () {
+            function resolveLuxeHrStyleBase() {
+                const root = document.documentElement;
+                const hadFallback = root.classList.contains('no-tailwind');
+                root.classList.remove('no-tailwind');
+                let tailwindReady = false;
+                try {
+                    const probe = document.createElement('div');
+                    probe.className = 'hidden';
+                    probe.style.position = 'absolute';
+                    probe.style.left = '-9999px';
+                    document.body.appendChild(probe);
+                    tailwindReady = window.getComputedStyle(probe).display === 'none';
+                    probe.remove();
+                } catch (error) {
+                    tailwindReady = false;
+                }
+                root.classList.toggle('tailwind-ready', tailwindReady);
+                root.classList.toggle('no-tailwind', !tailwindReady || hadFallback && !tailwindReady);
+                document.body?.setAttribute('data-style-base', tailwindReady ? 'tailwind-cdn' : 'internal-fallback');
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function () { setTimeout(resolveLuxeHrStyleBase, 80); });
+            } else {
+                setTimeout(resolveLuxeHrStyleBase, 80);
+            }
+            window.addEventListener('load', function () { setTimeout(resolveLuxeHrStyleBase, 350); });
+        })();
+    </script>
 </head>
 <body class="h-screen overflow-hidden flex flex-col md:flex-row antialiased selection:bg-gold-500 selection:text-surface-400 text-xs">
 <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden transition-opacity opacity-0 duration-300" id="sidebarBackdrop"></div>
@@ -896,7 +1320,7 @@
 </div>
 <div class="p-3 rounded-lg bg-surface-100 border border-blue-500/20 text-gray-400 text-[10px] leading-relaxed">
 <i class="fa-solid fa-shield-halved text-blue-300 mr-1"></i>
-                            Mode Google Sheet aktif: aplikasi akan menulis dan membaca data dari database pusat melalui Apps Script. Local Storage hanya menjadi cache/offline fallback di browser ini.
+                            Mode Google Sheet aktif: aplikasi menulis dan membaca data dari database pusat melalui Apps Script. Spreadsheet ID dikendalikan di server-side Apps Script; Local Storage hanya cache/offline fallback di browser ini.
                         </div>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
 <button class="border border-purple-500/40 text-purple-300 hover:bg-purple-500 hover:text-white font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all" onclick="pullCloudDataNow()" type="button"><i class="fa-solid fa-cloud-arrow-down mr-1.5"></i> Tarik dari Database</button>
@@ -920,12 +1344,14 @@
 </div>
 <div>
 <label class="label-premium">Apps Script Web App URL</label>
-<input class="field font-mono text-[9px]" id="webAppUrl" placeholder="Tempel URL Web App Apps Script di sini" type="url"/>
+<input class="field font-mono text-[9px]" id="webAppUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" type="url"/>
+<p class="text-[9px] text-gray-500 mt-1 leading-relaxed">Untuk mode profesional, URL ini bisa ditanam sekali di konstanta <span class="text-gold-500">LUXEHR_CENTRAL_SYNC_CONFIG.webAppUrl</span> sebelum file dibagikan. Jika sudah ditanam, perangkat baru tidak perlu input ulang.</p>
 </div>
 <div>
-<label class="label-premium">Spreadsheet ID Database</label>
-<input class="field font-mono text-[9px]" id="googleSheetId" placeholder="Tempel Spreadsheet ID" type="text"/>
-<p class="text-[9px] text-gray-500 mt-1 leading-relaxed">Ambil dari URL Google Sheet: docs.google.com/spreadsheets/d/<span class="text-gold-500">SPREADSHEET_ID</span>/edit. Link Apps Script bukan Spreadsheet ID.</p>
+<label class="label-premium">Mode Spreadsheet ID</label>
+<input id="googleSheetId" type="hidden" value=""/>
+<div class="p-3 rounded-lg bg-surface-100 border border-green-500/20 text-gray-400 text-[10px] leading-relaxed" id="centralDatabaseStatus">Database memakai server-side binding. Spreadsheet ID tidak disimpan di browser/perangkat.</div>
+<p class="text-[9px] text-gray-500 mt-1 leading-relaxed">Spreadsheet ID cukup diatur satu kali di Apps Script, bukan di setiap perangkat pengguna.</p>
 </div>
 <div>
 <label class="label-premium">Folder Google Drive Gambar</label>
@@ -937,7 +1363,7 @@
 <button class="border border-white/10 text-gray-300 hover:border-gold-500/50 hover:text-gold-500 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all" onclick="copyWebAppUrl()" type="button"><i class="fa-solid fa-link mr-1.5"></i> Salin Web App URL</button>
 <button class="border border-white/10 text-gray-300 hover:border-gold-500/50 hover:text-gold-500 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all" onclick="openWebAppUrl()" type="button"><i class="fa-solid fa-arrow-up-right-from-square mr-1.5"></i> Buka Web App</button>
 </div>
-<div class="p-3 rounded-lg bg-surface-100 border border-red-500/20 text-gray-400 text-[10px] leading-relaxed"><i class="fa-solid fa-triangle-exclamation text-red-400 mr-1"></i> Mode Google Sheet membutuhkan Spreadsheet ID, Web App URL Apps Script, deployment Web App dengan akses yang sesuai, dan izin Drive untuk upload foto/KTP. Local Storage hanya dipakai sebagai cache/offline fallback.</div>
+<div class="p-3 rounded-lg bg-surface-100 border border-red-500/20 text-gray-400 text-[10px] leading-relaxed"><i class="fa-solid fa-triangle-exclamation text-red-400 mr-1"></i> Mode profesional tidak meminta Spreadsheet ID di perangkat. Pastikan Apps Script diikat ke Google Sheet database atau isi SERVER_SPREADSHEET_ID di script. Web App URL dapat ditanam di kode HTML agar onboarding perangkat baru lebih cepat.</div>
 </div>
 </div>
 <div class="premium-card rounded-xl p-4 lg:col-span-2 mt-2 border border-red-500/20">
@@ -1004,15 +1430,16 @@
 <!-- NEW CARD: Google Apps Script Template -->
 <div class="premium-card rounded-xl p-4 lg:col-span-2 mt-2">
 <div class="flex justify-between items-center mb-1">
-<h3 class="font-serif font-bold text-white text-base">Google Apps Script Database Template v6.3 Clean Compact-Column Header-Safe</h3>
+<h3 class="font-serif font-bold text-white text-base">Google Apps Script Database Template v6.5 Professional Central Sync</h3>
 <button class="border border-white/10 text-gray-300 hover:text-white hover:border-gold-500/40 py-1.5 px-3 text-[9px] uppercase tracking-widest rounded-lg transition-all flex items-center gap-1.5" onclick="copyAppScript()" type="button">
 <i class="fa-solid fa-copy"></i> Salin Script
                         </button>
 </div>
-<p class="text-[10px] text-gray-500 mb-4">Copy script ini ke Google Apps Script. Script v6.3 Clean Compact-Column akan membuat header otomatis, membaca data berdasarkan nama header, dan merapikan layout agar header serta data selalu mulai dari kolom A meskipun sebelumnya bergeser ke H/kolom jauh.</p>
+<p class="text-[10px] text-gray-500 mb-4">Copy script ini ke Google Apps Script. Script v6.4 Professional Central Sync memakai database server-side: Spreadsheet ID tidak perlu diinput di setiap perangkat. Header tetap otomatis, data dibaca berdasarkan nama header, dan layout dirapikan mulai kolom A.</p>
 <textarea class="field min-h-[420px] font-mono text-[10px] leading-relaxed resize-y bg-surface-100/80 cursor-text" id="appScriptTemplate" readonly="" spellcheck="false">/**
- * LuxeHR Premium v6.3 - Clean Compact-Column Lock-Safe Google Sheet Database Connector
+ * LuxeHR Premium v6.5 - Professional Central Sync Google Sheet Database Connector
  * Fokus utama:
+ * - Spreadsheet ID tidak dikirim/disimpan di perangkat pengguna. Database ditentukan server-side di Apps Script.
  * - Header dibuat otomatis untuk semua sheet inti.
  * - Read/write memakai nama header, bukan posisi kolom.
  * - Jika kolom di Google Sheet digeser, data tetap aman.
@@ -1020,16 +1447,22 @@
  * - Header dan data otomatis dikompakkan mulai kolom A agar tidak tersimpan mulai H/kolom jauh.
  * - Upsert memakai record key stabil dan timestamp updatedAt/deletedAt.
  *
- * Cara pakai:
+ * Cara pakai profesional:
  * 1) Buat Google Sheet kosong untuk database.
- * 2) Extensions &gt; Apps Script &gt; paste seluruh kode ini.
+ * 2) Dari Google Sheet tersebut buka Extensions &gt; Apps Script, lalu paste seluruh kode ini.
  * 3) Deploy &gt; New deployment &gt; Web app.
  * 4) Execute as: Me. Who has access: Anyone with the link.
- * 5) Copy Web App URL ke aplikasi LuxeHR, lalu isi Spreadsheet ID.
+ * 5) Copy Web App URL ke aplikasi LuxeHR. Tidak perlu isi Spreadsheet ID di perangkat.
+ *
+ * Jika Apps Script dibuat standalone, isi SERVER_SPREADSHEET_ID di bawah ini satu kali di script
+ * atau set Script Property: LUXEHR_SPREADSHEET_ID = ID Google Sheet database.
  */
 
-const LUXEHR_CONNECTOR_VERSION = '6.2.0-compact-column-lock-safe';
+const LUXEHR_CONNECTOR_VERSION = '6.5.0-professional-central-sync';
 const DEFAULT_ROOT_FOLDER_NAME = 'LuxeHR Uploads';
+const SERVER_SPREADSHEET_ID = '';
+const SERVER_SPREADSHEET_ID_PROPERTY = 'LUXEHR_SPREADSHEET_ID';
+const ALLOW_CLIENT_SPREADSHEET_ID_FALLBACK = false;
 const HEADER_ROW = 1;
 const MUTATION_LOCK_WAIT_MS = 5000;
 const LOCK_BUSY_RETRY_AFTER_MS = 3000;
@@ -1297,11 +1730,28 @@ function normalizeJob_(job) {
   };
 }
 
+function getServerSpreadsheetId_() {
+  const hardcoded = String(SERVER_SPREADSHEET_ID || '').trim();
+  if (hardcoded) return hardcoded;
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const fromProp = props ? String(props.getProperty(SERVER_SPREADSHEET_ID_PROPERTY) || '').trim() : '';
+    if (fromProp) return fromProp;
+  } catch (err) {}
+  return '';
+}
+
 function openDatabase_(spreadsheetId) {
-  if (spreadsheetId) return SpreadsheetApp.openById(String(spreadsheetId).trim());
+  const serverSpreadsheetId = getServerSpreadsheetId_();
+  if (serverSpreadsheetId) return SpreadsheetApp.openById(serverSpreadsheetId);
+
   const active = SpreadsheetApp.getActiveSpreadsheet();
   if (active) return active;
-  throw new Error('Spreadsheet ID kosong. Isi Spreadsheet ID dari URL Google Sheet.');
+
+  const clientSpreadsheetId = String(spreadsheetId || '').trim();
+  if (ALLOW_CLIENT_SPREADSHEET_ID_FALLBACK && clientSpreadsheetId) return SpreadsheetApp.openById(clientSpreadsheetId);
+
+  throw new Error('Database belum diikat di server-side. Buka Apps Script dari Google Sheet database, atau isi SERVER_SPREADSHEET_ID / Script Property LUXEHR_SPREADSHEET_ID.');
 }
 
 function ensureCoreSheets_(ss) {
@@ -2052,11 +2502,21 @@ function jsonOutput_(obj) {
         (function () {
             'use strict';
 
-            // --- MODE SERVER LOCAL STORAGE ---
+            // --- MODE PROFESSIONAL CENTRAL SYNC ---
             // Database utama: Google Sheet via Apps Script. Local Storage hanya dipakai sebagai cache/offline fallback.
-            const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzgZxX7HaFDE1z1FzFmuaMZpbLGLiyah7H9F_PgST6xPHXYGR_7NYjqE0mL0nbcO3iElw/exec";
+            // Profesional: Spreadsheet ID tidak lagi disimpan di setiap perangkat. Database diikat di sisi Apps Script.
+            // Isi webAppUrl di bawah ini sekali saja sebelum file HTML dibagikan ke perangkat lain, atau isi lewat menu Pengaturan pada perangkat admin.
+            const LUXEHR_CENTRAL_SYNC_CONFIG = Object.freeze({
+                webAppUrl: "https://script.google.com/macros/s/AKfycbzgZxX7HaFDE1z1FzFmuaMZpbLGLiyah7H9F_PgST6xPHXYGR_7NYjqE0mL0nbcO3iElw/exec",
+                useServerSideSpreadsheet: true,
+                lockClientSpreadsheetId: true,
+                lockWebAppUrlWhenBundled: true,
+                defaultDriveRootFolderName: 'LuxeHR Uploads',
+                deploymentLabel: 'LuxeHR Central Google Sheet Database'
+            });
+            const GOOGLE_APPS_SCRIPT_URL = String(LUXEHR_CENTRAL_SYNC_CONFIG.webAppUrl || '').trim();
 
-            const APP_VERSION = '6.3.0-google-sheet-clean-sync';
+            const APP_VERSION = '6.5.0-stylebase-professional-central-sync';
             const PAYROLL_MONTH_DAYS = 30;
             const STANDARD_WORKDAY_HOURS = 12;
             const STANDARD_WORKDAY_MINUTES = STANDARD_WORKDAY_HOURS * 60;
@@ -2595,6 +3055,7 @@ function jsonOutput_(obj) {
                 if (getSyncQueue().pending && getAutoSyncEnabled()) scheduleAutoSync(2500);
             }
             function getConfiguredSpreadsheetId() {
+                if (isClientSpreadsheetIdLocked()) return '';
                 return String(settings.googleSheetId || '').trim();
             }
             function buildSyncPayload(sheetName, payloadData, overwrite = true, action = 'sync') {
@@ -4198,8 +4659,10 @@ function jsonOutput_(obj) {
                         companyName: '',
                         companyAddress: '',
                         standardStartTime: '08:00',
-                        googleSheetId: getConfiguredSpreadsheetId(),
-                        driveRootFolderName: 'LuxeHR Uploads',
+                        googleSheetId: '',
+                        googleWebAppUrl: getBundledWebAppUrl(),
+                        webAppUrl: getBundledWebAppUrl(),
+                        driveRootFolderName: LUXEHR_CENTRAL_SYNC_CONFIG.defaultDriveRootFolderName || 'LuxeHR Uploads',
                         branchOptions: [],
                         employeeStatusOptions: [],
                         offboardingFeatureInitialized: true,
@@ -4212,6 +4675,11 @@ function jsonOutput_(obj) {
                         userAccounts: [],
                         spreadsheetTimeZone: DEFAULT_SPREADSHEET_TIME_ZONE
                     }, cloudSettings || {});
+                    settings.googleSheetId = '';
+                    if (hasBundledWebAppUrl()) {
+                        settings.googleWebAppUrl = getBundledWebAppUrl();
+                        settings.webAppUrl = getBundledWebAppUrl();
+                    }
                     const cloudDeleteRows = cleanCloudRows(sheetRows.deleteLog || [], ['sheetName', 'recordKey', 'deletedAt']);
                     const pendingLocalDeleteRows = hasUnsyncedOfflineData() ? (deletedRecords || []) : [];
                     deletedRecords = normalizeDeleteLog([...cloudDeleteRows, ...pendingLocalDeleteRows]);
@@ -4237,7 +4705,7 @@ function jsonOutput_(obj) {
                     settings.cloudFirstEnabled = settings.cloudFirstEnabled !== false;
                     settings.realtimePullEnabled = settings.realtimePullEnabled !== false;
                     settings.realtimePullIntervalSeconds = Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS);
-                    if (!settings.driveRootFolderName) settings.driveRootFolderName = 'LuxeHR Uploads';
+                    if (!settings.driveRootFolderName) settings.driveRootFolderName = LUXEHR_CENTRAL_SYNC_CONFIG.defaultDriveRootFolderName || 'LuxeHR Uploads';
                     ensureAuthSettings();
                     normalizeMasterDropdowns();
                     migrateCabangTerminology();
@@ -6134,7 +6602,8 @@ function jsonOutput_(obj) {
                     if (!localImages) pushMaintenanceIssue(issues, 'success', 'Tidak ada gambar lokal yang perlu diupload ke Drive.', 'Tidak ada tindakan diperlukan.');
                 }
                 if (moduleId === 'settingsMaster') {
-                    if (!getConfiguredSpreadsheetId()) pushMaintenanceIssue(issues, 'warning', 'Spreadsheet ID belum diisi.', 'Isi Spreadsheet ID di Pengaturan Integrasi.');
+                    if (!isWebAppUrlConfigured()) pushMaintenanceIssue(issues, 'warning', 'Web App URL belum dikonfigurasi.', 'Isi Web App URL atau tanam URL di LUXEHR_CENTRAL_SYNC_CONFIG.webAppUrl.');
+                    if (!isCentralSpreadsheetMode()) pushMaintenanceIssue(issues, 'warning', 'Mode Spreadsheet masih client-side legacy.', 'Aktifkan server-side binding agar Spreadsheet ID tidak disimpan di perangkat.');
                     if (!getDriveRootFolderName()) pushMaintenanceIssue(issues, 'warning', 'Nama folder Google Drive belum diisi.', 'Isi nama folder Drive di Pengaturan.');
                     if (!getBranches().length) pushMaintenanceIssue(issues, 'warning', 'Master Cabang masih kosong.', 'Tambah Cabang dari Pengaturan.');
                     if (!getEmployeeStatuses().length) pushMaintenanceIssue(issues, 'warning', 'Master Status masih kosong.', 'Tambah Status dari Pengaturan.');
@@ -6145,7 +6614,7 @@ function jsonOutput_(obj) {
                     const broken = Object.values(STORAGE_KEYS).filter(key => !readDirect(key).ok).length;
                     if (broken) pushMaintenanceIssue(issues, 'error', `${broken} storage key tidak bisa dibaca.`, 'Gunakan backup/restore modul terkait.');
                     if (queue.pending) pushMaintenanceIssue(issues, 'warning', 'Masih ada antrean auto-sync pending.', 'Klik Sync modul Sync & Storage atau tunggu auto-sync.');
-                    if (meta.status === 'error') pushMaintenanceIssue(issues, 'warning', `Sync terakhir error: ${meta.lastError || '-'}`, 'Cek Apps Script, deployment, koneksi internet, dan Spreadsheet ID.');
+                    if (meta.status === 'error') pushMaintenanceIssue(issues, 'warning', `Sync terakhir error: ${meta.lastError || '-'}`, 'Cek Apps Script, deployment, koneksi internet, dan server-side database binding.');
                 }
                 const hasError = issues.some(item => item.level === 'error');
                 const hasWarning = issues.some(item => item.level === 'warning');
@@ -6380,7 +6849,7 @@ function jsonOutput_(obj) {
                     if (moduleId === 'settingsMaster') {
                         normalizeMasterDropdowns();
                         settings.autoSyncEnabled = settings.autoSyncEnabled !== false;
-                        settings.driveRootFolderName = String(settings.driveRootFolderName || 'LuxeHR Uploads').trim() || 'LuxeHR Uploads';
+                        settings.driveRootFolderName = String(settings.driveRootFolderName || LUXEHR_CENTRAL_SYNC_CONFIG.defaultDriveRootFolderName || 'LuxeHR Uploads').trim() || 'LuxeHR Uploads';
                         changed = true;
                         saveSettings();
                     }
@@ -6479,9 +6948,9 @@ function jsonOutput_(obj) {
             async function emptyAllApplicationData() {
                 if (!requirePermission('resetData')) return;
                 showConfirm('Kosongkan seluruh data aplikasi? Data karyawan, absensi, cuti, shift, resign, blacklist, master, maintenance, dan pengaturan akan dikosongkan. Jika akses jaringan cloud aktif, Google Sheet juga akan ditimpa kosong. Lanjutkan?', async () => {
-                    const keepSheetId = settings.googleSheetId || '';
-                    const keepFolder = settings.driveRootFolderName || 'LuxeHR Uploads';
-                    const keepNetwork = settings.networkAccessEnabled === true;
+                    const keepWebAppUrl = settings.googleWebAppUrl || getBundledWebAppUrl() || '';
+                    const keepFolder = settings.driveRootFolderName || LUXEHR_CENTRAL_SYNC_CONFIG.defaultDriveRootFolderName || 'LuxeHR Uploads';
+                    const keepNetwork = settings.networkAccessEnabled !== false;
                     const resetDeleteMarkers = buildDeleteMarkersForReset();
                     employees = [];
                     attendance = [];
@@ -6496,7 +6965,9 @@ function jsonOutput_(obj) {
                         companyName: '',
                         companyAddress: '',
                         standardStartTime: '08:00',
-                        googleSheetId: keepSheetId,
+                        googleSheetId: '',
+                        googleWebAppUrl: keepWebAppUrl,
+                        webAppUrl: keepWebAppUrl,
                         driveRootFolderName: keepFolder,
                         branchOptions: [],
                         employeeStatusOptions: [],
@@ -6539,8 +7010,30 @@ function jsonOutput_(obj) {
                 e.preventDefault();
                 if (!requirePermission('manageSettings')) return;
                 const previous = settings || {};
-                settings = { ...previous, companyName: byId('companyName').value.trim(), companyAddress: byId('companyAddress').value.trim(), standardStartTime: byId('standardStartTime').value || '08:00', googleSheetId: '', driveRootFolderName: 'LuxeHR Local Images', branchOptions: previous.branchOptions || [], employeeStatusOptions: Array.isArray(previous.employeeStatusOptions) ? previous.employeeStatusOptions : [], offboardingFeatureInitialized: previous.offboardingFeatureInitialized || false, autoSyncEnabled: previous.autoSyncEnabled !== false, autoSyncIntervalSeconds: Number(previous.autoSyncIntervalSeconds || 60), networkAccessEnabled: false, previewNetworkGuardEnabled: false, cloudFirstEnabled: false, realtimePullEnabled: false, localStorageServerEnabled: true, realtimePullIntervalSeconds: Number(previous.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS), accessControlEnabled: previous.accessControlEnabled !== false, userAccounts: Array.isArray(previous.userAccounts) ? previous.userAccounts : [] };
-                saveSettings(); renderCompanyIdentity(); updateStorageStatus(); showToast('Pengaturan lokal berhasil disimpan', 'success');
+                settings = {
+                    ...previous,
+                    companyName: byId('companyName').value.trim(),
+                    companyAddress: byId('companyAddress').value.trim(),
+                    standardStartTime: byId('standardStartTime').value || '08:00',
+                    googleSheetId: '',
+                    googleWebAppUrl: previous.googleWebAppUrl || getBundledWebAppUrl() || '',
+                    webAppUrl: previous.webAppUrl || previous.googleWebAppUrl || getBundledWebAppUrl() || '',
+                    driveRootFolderName: previous.driveRootFolderName || LUXEHR_CENTRAL_SYNC_CONFIG.defaultDriveRootFolderName || 'LuxeHR Uploads',
+                    branchOptions: previous.branchOptions || [],
+                    employeeStatusOptions: Array.isArray(previous.employeeStatusOptions) ? previous.employeeStatusOptions : [],
+                    offboardingFeatureInitialized: previous.offboardingFeatureInitialized || false,
+                    autoSyncEnabled: previous.autoSyncEnabled !== false,
+                    autoSyncIntervalSeconds: Number(previous.autoSyncIntervalSeconds || 60),
+                    networkAccessEnabled: previous.networkAccessEnabled !== false,
+                    previewNetworkGuardEnabled: false,
+                    cloudFirstEnabled: previous.cloudFirstEnabled !== false,
+                    realtimePullEnabled: previous.realtimePullEnabled !== false,
+                    localStorageServerEnabled: false,
+                    realtimePullIntervalSeconds: Number(previous.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS),
+                    accessControlEnabled: previous.accessControlEnabled !== false,
+                    userAccounts: Array.isArray(previous.userAccounts) ? previous.userAccounts : []
+                };
+                saveSettings(); renderCompanyIdentity(); updateStorageStatus(); showToast('Pengaturan perusahaan berhasil disimpan', 'success');
             }
             function copyTextToClipboard(text, successMessage, errorMessage) {
                 if (navigator.clipboard && window.isSecureContext) {
@@ -6849,8 +7342,22 @@ function jsonOutput_(obj) {
             // --- GOOGLE SHEET DATABASE PATCH v6.3 CLEAN COMPACT-COLUMN LOCK-SAFE ---
             // Patch ini mengubah Local Storage menjadi cache/offline fallback.
             // Database utama: Google Sheet via Apps Script Web App.
+            function getBundledWebAppUrl() {
+                return String(LUXEHR_CENTRAL_SYNC_CONFIG?.webAppUrl || GOOGLE_APPS_SCRIPT_URL || '').trim();
+            }
+            function hasBundledWebAppUrl() {
+                return Boolean(getBundledWebAppUrl());
+            }
             function getConfiguredWebAppUrl() {
-                return String(settings.googleWebAppUrl || settings.webAppUrl || GOOGLE_APPS_SCRIPT_URL || '').trim();
+                const bundled = getBundledWebAppUrl();
+                const saved = String(settings.googleWebAppUrl || settings.webAppUrl || '').trim();
+                return bundled || saved;
+            }
+            function isCentralSpreadsheetMode() {
+                return LUXEHR_CENTRAL_SYNC_CONFIG?.useServerSideSpreadsheet !== false;
+            }
+            function isClientSpreadsheetIdLocked() {
+                return isCentralSpreadsheetMode() && LUXEHR_CENTRAL_SYNC_CONFIG?.lockClientSpreadsheetId !== false;
             }
             function isWebAppUrlConfigured() {
                 const url = getConfiguredWebAppUrl();
@@ -6871,7 +7378,7 @@ function jsonOutput_(obj) {
                     return false;
                 }
                 if (!isWebAppUrlConfigured()) {
-                    saveSyncMeta({ status: 'warning', sheetName: 'Google Sheet Database', mode, lastAttemptAt: new Date().toISOString(), lastError: 'Apps Script Web App URL belum valid.', message: 'Isi Apps Script Web App URL terlebih dahulu di menu Pengaturan.' });
+                    saveSyncMeta({ status: 'warning', sheetName: 'Google Sheet Database', mode, lastAttemptAt: new Date().toISOString(), lastError: 'Apps Script Web App URL belum valid.', message: 'Isi Apps Script Web App URL terlebih dahulu di menu Pengaturan atau tanam URL di konfigurasi pusat HTML.' });
                     return false;
                 }
                 return true;
@@ -6892,8 +7399,8 @@ function jsonOutput_(obj) {
                     companyAddress: '',
                     standardStartTime: '08:00',
                     googleSheetId: '',
-                    googleWebAppUrl: '',
-                    driveRootFolderName: 'LuxeHR Uploads',
+                    googleWebAppUrl: getBundledWebAppUrl(),
+                    driveRootFolderName: LUXEHR_CENTRAL_SYNC_CONFIG.defaultDriveRootFolderName || 'LuxeHR Uploads',
                     spreadsheetTimeZone: DEFAULT_SPREADSHEET_TIME_ZONE,
                     branchOptions: [],
                     employeeStatusOptions: DEFAULT_EMPLOYEE_STATUSES,
@@ -6910,7 +7417,7 @@ function jsonOutput_(obj) {
                     userAccounts: []
                 }, value => value && typeof value === 'object' && !Array.isArray(value));
 
-                if (!settings.driveRootFolderName) settings.driveRootFolderName = 'LuxeHR Uploads';
+                if (!settings.driveRootFolderName) settings.driveRootFolderName = LUXEHR_CENTRAL_SYNC_CONFIG.defaultDriveRootFolderName || 'LuxeHR Uploads';
                 if (!settings.spreadsheetTimeZone) settings.spreadsheetTimeZone = DEFAULT_SPREADSHEET_TIME_ZONE;
                 if (settings.autoSyncEnabled === undefined) settings.autoSyncEnabled = true;
                 if (settings.networkAccessEnabled === undefined) settings.networkAccessEnabled = true;
@@ -6918,6 +7425,11 @@ function jsonOutput_(obj) {
                 if (settings.realtimePullEnabled === undefined) settings.realtimePullEnabled = true;
                 settings.localStorageServerEnabled = false;
                 settings.previewNetworkGuardEnabled = false;
+                if (hasBundledWebAppUrl()) {
+                    settings.googleWebAppUrl = getBundledWebAppUrl();
+                    settings.webAppUrl = getBundledWebAppUrl();
+                }
+                settings.googleSheetId = '';
 
                 ensureAuthSettings();
                 normalizeMasterDropdowns();
@@ -6944,10 +7456,10 @@ function jsonOutput_(obj) {
                 settings.realtimePullEnabled = settings.realtimePullEnabled !== false;
                 settings.localStorageServerEnabled = false;
                 settings.realtimePullIntervalSeconds = Math.max(REALTIME_PULL_MIN_SECONDS, Number(settings.realtimePullIntervalSeconds || REALTIME_PULL_DEFAULT_SECONDS));
-                settings.driveRootFolderName = String(settings.driveRootFolderName || 'LuxeHR Uploads').trim() || 'LuxeHR Uploads';
+                settings.driveRootFolderName = String(settings.driveRootFolderName || LUXEHR_CENTRAL_SYNC_CONFIG.defaultDriveRootFolderName || 'LuxeHR Uploads').trim() || 'LuxeHR Uploads';
                 settings.spreadsheetTimeZone = String(settings.spreadsheetTimeZone || DEFAULT_SPREADSHEET_TIME_ZONE).trim() || DEFAULT_SPREADSHEET_TIME_ZONE;
-                settings.googleWebAppUrl = String(settings.googleWebAppUrl || settings.webAppUrl || '').trim();
-                settings.googleSheetId = String(settings.googleSheetId || '').trim();
+                settings.googleWebAppUrl = hasBundledWebAppUrl() ? getBundledWebAppUrl() : String(settings.googleWebAppUrl || settings.webAppUrl || '').trim();
+                settings.googleSheetId = isClientSpreadsheetIdLocked() ? '' : String(settings.googleSheetId || '').trim();
                 ensureAuthSettings();
                 safeWrite(STORAGE_KEYS.settings, settings, value => value && typeof value === 'object' && !Array.isArray(value));
                 requestAutoSyncAfterLocalSave('Pengaturan aplikasi disimpan');
@@ -6964,12 +7476,12 @@ function jsonOutput_(obj) {
                     borderClass: configured ? 'border-green-500/30' : 'border-yellow-500/30',
                     dotClass: configured ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,.8)]' : 'bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,.8)]',
                     icon: configured ? 'fa-cloud' : 'fa-plug-circle-exclamation',
-                    detail: configured ? 'Aplikasi memakai Google Sheet sebagai database pusat.' : 'Isi Web App URL dan Spreadsheet ID di Pengaturan.'
+                    detail: configured ? 'Aplikasi memakai Google Sheet sebagai database pusat dengan server-side binding.' : 'Isi Web App URL di Pengaturan atau tanam URL di LUXEHR_CENTRAL_SYNC_CONFIG.webAppUrl.'
                 };
                 if (!navigator.onLine) state = Object.assign(state, { key: 'offline', label: 'Offline Cache', textClass: 'text-yellow-400', borderClass: 'border-yellow-500/30', dotClass: 'bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,.8)]', icon: 'fa-wifi-slash', detail: 'Browser offline. Perubahan disimpan lokal dan akan disync saat online.' });
                 if (queue.pending) state = Object.assign(state, { key: 'queue-pending', label: 'Menunggu Sync', textClass: 'text-yellow-400', borderClass: 'border-yellow-500/30', dotClass: 'bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,.8)]', icon: 'fa-cloud-arrow-up fa-beat-fade', detail: 'Ada perubahan lokal yang menunggu dikirim ke Google Sheet.' });
                 if (meta.status === 'syncing') state = Object.assign(state, { key: 'syncing', label: 'Syncing', textClass: 'text-blue-300', borderClass: 'border-blue-500/30', dotClass: 'bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,.8)]', icon: 'fa-rotate fa-spin', detail: 'Aplikasi sedang menyinkronkan data ke Google Sheet.' });
-                if (meta.status === 'error') state = Object.assign(state, { key: 'sync-error', label: 'Sync Error', textClass: 'text-red-400', borderClass: 'border-red-500/30', dotClass: 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,.8)]', icon: 'fa-circle-exclamation', detail: 'Sync terakhir gagal. Cek Web App URL, Spreadsheet ID, deployment Apps Script, dan koneksi internet.' });
+                if (meta.status === 'error') state = Object.assign(state, { key: 'sync-error', label: 'Sync Error', textClass: 'text-red-400', borderClass: 'border-red-500/30', dotClass: 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,.8)]', icon: 'fa-circle-exclamation', detail: 'Sync terakhir gagal. Cek Web App URL, deployment Apps Script, server-side Spreadsheet binding, dan koneksi internet.' });
                 return Object.assign(state, { browserOnline: navigator.onLine === true, networkEnabled: isNetworkAccessEnabled(), cloudFirst: isCloudFirstEnabled(), realtimeEnabled: isRealtimePullEnabled(), queue, meta });
             }
 
@@ -6985,7 +7497,7 @@ function jsonOutput_(obj) {
 
                         async function postToAppsScript(payload, allowOpaqueFallback = false) {
                 const url = getConfiguredWebAppUrl();
-                if (!isWebAppUrlConfigured()) throw new Error('Apps Script Web App URL belum valid. Tempel URL deploy Web App dari Apps Script.');
+                if (!isWebAppUrlConfigured()) throw new Error('Apps Script Web App URL belum valid. Tempel URL deploy Web App dari Apps Script atau tanam URL di konfigurasi pusat.');
                 const maxAttempts = String(payload?.action || '').toLowerCase().includes('read') ? 2 : 4;
                 let lastError = null;
                 for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -7133,7 +7645,7 @@ function jsonOutput_(obj) {
             function getIntegrationSheetRows() {
                 return [
                     { key: 'webAppUrl', value: getConfiguredWebAppUrl(), jenis: 'Apps Script Web App URL', updatedAt: new Date().toISOString() },
-                    { key: 'spreadsheetId', value: getConfiguredSpreadsheetId(), jenis: 'Google Sheet Spreadsheet ID', updatedAt: new Date().toISOString() },
+                    { key: 'spreadsheetBinding', value: isCentralSpreadsheetMode() ? 'server-side-apps-script' : 'client-side-legacy', jenis: 'Google Sheet Binding Mode', updatedAt: new Date().toISOString() },
                     { key: 'driveRootFolderName', value: getDriveRootFolderName(), jenis: 'Google Drive Folder Root', updatedAt: new Date().toISOString() },
                     { key: 'databaseMode', value: 'google-sheet-cloud-first', jenis: 'Mode Database', updatedAt: new Date().toISOString() }
                 ];
@@ -7143,7 +7655,7 @@ function jsonOutput_(obj) {
             async function verifyDatabaseIntegrity(options = {}) {
                 const silent = options.silent === true;
                 if (!requireNetworkAccess('verify-database')) {
-                    if (!silent) showToast('Belum bisa audit database. Cek Web App URL, Spreadsheet ID, dan internet.', 'warning');
+                    if (!silent) showToast('Belum bisa audit database. Cek Web App URL, database binding Apps Script, dan internet.', 'warning');
                     return { ok: false, skipped: true, reason: 'network-or-config-missing' };
                 }
                 const startedAt = new Date().toISOString();
@@ -7166,7 +7678,7 @@ function jsonOutput_(obj) {
                     updateConnectivityStatus();
                     return { ok: true, totalRows, counts, result };
                 } catch (error) {
-                    saveSyncMeta({ status: 'error', sheetName: 'Google Sheet Database', mode: 'database-audit-failed', lastAttemptAt: startedAt, lastError: error.message || String(error), message: 'Audit database gagal. Periksa deployment Apps Script, Spreadsheet ID, dan izin akses Web App.' });
+                    saveSyncMeta({ status: 'error', sheetName: 'Google Sheet Database', mode: 'database-audit-failed', lastAttemptAt: startedAt, lastError: error.message || String(error), message: 'Audit database gagal. Periksa deployment Apps Script, server-side Spreadsheet binding, dan izin akses Web App.' });
                     if (!silent) showToast(`Audit database gagal: ${error.message || error}`, 'error');
                     renderSyncStatus();
                     updateConnectivityStatus();
@@ -7227,7 +7739,7 @@ function jsonOutput_(obj) {
                     return { ok: false, skipped: true, reason: 'sync-in-progress', verifiedCount: 0, fallbackCount: 0, failedCount: 0 };
                 }
                 if (!requireNetworkAccess(isAuto ? 'auto-sync' : 'manual-sync')) {
-                    if (!silent) showToast('Isi Web App URL dan Spreadsheet ID dulu, lalu klik Test Database.', 'warning');
+                    if (!silent) showToast('Isi Web App URL dulu, lalu klik Test Database. Spreadsheet ID sudah server-side di Apps Script.', 'warning');
                     return { ok: false, skipped: true, reason: 'network-or-config-missing', verifiedCount: 0, fallbackCount: 0, failedCount: 0 };
                 }
                 syncInProgress = true;
@@ -7267,7 +7779,7 @@ function jsonOutput_(obj) {
 
             async function testGoogleSheetConnection() {
                 if (!requireNetworkAccess('test-database')) {
-                    showToast('Lengkapi Web App URL dan Spreadsheet ID terlebih dahulu', 'warning');
+                    showToast('Lengkapi Web App URL terlebih dahulu', 'warning');
                     return { ok: false, reason: 'missing-config' };
                 }
                 saveSyncMeta({ status: 'syncing', sheetName: 'Google Sheet Database', mode: 'connection-test', lastAttemptAt: new Date().toISOString(), lastError: null, message: 'Mengetes koneksi ke Apps Script dan Google Sheet...' });
@@ -7290,7 +7802,7 @@ function jsonOutput_(obj) {
                 const force = options.force === true;
                 const verifyMode = options.verifyMode === true;
                 if (!requireNetworkAccess('read-all')) {
-                    if (!silent) showToast('Belum bisa baca database. Cek URL, Spreadsheet ID, dan internet.', 'warning');
+                    if (!silent) showToast('Belum bisa baca database. Cek URL, server-side database binding, dan internet.', 'warning');
                     return { ok: false, skipped: true, reason: 'network-or-config-missing' };
                 }
                 const nowMs = Date.now();
@@ -7336,7 +7848,7 @@ function jsonOutput_(obj) {
 
             async function startCloudFirstStartupSync() {
                 if (!isWebAppUrlConfigured()) {
-                    saveSyncMeta({ status: 'warning', sheetName: 'Google Sheet Database', mode: 'startup-waiting-config', lastAttemptAt: new Date().toISOString(), lastError: 'Database belum dikonfigurasi.', message: 'Isi Web App URL dan Spreadsheet ID di Pengaturan agar semua perangkat memakai database yang sama.' });
+                    saveSyncMeta({ status: 'warning', sheetName: 'Google Sheet Database', mode: 'startup-waiting-config', lastAttemptAt: new Date().toISOString(), lastError: 'Database belum dikonfigurasi.', message: 'Isi Web App URL di Pengaturan atau tanam URL di kode HTML agar semua perangkat memakai database yang sama tanpa input Spreadsheet ID.' });
                     return { ok: false, skipped: true, reason: 'missing-config' };
                 }
                 const localHasData = Boolean((employees || []).length || (attendance || []).length || (leaves || []).length || (shifts || []).length || (shiftAssignments || []).length || (resignRecords || []).length || (blacklistRecords || []).length || (maintenanceLogs || []).length);
@@ -7381,7 +7893,7 @@ function jsonOutput_(obj) {
                 const lastAttempt = meta.lastAttemptAt ? new Date(meta.lastAttemptAt).toLocaleString('id-ID') : '-';
                 const nextAutoRun = queue.nextRunAt ? new Date(queue.nextRunAt).toLocaleString('id-ID') : '-';
                 const lastAutoRun = queue.lastRunAt ? new Date(queue.lastRunAt).toLocaleString('id-ID') : '-';
-                el.innerHTML = `<div class="flex items-start gap-2"><i class="fa-solid ${icon} mt-0.5 ${cls.split(' ')[0]}"></i><div class="min-w-0"><p class="text-white text-[11px]">${escapeHtml(meta.message || 'Database Google Sheet siap digunakan.')}</p><p>Database: ${escapeHtml(meta.sheetName || 'Google Sheet Database')}</p><p>Mode: ${escapeHtml(meta.mode || 'google-sheet-cloud-first')}</p><p>Web App URL: <span class="${isWebAppUrlConfigured() ? 'text-green-400' : 'text-yellow-400'}">${isWebAppUrlConfigured() ? 'Valid' : 'Belum diisi/invalid'}</span></p><p>Spreadsheet ID: <span class="${getConfiguredSpreadsheetId() ? 'text-green-400' : 'text-yellow-400'}">${getConfiguredSpreadsheetId() ? 'Terisi' : 'Kosong'}</span></p><p>Sync berhasil terakhir: ${escapeHtml(lastSuccess)}</p><p>Percobaan terakhir: ${escapeHtml(lastAttempt)}</p><div class="mt-2 pt-2 border-t border-white/5"><p>Auto-sync: <span class="${getAutoSyncEnabled() ? 'text-green-400' : 'text-red-400'}">${getAutoSyncEnabled() ? 'Aktif' : 'Nonaktif'}</span></p><p>Antrean perubahan: <span class="${queue.pending ? 'text-yellow-400' : 'text-green-400'}">${queue.pending ? 'Menunggu sync' : 'Kosong'}</span></p><p>Auto-sync terakhir: ${escapeHtml(lastAutoRun)}</p><p>Auto-sync berikutnya: ${escapeHtml(nextAutoRun)}</p></div>${meta.lastError ? `<p class="mt-1 text-red-400 break-words">Error: ${escapeHtml(meta.lastError)}</p>` : ''}</div></div>`;
+                el.innerHTML = `<div class="flex items-start gap-2"><i class="fa-solid ${icon} mt-0.5 ${cls.split(' ')[0]}"></i><div class="min-w-0"><p class="text-white text-[11px]">${escapeHtml(meta.message || 'Database Google Sheet siap digunakan.')}</p><p>Database: ${escapeHtml(meta.sheetName || 'Google Sheet Database')}</p><p>Mode: ${escapeHtml(meta.mode || 'google-sheet-cloud-first')}</p><p>Web App URL: <span class="${isWebAppUrlConfigured() ? 'text-green-400' : 'text-yellow-400'}">${isWebAppUrlConfigured() ? 'Valid' : 'Belum diisi/invalid'}</span></p><p>Spreadsheet binding: <span class="text-green-400">Server-side / tidak disimpan di perangkat</span></p><p>Sync berhasil terakhir: ${escapeHtml(lastSuccess)}</p><p>Percobaan terakhir: ${escapeHtml(lastAttempt)}</p><div class="mt-2 pt-2 border-t border-white/5"><p>Auto-sync: <span class="${getAutoSyncEnabled() ? 'text-green-400' : 'text-red-400'}">${getAutoSyncEnabled() ? 'Aktif' : 'Nonaktif'}</span></p><p>Antrean perubahan: <span class="${queue.pending ? 'text-yellow-400' : 'text-green-400'}">${queue.pending ? 'Menunggu sync' : 'Kosong'}</span></p><p>Auto-sync terakhir: ${escapeHtml(lastAutoRun)}</p><p>Auto-sync berikutnya: ${escapeHtml(nextAutoRun)}</p></div>${meta.lastError ? `<p class="mt-1 text-red-400 break-words">Error: ${escapeHtml(meta.lastError)}</p>` : ''}</div></div>`;
             }
 
             function renderRealtimeStatus() {
@@ -7405,20 +7917,36 @@ function jsonOutput_(obj) {
                 renderRealtimeStatus();
             }
 
+            function renderCentralDatabaseStatus() {
+                const el = byId('centralDatabaseStatus');
+                if (!el) return;
+                const urlMode = hasBundledWebAppUrl() ? 'Terkunci di kode HTML' : 'Diisi dari Pengaturan perangkat admin';
+                const sheetMode = isCentralSpreadsheetMode() ? 'Server-side Apps Script' : 'Client-side legacy';
+                el.innerHTML = `<div class="flex items-start gap-2"><i class="fa-solid fa-database text-green-400 mt-0.5"></i><div><p class="text-white text-[11px]">Database pusat profesional aktif.</p><p>Spreadsheet ID: <span class="text-green-400">${escapeHtml(sheetMode)}</span></p><p>Web App URL: <span class="${isWebAppUrlConfigured() ? 'text-green-400' : 'text-yellow-400'}">${escapeHtml(urlMode)}</span></p><p class="mt-1 text-gray-500">Perangkat baru tidak perlu memasukkan Spreadsheet ID. Cukup gunakan file HTML yang sudah berisi Web App URL, atau isi URL satu kali pada perangkat admin.</p></div></div>`;
+            }
+
             function renderSettings() {
                 byId('companyName').value = settings.companyName || '';
                 byId('companyAddress').value = settings.companyAddress || '';
                 byId('standardStartTime').value = settings.standardStartTime || '08:00';
                 const urlInput = byId('webAppUrl');
                 if (urlInput) {
-                    urlInput.removeAttribute('readonly');
-                    urlInput.value = settings.googleWebAppUrl || '';
+                    const bundledUrl = getBundledWebAppUrl();
+                    urlInput.value = bundledUrl || settings.googleWebAppUrl || '';
                     urlInput.placeholder = 'https://script.google.com/macros/s/AKfycb.../exec';
+                    if (bundledUrl && LUXEHR_CENTRAL_SYNC_CONFIG.lockWebAppUrlWhenBundled !== false) {
+                        urlInput.setAttribute('readonly', 'readonly');
+                        urlInput.title = 'Web App URL sudah dikunci di LUXEHR_CENTRAL_SYNC_CONFIG.webAppUrl';
+                    } else {
+                        urlInput.removeAttribute('readonly');
+                        urlInput.title = '';
+                    }
                 }
                 const sheetInput = byId('googleSheetId');
-                if (sheetInput) sheetInput.value = settings.googleSheetId || '';
+                if (sheetInput) sheetInput.value = '';
+                renderCentralDatabaseStatus();
                 const driveInput = byId('driveRootFolderName');
-                if (driveInput) driveInput.value = settings.driveRootFolderName || 'LuxeHR Uploads';
+                if (driveInput) driveInput.value = settings.driveRootFolderName || LUXEHR_CENTRAL_SYNC_CONFIG.defaultDriveRootFolderName || 'LuxeHR Uploads';
                 const networkSelect = byId('networkAccessEnabled');
                 if (networkSelect) networkSelect.value = settings.networkAccessEnabled === false ? 'false' : 'true';
                 const cloudFirstSelect = byId('cloudFirstEnabled');
@@ -7436,10 +7964,11 @@ function jsonOutput_(obj) {
 
             function saveIntegrationSettings() {
                 if (!requirePermission('manageSettings')) return;
-                settings.googleWebAppUrl = String(byId('webAppUrl')?.value || '').trim();
+                const bundledUrl = getBundledWebAppUrl();
+                settings.googleWebAppUrl = bundledUrl || String(byId('webAppUrl')?.value || '').trim();
                 settings.webAppUrl = settings.googleWebAppUrl;
-                settings.googleSheetId = String(byId('googleSheetId')?.value || '').trim();
-                settings.driveRootFolderName = String(byId('driveRootFolderName')?.value || 'LuxeHR Uploads').trim() || 'LuxeHR Uploads';
+                settings.googleSheetId = '';
+                settings.driveRootFolderName = String(byId('driveRootFolderName')?.value || LUXEHR_CENTRAL_SYNC_CONFIG.defaultDriveRootFolderName || 'LuxeHR Uploads').trim() || 'LuxeHR Uploads';
                 settings.networkAccessEnabled = byId('networkAccessEnabled')?.value !== 'false';
                 settings.cloudFirstEnabled = byId('cloudFirstEnabled')?.value !== 'false';
                 settings.realtimePullEnabled = byId('realtimePullEnabled')?.value !== 'false';
@@ -7449,7 +7978,7 @@ function jsonOutput_(obj) {
                 startRealtimeCloudService();
                 updateConnectivityStatus();
                 renderSettings();
-                showToast('Konfigurasi database Google Sheet disimpan', 'success');
+                showToast('Konfigurasi database profesional disimpan. Spreadsheet ID tetap di server-side Apps Script.', 'success');
             }
 
             function copyWebAppUrl() {
