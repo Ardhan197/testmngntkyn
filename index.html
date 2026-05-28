@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>LuxeHR Premium Cloud Sheet v6.1 - Aplikasi Management Karyawan</title>
+<title>LuxeHR Premium Google Sheet DB v6.2 - Compact Column Database</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css';" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
@@ -914,7 +914,7 @@
 </div>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
 <button class="border border-blue-500/40 text-blue-300 hover:bg-blue-500 hover:text-white font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all" onclick="testGoogleSheetConnection()" type="button"><i class="fa-solid fa-plug-circle-check mr-1.5"></i> Test Database</button>
-<button class="border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500 hover:text-white font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all" onclick="verifyDatabaseIntegrity()" type="button"><i class="fa-solid fa-shield-check mr-1.5"></i> Audit Database</button>
+<button class="border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500 hover:text-white font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all" onclick="verifyDatabaseIntegrity()" type="button"><i class="fa-solid fa-shield-check mr-1.5"></i> Audit & Rapikan Kolom</button>
 <button class="bg-gold-500 text-surface-400 hover:bg-gold-400 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all shadow-gold-glow" onclick="syncAllToCloud()" type="button"><i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> Sync Manual</button>
 <button class="border border-green-500/40 text-green-300 hover:bg-green-500 hover:text-white font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all" onclick="runAutoSyncNow()" type="button"><i class="fa-solid fa-rotate mr-1.5"></i> Paksa Sync Sekarang</button>
 </div>
@@ -1004,20 +1004,20 @@
 <!-- NEW CARD: Google Apps Script Template -->
 <div class="premium-card rounded-xl p-4 lg:col-span-2 mt-2">
 <div class="flex justify-between items-center mb-1">
-<h3 class="font-serif font-bold text-white text-base">Google Apps Script Database Template v6.1 Lock-Safe Header-Safe</h3>
+<h3 class="font-serif font-bold text-white text-base">Google Apps Script Database Template v6.2 Compact-Column Header-Safe</h3>
 <button class="border border-white/10 text-gray-300 hover:text-white hover:border-gold-500/40 py-1.5 px-3 text-[9px] uppercase tracking-widest rounded-lg transition-all flex items-center gap-1.5" onclick="copyAppScript()" type="button">
 <i class="fa-solid fa-copy"></i> Salin Script
                         </button>
 </div>
-<p class="text-[10px] text-gray-500 mb-4">Copy script ini ke Google Apps Script. Script v6.1 Lock-Safe akan membuat header otomatis dan membaca data berdasarkan nama header, sehingga urutan kolom di Google Sheet boleh berubah tanpa merusak data.</p>
+<p class="text-[10px] text-gray-500 mb-4">Copy script ini ke Google Apps Script. Script v6.2 Compact-Column akan membuat header otomatis, membaca data berdasarkan nama header, dan merapikan layout agar header serta data selalu mulai dari kolom A meskipun sebelumnya bergeser ke H/kolom jauh.</p>
 <textarea class="field min-h-[420px] font-mono text-[10px] leading-relaxed resize-y bg-surface-100/80 cursor-text" id="appScriptTemplate" readonly="" spellcheck="false">/**
- * LuxeHR Premium v6.1 - Lock-Safe Advanced Google Sheet Database Connector
+ * LuxeHR Premium v6.2 - Compact-Column Lock-Safe Google Sheet Database Connector
  * Fokus utama:
  * - Header dibuat otomatis untuk semua sheet inti.
  * - Read/write memakai nama header, bukan posisi kolom.
  * - Jika kolom di Google Sheet digeser, data tetap aman.
  * - Jika ada header lama/alias seperti "Nama Karyawan", "Cabang", "NIK", script akan memetakan ke field canonical.
- * - Header baru otomatis ditambahkan di kanan tanpa merusak urutan kolom manual.
+ * - Header dan data otomatis dikompakkan mulai kolom A agar tidak tersimpan mulai H/kolom jauh.
  * - Upsert memakai record key stabil dan timestamp updatedAt/deletedAt.
  *
  * Cara pakai:
@@ -1028,7 +1028,7 @@
  * 5) Copy Web App URL ke aplikasi LuxeHR, lalu isi Spreadsheet ID.
  */
 
-const LUXEHR_CONNECTOR_VERSION = '6.1.0-lock-safe-header-safe';
+const LUXEHR_CONNECTOR_VERSION = '6.2.0-compact-column-lock-safe';
 const DEFAULT_ROOT_FOLDER_NAME = 'LuxeHR Uploads';
 const HEADER_ROW = 1;
 const MUTATION_LOCK_WAIT_MS = 5000;
@@ -1212,6 +1212,25 @@ function handleRequest_(payload) {
     return { ok: true, status: 'success', action: 'ensureHeaders', spreadsheetId: ss.getId(), schema, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: new Date().toISOString() };
   }
 
+
+  if (action === 'compact' || action === 'compact_sheets' || action === 'repairlayout' || action === 'repair_layout') {
+    const schema = ensureCoreSheets_(ss);
+    const sheets = readSheets_(ss, payload.sheetNames || payload.sheets || []);
+    return {
+      ok: true,
+      status: 'success',
+      action: 'compactSheets',
+      spreadsheetId: ss.getId(),
+      spreadsheetName: ss.getName(),
+      schema: schema,
+      totalSheets: Object.keys(sheets).length,
+      totalRows: Object.keys(sheets).reduce(function(sum, name){ return sum + sheets[name].length; }, 0),
+      message: 'Layout sheet berhasil dirapikan. Header dan data dimulai dari kolom A.',
+      connectorVersion: LUXEHR_CONNECTOR_VERSION,
+      serverTime: new Date().toISOString()
+    };
+  }
+
   if (action === 'readall' || action === 'read_all' || action === 'read') {
     const sheets = readSheetsReadOnly_(ss, payload.sheetNames || payload.sheets || []);
     return { ok: true, status: 'success', action: 'readAll', spreadsheetId: ss.getId(), sheets, totalSheets: Object.keys(sheets).length, totalRows: Object.keys(sheets).reduce(function(sum, name){ return sum + sheets[name].length; }, 0), readOnly: true, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: new Date().toISOString() };
@@ -1238,7 +1257,7 @@ function handleRequest_(payload) {
       counts: counts,
       headers: headers,
       schema: schema,
-      guarantees: { headerOrderIndependent: true, autoCreateMissingSheets: true, autoAppendMissingHeaders: true, upsertByStableRecordKey: true },
+      guarantees: { headerOrderIndependent: true, autoCreateMissingSheets: true, autoAppendMissingHeaders: true, compactToColumnA: true, upsertByStableRecordKey: true },
       connectorVersion: LUXEHR_CONNECTOR_VERSION,
       serverTime: new Date().toISOString()
     };
@@ -1325,61 +1344,109 @@ function ensureHeaders_(sheet, sheetName, extraRows) {
   const schema = LUXEHR_SCHEMAS[sheetName] || { headers: [], aliases: {} };
   const canonicalBase = schema.headers || [];
   const extraHeaders = collectHeaders_(Array.isArray(extraRows) ? extraRows : [], sheetName);
-  const desired = uniqueHeaders_(canonicalBase.concat(extraHeaders));
-  if (!desired.length) return { headers: [], added: [], renamed: [], duplicateCount: 0 };
 
   if (sheet.getMaxRows() &lt; 1) sheet.insertRows(1, 1);
-  const existingLastColumn = Math.max(sheet.getLastColumn(), desired.length, 1);
-  const headerRange = sheet.getRange(HEADER_ROW, 1, 1, existingLastColumn);
+
+  const originalLastColumn = Math.max(sheet.getLastColumn(), canonicalBase.length, 1);
+  const originalLastRow = Math.max(sheet.getLastRow(), 1);
+  const headerRange = sheet.getRange(HEADER_ROW, 1, 1, originalLastColumn);
   const originalHeaders = headerRange.getValues()[0].map(function(v){ return String(v || '').trim(); });
-  let headers = originalHeaders.slice();
-  let changed = false;
+  const originalData = originalLastRow &gt; 1 ? sheet.getRange(2, 1, originalLastRow - 1, originalLastColumn).getValues() : [];
+
   const renamed = [];
-  const seenCanonical = {};
+  const duplicateHeaders = [];
+  const originalCanonicalHeaders = [];
+  const originalNormSeen = {};
+  const originalIndexMap = {};
+  let firstNonEmptyHeaderColumn = 0;
 
-  for (let i = 0; i &lt; headers.length; i++) {
-    const raw = headers[i];
-    if (!raw) continue;
+  originalHeaders.forEach(function(raw, index) {
+    if (!raw) return;
+    if (!firstNonEmptyHeaderColumn) firstNonEmptyHeaderColumn = index + 1;
     const canon = canonicalHeader_(sheetName, raw);
-    if (canon !== raw &amp;&amp; !seenCanonical[canon]) {
-      headers[i] = canon;
-      renamed.push({ from: raw, to: canon, column: i + 1 });
-      changed = true;
+    if (canon !== raw) renamed.push({ from: raw, to: canon, column: index + 1 });
+    if (/^__duplicate_/i.test(canon)) return;
+    const norm = normalizeToken_(canon);
+    if (!originalIndexMap[norm]) originalIndexMap[norm] = [];
+    originalIndexMap[norm].push(index);
+    if (originalNormSeen[norm]) {
+      duplicateHeaders.push({ header: canon, column: index + 1 });
+      return;
     }
-    const active = headers[i];
-    if (active) {
-      const activeNorm = normalizeToken_(active);
-      if (seenCanonical[activeNorm]) {
-        headers[i] = '__duplicate_' + active + '_' + (i + 1);
-        changed = true;
-      } else {
-        seenCanonical[activeNorm] = true;
-      }
-    }
-  }
-
-  const currentNorms = {};
-  headers.forEach(function(h){ if (h) currentNorms[normalizeToken_(h)] = true; });
-  const added = [];
-  desired.forEach(function(h) {
-    const canon = canonicalHeader_(sheetName, h);
-    const key = normalizeToken_(canon);
-    if (!currentNorms[key]) {
-      headers.push(canon);
-      currentNorms[key] = true;
-      added.push(canon);
-      changed = true;
-    }
+    originalNormSeen[norm] = true;
+    originalCanonicalHeaders.push(canon);
   });
 
-  headers = headers.filter(function(h, idx){ return h || idx &lt; desired.length; });
-  if (!headers.length) headers = desired;
-  if (sheet.getMaxColumns() &lt; headers.length) sheet.insertColumnsAfter(sheet.getMaxColumns(), headers.length - sheet.getMaxColumns());
-  if (changed || sheet.getLastColumn() &lt; headers.length || originalHeaders.join('|') !== headers.join('|')) {
+  // Urutan final selalu dimulai dari schema inti, lalu header ekstra dari payload,
+  // lalu header custom lama. Kolom kosong di depan/tengah sengaja tidak dipertahankan.
+  const headers = uniqueHeaders_(canonicalBase.concat(extraHeaders).concat(originalCanonicalHeaders));
+  if (!headers.length) return { headers: [], added: [], renamed: renamed, duplicateCount: duplicateHeaders.length, compacted: false };
+
+  const added = headers.filter(function(h) { return !originalNormSeen[normalizeToken_(h)]; });
+  const currentCanonicalOrder = originalHeaders
+    .filter(function(h) { return String(h || '').trim() !== ''; })
+    .map(function(h) { return canonicalHeader_(sheetName, h); })
+    .filter(function(h) { return !/^__duplicate_/i.test(h); });
+
+  const expectedAtA = headers.join('|');
+  const currentAtA = originalHeaders.slice(0, headers.length).map(function(h) {
+    return h ? canonicalHeader_(sheetName, h) : '';
+  }).join('|');
+  const hasLeadingBlankHeaders = firstNonEmptyHeaderColumn &gt; 1;
+  const hasGapsBeforeUsedHeaders = originalHeaders.some(function(h, idx) {
+    if (idx &gt;= headers.length) return false;
+    return !h &amp;&amp; originalHeaders.slice(idx + 1).some(function(next){ return String(next || '').trim() !== ''; });
+  });
+  const hasTrailingUsedColumns = originalHeaders.slice(headers.length).some(function(h){ return String(h || '').trim() !== ''; });
+  const headerOrderChanged = currentAtA !== expectedAtA || currentCanonicalOrder.join('|') !== headers.filter(function(h){ return originalNormSeen[normalizeToken_(h)]; }).join('|');
+  const shouldCompact = hasLeadingBlankHeaders || hasGapsBeforeUsedHeaders || hasTrailingUsedColumns || headerOrderChanged || added.length || renamed.length || duplicateHeaders.length || sheet.getLastColumn() &lt; headers.length;
+
+  if (sheet.getMaxColumns() &lt; headers.length) {
+    sheet.insertColumnsAfter(sheet.getMaxColumns(), headers.length - sheet.getMaxColumns());
+  }
+
+  if (shouldCompact) {
+    const compactedValues = originalData.map(function(row) {
+      return headers.map(function(header) {
+        const norm = normalizeToken_(canonicalHeader_(sheetName, header));
+        const indices = originalIndexMap[norm] || [];
+        if (!indices.length) return '';
+        for (let i = 0; i &lt; indices.length; i++) {
+          const value = row[indices[i]];
+          if (String(value === null || value === undefined ? '' : value).trim() !== '') return value;
+        }
+        return row[indices[0]] === undefined ? '' : row[indices[0]];
+      });
+    });
+
+    sheet.getRange(HEADER_ROW, 1, 1, headers.length).setValues([headers]);
+    if (compactedValues.length) {
+      sheet.getRange(2, 1, compactedValues.length, headers.length).setValues(compactedValues);
+    }
+
+    const clearRows = Math.max(originalLastRow, sheet.getLastRow(), 1);
+    const clearLastColumn = Math.max(originalLastColumn, sheet.getLastColumn(), headers.length);
+    if (clearLastColumn &gt; headers.length) {
+      sheet.getRange(1, headers.length + 1, clearRows, clearLastColumn - headers.length).clearContent();
+    }
+  } else {
     sheet.getRange(HEADER_ROW, 1, 1, headers.length).setValues([headers]);
   }
+
   try { sheet.setFrozenRows(1); } catch (err) {}
-  return { headers: headers, added: added, renamed: renamed, duplicateCount: headers.filter(function(h){ return /^__duplicate_/.test(h); }).length };
+  try { sheet.autoResizeColumns(1, Math.min(headers.length, 30)); } catch (resizeErr) {}
+
+  return {
+    headers: headers,
+    added: added,
+    renamed: renamed,
+    duplicateCount: duplicateHeaders.length,
+    duplicateHeaders: duplicateHeaders,
+    compacted: shouldCompact,
+    firstNonEmptyHeaderColumnBefore: firstNonEmptyHeaderColumn || 1,
+    finalStartColumn: 1,
+    guarantee: 'headers-and-data-start-at-column-A'
+  };
 }
 
 function getHeaderInfo_(sheet, sheetName, extraRows) {
