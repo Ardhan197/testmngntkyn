@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>LuxeHR Premium v7.1 - Access Layout & Owner Login Repair</title>
+<title>LuxeHR Premium v7.2 - Scrollable Sidebar Navigation</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css';" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
@@ -701,6 +701,54 @@
             html.no-tailwind [class~="xl:grid-cols-7"] { grid-template-columns: repeat(7, minmax(0, 1fr)); }
             html.no-tailwind [class~="xl:col-span-2"] { grid-column: span 2 / span 2; }
             html.no-tailwind [class~="xl:col-span-3"] { grid-column: span 3 / span 3; }
+        }
+
+
+        /* LuxeHR v7.2 scrollable sidebar navigation */
+        #leftSidebar {
+            height: 100vh;
+            height: 100dvh;
+            max-height: 100vh;
+            max-height: 100dvh;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        #leftSidebar > div:first-child {
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+        }
+        #leftSidebar > div:first-child > div:first-child {
+            flex: 0 0 4rem !important;
+        }
+        #sidebarNav {
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            padding-bottom: 1rem !important;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(212,175,55,.55) rgba(255,255,255,.04);
+        }
+        #sidebarNav::-webkit-scrollbar { width: 5px; }
+        #sidebarNav::-webkit-scrollbar-track { background: rgba(255,255,255,.035); border-radius: 999px; }
+        #sidebarNav::-webkit-scrollbar-thumb { background: rgba(212,175,55,.55); border-radius: 999px; }
+        #sidebarNav::-webkit-scrollbar-thumb:hover { background: rgba(212,175,55,.85); }
+        #leftSidebar > div:last-child {
+            flex: 0 0 auto !important;
+            position: relative;
+            z-index: 2;
+        }
+        @media (max-height: 560px) {
+            #leftSidebar > div:last-child { padding: .6rem !important; }
+            #leftSidebar > div:last-child .w-8.h-8 { width: 1.65rem !important; height: 1.65rem !important; }
+            #leftSidebar > div:last-child p:last-child { display: none !important; }
+            #sidebarNav { padding-top: .35rem !important; padding-bottom: .55rem !important; }
         }
 
         @media print {
@@ -2815,7 +2863,7 @@ function jsonOutput_(obj) {
             });
             const GOOGLE_APPS_SCRIPT_URL = String(LUXEHR_CENTRAL_SYNC_CONFIG.webAppUrl || '').trim();
 
-            const APP_VERSION = '7.1.0-access-layout-owner-login-repair';
+            const APP_VERSION = '7.2.0-scrollable-sidebar-navigation';
             const PAYROLL_MONTH_DAYS = 30;
             const STANDARD_WORKDAY_HOURS = 12;
             const STANDARD_WORKDAY_MINUTES = STANDARD_WORKDAY_HOURS * 60;
@@ -5812,6 +5860,22 @@ function jsonOutput_(obj) {
                 downloadFile(filename, csv, 'text/csv;charset=utf-8;');
             }
 
+            function scrollActiveSidebarItemIntoView() {
+                const nav = byId('sidebarNav');
+                if (!nav) return;
+                const active = nav.querySelector('.border-gold-500, .text-gold-500');
+                if (!active) return;
+                try {
+                    const navRect = nav.getBoundingClientRect();
+                    const activeRect = active.getBoundingClientRect();
+                    const above = activeRect.top < navRect.top + 8;
+                    const below = activeRect.bottom > navRect.bottom - 8;
+                    if (above || below) active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                } catch (error) {
+                    active.scrollIntoView(false);
+                }
+            }
+
             function openSidebar() {
                 const sidebar = byId('leftSidebar');
                 const backdrop = byId('sidebarBackdrop');
@@ -5822,6 +5886,7 @@ function jsonOutput_(obj) {
                 requestAnimationFrame(() => {
                     backdrop.classList.remove('opacity-0');
                     backdrop.classList.add('opacity-100');
+                    scrollActiveSidebarItemIntoView();
                 });
             }
             function closeSidebar() {
@@ -5855,6 +5920,7 @@ function jsonOutput_(obj) {
                 if (!activeNav) return renderActiveView();
                 activeNav.classList.add('bg-gradient-to-r', 'from-gold-500/10', 'to-transparent', 'border-gold-500', 'text-gold-500');
                 activeNav.classList.remove('border-transparent', 'text-gray-400', 'hover:text-white', 'hover:bg-white/5');
+                scrollActiveSidebarItemIntoView();
                 closeSidebar();
                 renderActiveView();
             }
