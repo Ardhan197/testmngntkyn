@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>LuxeHR Premium v6.8 - Hard Reset & Access Layout</title>
+<title>LuxeHR Premium v7.1 - Access Layout & Owner Login Repair</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" onerror="this.onerror=null;this.href='https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css';" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&amp;display=swap" rel="stylesheet"/>
@@ -709,6 +709,176 @@
             #idCardModal { position: static !important; display: flex !important; background: #fff !important; }
             #idCardBackdrop, #idCardModal .p-4.border-b, #idCardModal button { display: none !important; }
             #idCardContent { box-shadow: none !important; border: none !important; transform: none !important; }
+        }
+
+        /* LuxeHR v7.1 access layout hard fix + owner login repair */
+        main > .view {
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+        }
+        main > #accessView:not(.hidden) {
+            display: block !important;
+            width: 100% !important;
+            max-width: none !important;
+            min-width: 0 !important;
+            flex: 1 1 auto !important;
+            align-self: stretch !important;
+            margin: 0 !important;
+            left: auto !important;
+            right: auto !important;
+            transform: none !important;
+            grid-column: 1 / -1 !important;
+        }
+        #accessView, #accessView * { box-sizing: border-box; }
+        #accessView .access-page-shell {
+            width: 100%;
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+        #accessView .access-page-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+            width: 100%;
+        }
+        #accessView .access-page-stack {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        #accessView .access-account-form {
+            width: 100% !important;
+            display: grid !important;
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            gap: .9rem !important;
+            align-items: start !important;
+        }
+        #accessView .access-form-field,
+        #accessView .access-role-status,
+        #accessView .access-linked-employee {
+            min-width: 0;
+            width: 100%;
+        }
+        #accessView .access-role-status {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .55rem;
+        }
+        #accessView .access-form-full,
+        #accessView .access-form-actions {
+            grid-column: 1 / -1 !important;
+            width: 100%;
+            min-width: 0;
+        }
+        #accessView .access-form-actions {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: .65rem !important;
+            padding-top: .25rem;
+        }
+        #accessView #accountPermissionGrid {
+            width: 100% !important;
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: .75rem !important;
+            align-items: start !important;
+        }
+        #accessView .access-permission-group,
+        #accessView .access-permission-hint {
+            width: 100%;
+            min-width: 0;
+        }
+        #accessView .access-permission-group-inner {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: .5rem;
+        }
+        #accessView .access-permission-item {
+            display: flex;
+            align-items: flex-start;
+            gap: .5rem;
+            padding: .55rem;
+            border-radius: .7rem;
+            background: #1A1A1A;
+            border: 1px solid rgba(255,255,255,.05);
+            transition: .2s;
+            min-width: 0;
+        }
+        #accessView .access-permission-item:hover { border-color: rgba(212,175,55,.35); }
+        #accessView .access-permission-item span { min-width: 0; }
+        #accessView .access-permission-item input { flex: 0 0 auto; margin-top: .1rem; }
+        #accessView .access-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        #accessView .access-rule-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: .75rem;
+        }
+        #accessView .field,
+        #accessView .premium-select-shell,
+        #accessView .premium-select-trigger {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+        }
+        @media (max-width: 1023px) {
+            #accessView .access-account-form { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+            #accessView #accountPermissionGrid { grid-template-columns: minmax(0, 1fr) !important; }
+            #accessView .access-rule-grid { grid-template-columns: minmax(0, 1fr); }
+        }
+        @media (max-width: 767px) {
+            main > #accessView:not(.hidden) {
+                display: block !important;
+                padding: 1rem !important;
+                width: 100vw !important;
+                max-width: 100vw !important;
+                margin: 0 !important;
+            }
+            #accessView .access-page-shell {
+                max-width: none;
+                width: 100%;
+                margin: 0;
+            }
+            #accessView .access-page-header {
+                flex-direction: column !important;
+                align-items: stretch !important;
+            }
+            #accessView .access-page-header button { width: 100%; }
+            #accessView .access-account-form {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: .8rem !important;
+            }
+            #accessView .access-role-status {
+                grid-template-columns: 1fr !important;
+            }
+            #accessView #accountPermissionGrid {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: .75rem !important;
+            }
+            #accessView .access-permission-group-inner {
+                grid-template-columns: 1fr !important;
+            }
+            #accessView .access-form-actions {
+                grid-template-columns: 1fr !important;
+            }
+            #accessView table { min-width: 720px; }
+        }
+        @media (min-width: 1024px) {
+            html.no-tailwind [class~="lg:col-span-3"] { grid-column: span 3 / span 3; }
+            html.no-tailwind [class~="lg:col-span-4"] { grid-column: span 4 / span 4; }
+            html.no-tailwind [class~="lg:grid-cols-4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        }
+        @media (min-width: 640px) {
+            html.no-tailwind [class~="sm:grid-cols-2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
     </style>
 
@@ -1431,14 +1601,14 @@
 <!-- NEW CARD: Google Apps Script Template -->
 <div class="premium-card rounded-xl p-4 lg:col-span-2 mt-2">
 <div class="flex justify-between items-center mb-1">
-<h3 class="font-serif font-bold text-white text-base">Google Apps Script Database Template v6.8 Hard Reset & Access Layout</h3>
+<h3 class="font-serif font-bold text-white text-base">Google Apps Script Database Template v7.1 Canonical Sheet Consolidation</h3>
 <button class="border border-white/10 text-gray-300 hover:text-white hover:border-gold-500/40 py-1.5 px-3 text-[9px] uppercase tracking-widest rounded-lg transition-all flex items-center gap-1.5" onclick="copyAppScript()" type="button">
 <i class="fa-solid fa-copy"></i> Salin Script
                         </button>
 </div>
-<p class="text-[10px] text-gray-500 mb-4">Copy script ini ke Google Apps Script. Script v6.8 memakai database server-side: Spreadsheet ID tidak perlu diinput di setiap perangkat. Header tetap otomatis, data dibaca berdasarkan nama header, dan layout dirapikan mulai kolom A.</p>
+<p class="text-[10px] text-gray-500 mb-4">Copy script ini ke Google Apps Script. Script v7.1 memakai database server-side: Spreadsheet ID tidak perlu diinput di setiap perangkat. Header tetap otomatis, data dibaca berdasarkan nama header, dan layout dirapikan mulai kolom A.</p>
 <textarea class="field min-h-[420px] font-mono text-[10px] leading-relaxed resize-y bg-surface-100/80 cursor-text" id="appScriptTemplate" readonly="" spellcheck="false">/**
- * LuxeHR Premium v6.8 - Hard Reset & Access Layout Google Sheet Database Connector
+ * LuxeHR Premium v7.1 - Access Layout & Owner Login Repair Google Sheet Database Connector
  * Fokus utama:
  * - Spreadsheet ID tidak dikirim/disimpan di perangkat pengguna. Database ditentukan server-side di Apps Script.
  * - Header dibuat otomatis untuk semua sheet inti.
@@ -1446,6 +1616,7 @@
  * - Jika kolom di Google Sheet digeser, data tetap aman.
  * - Jika ada header lama/alias seperti "Nama Karyawan", "Cabang", "NIK", script akan memetakan ke field canonical.
  * - Header dan data otomatis dikompakkan mulai kolom A agar tidak tersimpan mulai H/kolom jauh.
+ * - Sheet lama/alias seperti "Karyawan Data" otomatis digabung ke sheet canonical "Data_Karyawan" supaya tidak dobel.
  * - Upsert memakai record key stabil dan timestamp updatedAt/deletedAt.
  *
  * Cara pakai profesional:
@@ -1459,7 +1630,7 @@
  * atau set Script Property: LUXEHR_SPREADSHEET_ID = ID Google Sheet database.
  */
 
-const LUXEHR_CONNECTOR_VERSION = '6.8.0-hard-reset-access-layout';
+const LUXEHR_CONNECTOR_VERSION = '7.0.0-canonical-sheet-consolidation';
 const DEFAULT_ROOT_FOLDER_NAME = 'LuxeHR Uploads';
 const SERVER_SPREADSHEET_ID = '';
 const SERVER_SPREADSHEET_ID_PROPERTY = 'LUXEHR_SPREADSHEET_ID';
@@ -1467,6 +1638,7 @@ const ALLOW_CLIENT_SPREADSHEET_ID_FALLBACK = false;
 const HEADER_ROW = 1;
 const MUTATION_LOCK_WAIT_MS = 5000;
 const LOCK_BUSY_RETRY_AFTER_MS = 3000;
+const DELETE_DUPLICATE_ALIAS_SHEETS_AFTER_MERGE = true;
 
 const LUXEHR_SCHEMAS = {
   Data_Karyawan: {
@@ -1546,7 +1718,7 @@ const LUXEHR_SCHEMAS = {
 };
 
 const SHEET_ALIASES = {
-  Data_Karyawan: ['Data Karyawan','Karyawan','Employees','Master Karyawan','Master Data Karyawan','Master_Data_Karyawan'],
+  Data_Karyawan: ['Data Karyawan','Karyawan Data','Karyawan_Data','Karyawan','Employees','Employee','Employee Data','Data Employee','Data Employees','Master Karyawan','Master Data Karyawan','Master_Data_Karyawan'],
   Data_Absensi: ['Data Absensi','Absensi','Attendance'],
   Data_Cuti: ['Data Cuti','Cuti','Izin','Leave','Leaves'],
   Data_Shift: ['Data Shift','Shift','Master Shift'],
@@ -1646,6 +1818,12 @@ function handleRequest_(payload) {
     return { ok: true, status: 'success', action: 'ensureHeaders', spreadsheetId: ss.getId(), schema, connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: new Date().toISOString() };
   }
 
+  if (action === 'deduplicate' || action === 'deduplicate_alias_sheets' || action === 'consolidate_sheets') {
+    const consolidation = consolidateDuplicateAliasSheets_(ss);
+    const schema = ensureCoreSheets_(ss);
+    return { ok: true, status: 'success', action: 'deduplicateAliasSheets', spreadsheetId: ss.getId(), spreadsheetName: ss.getName(), consolidation, schema, message: 'Sheet duplikat/alias sudah digabung ke nama canonical. Contoh: Karyawan Data -> Data_Karyawan.', connectorVersion: LUXEHR_CONNECTOR_VERSION, serverTime: new Date().toISOString() };
+  }
+
 
   if (action === 'compact' || action === 'compact_sheets' || action === 'repairlayout' || action === 'repair_layout') {
     const schema = ensureCoreSheets_(ss);
@@ -1659,7 +1837,7 @@ function handleRequest_(payload) {
       schema: schema,
       totalSheets: Object.keys(sheets).length,
       totalRows: Object.keys(sheets).reduce(function(sum, name){ return sum + sheets[name].length; }, 0),
-      message: 'Layout sheet berhasil dirapikan. Header dan data dimulai dari kolom A.',
+      message: 'Layout sheet berhasil dirapikan. Header dan data dimulai dari kolom A. Sheet alias/duplikat juga digabung ke nama canonical.',
       connectorVersion: LUXEHR_CONNECTOR_VERSION,
       serverTime: new Date().toISOString()
     };
@@ -1691,7 +1869,7 @@ function handleRequest_(payload) {
       counts: counts,
       headers: headers,
       schema: schema,
-      guarantees: { headerOrderIndependent: true, autoCreateMissingSheets: true, autoAppendMissingHeaders: true, compactToColumnA: true, upsertByStableRecordKey: true },
+      guarantees: { headerOrderIndependent: true, autoCreateMissingSheets: true, autoAppendMissingHeaders: true, compactToColumnA: true, consolidateDuplicateAliasSheets: true, upsertByStableRecordKey: true },
       connectorVersion: LUXEHR_CONNECTOR_VERSION,
       serverTime: new Date().toISOString()
     };
@@ -1756,7 +1934,7 @@ function openDatabase_(spreadsheetId) {
 }
 
 function ensureCoreSheets_(ss) {
-  const report = {};
+  const report = { __canonicalConsolidation: consolidateDuplicateAliasSheets_(ss) };
   Object.keys(LUXEHR_SCHEMAS).forEach(function(sheetName) {
     const sheet = getOrCreateSheet_(ss, sheetName);
     report[sheetName] = ensureHeaders_(sheet, sheetName);
@@ -1968,6 +2146,112 @@ function clearBody_(sheet) {
   if (rows &gt; 1) sheet.getRange(2, 1, rows - 1, cols).clearContent();
 }
 
+
+function getCanonicalCandidateSheets_(ss, name) {
+  const canonical = canonicalSheetName_(name);
+  const targetNames = [canonical].concat(SHEET_ALIASES[canonical] || []);
+  const targetNorms = {};
+  targetNames.forEach(function(item) { targetNorms[normalizeToken_(item)] = true; });
+  return ss.getSheets().filter(function(sheet) {
+    return targetNorms[normalizeToken_(sheet.getName())] === true;
+  });
+}
+
+function mergeRowsByStableKey_(sheetName, rowGroups) {
+  const byKey = {};
+  const result = [];
+  (rowGroups || []).forEach(function(rows) {
+    (rows || []).forEach(function(row, index) {
+      const key = recordKey_(sheetName, row, index);
+      const existingIndex = byKey[key];
+      if (existingIndex === undefined) {
+        byKey[key] = result.length;
+        result.push(row);
+        return;
+      }
+      const current = result[existingIndex] || {};
+      const currentTime = new Date(current.updatedAt || current.createdAt || 0).getTime() || 0;
+      const incomingTime = new Date(row.updatedAt || row.createdAt || 0).getTime() || 0;
+      if (incomingTime >= currentTime) result[existingIndex] = Object.assign({}, current, row);
+    });
+  });
+  return result;
+}
+
+function consolidateCanonicalSheet_(ss, sheetName) {
+  const canonical = canonicalSheetName_(sheetName);
+  const candidates = getCanonicalCandidateSheets_(ss, canonical);
+  if (!candidates.length) return { canonical: canonical, merged: false, deletedAliases: [], sourceSheets: [] };
+
+  let target = ss.getSheetByName(canonical) || candidates[0];
+  if (target.getName() !== canonical && !ss.getSheetByName(canonical)) {
+    try { target.setName(canonical); } catch (renameErr) {}
+    target = ss.getSheetByName(canonical) || target;
+  }
+
+  const refreshedCandidates = getCanonicalCandidateSheets_(ss, canonical);
+  if (refreshedCandidates.length <= 1 && target.getName() === canonical) {
+    return { canonical: canonical, merged: false, deletedAliases: [], sourceSheets: refreshedCandidates.map(function(sh){ return sh.getName(); }) };
+  }
+
+  const rowGroups = [];
+  refreshedCandidates.forEach(function(sheet) {
+    try {
+      rowGroups.push(readSheetAsObjects_(sheet, canonical, { ensure: true }));
+    } catch (readErr) {
+      rowGroups.push([]);
+    }
+  });
+  const mergedRows = mergeRowsByStableKey_(canonical, rowGroups);
+  replaceSheet_(target, mergedRows, canonical);
+
+  const deletedAliases = [];
+  refreshedCandidates.forEach(function(sheet) {
+    if (sheet.getSheetId() === target.getSheetId()) return;
+    try {
+      if (DELETE_DUPLICATE_ALIAS_SHEETS_AFTER_MERGE && ss.getSheets().length > 1) {
+        const aliasName = sheet.getName();
+        ss.deleteSheet(sheet);
+        deletedAliases.push(aliasName);
+      }
+    } catch (deleteErr) {
+      try {
+        const archiveName = ('Merged_' + canonical + '_' + new Date().getTime()).slice(0, 98);
+        sheet.setName(archiveName);
+        deletedAliases.push(sheet.getName());
+      } catch (archiveErr) {}
+    }
+  });
+
+  return {
+    canonical: canonical,
+    merged: true,
+    targetSheet: target.getName(),
+    sourceSheets: refreshedCandidates.map(function(sh){ return sh.getName(); }),
+    deletedAliases: deletedAliases,
+    rowsAfterMerge: mergedRows.length
+  };
+}
+
+function consolidateDuplicateAliasSheets_(ss) {
+  const report = {};
+  Object.keys(LUXEHR_SCHEMAS).forEach(function(sheetName) {
+    const result = consolidateCanonicalSheet_(ss, sheetName);
+    if (result && (result.merged || (result.sourceSheets || []).length > 1)) report[sheetName] = result;
+  });
+  return report;
+}
+
+function readCanonicalSheetRowsMerged_(ss, sheetName, options) {
+  const canonical = canonicalSheetName_(sheetName);
+  const candidates = getCanonicalCandidateSheets_(ss, canonical);
+  if (!candidates.length) return [];
+  const groups = candidates.map(function(sheet) {
+    return readSheetAsObjects_(sheet, canonical, options || { ensure: false });
+  });
+  return mergeRowsByStableKey_(canonical, groups);
+}
+
 function findSheetByCanonicalOrAlias_(ss, name) {
   const canonical = canonicalSheetName_(name);
   const direct = ss.getSheetByName(canonical);
@@ -1989,10 +2273,9 @@ function readSheetsReadOnly_(ss, requestedNames) {
   const sheets = {};
   const request = Array.isArray(requestedNames) ? requestedNames.filter(Boolean).map(canonicalSheetName_) : [];
   const sourceNames = request.length ? request : Object.keys(LUXEHR_SCHEMAS);
-  sourceNames.forEach(function(name) {
+  uniqueTextList_(sourceNames.map(canonicalSheetName_)).forEach(function(name) {
     const canonical = canonicalSheetName_(name);
-    const sheet = findSheetByCanonicalOrAlias_(ss, canonical);
-    sheets[canonical] = sheet ? readSheetAsObjects_(sheet, canonical, { ensure: false }) : [];
+    sheets[canonical] = readCanonicalSheetRowsMerged_(ss, canonical, { ensure: false });
   });
   return sheets;
 }
@@ -2001,9 +2284,11 @@ function readSheetsReadOnly_(ss, requestedNames) {
 function readSheets_(ss, requestedNames) {
   const sheets = {};
   const request = Array.isArray(requestedNames) ? requestedNames.filter(Boolean).map(canonicalSheetName_) : [];
-  const source = request.length ? request.map(function(name){ return getOrCreateSheet_(ss, name); }) : Object.keys(LUXEHR_SCHEMAS).map(function(name){ return getOrCreateSheet_(ss, name); });
-  source.forEach(function(sheet) {
-    const canonical = canonicalSheetName_(sheet.getName());
+  const sourceNames = request.length ? request : Object.keys(LUXEHR_SCHEMAS);
+  uniqueTextList_(sourceNames.map(canonicalSheetName_)).forEach(function(name) {
+    const canonical = canonicalSheetName_(name);
+    consolidateCanonicalSheet_(ss, canonical);
+    const sheet = getOrCreateSheet_(ss, canonical);
     sheets[canonical] = readSheetAsObjects_(sheet, canonical, { ensure: true });
   });
   return sheets;
@@ -2098,6 +2383,17 @@ function canonicalHeader_(sheetName, header) {
     return (aliases[target] || []).some(function(alias) { return normalizeToken_(alias) === rawNorm; });
   });
   return canonical || raw;
+}
+
+function uniqueTextList_(list) {
+  const seen = {};
+  return (Array.isArray(list) ? list : []).map(function(item){ return String(item || '').trim(); }).filter(function(item) {
+    if (!item) return false;
+    const key = normalizeToken_(item);
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
 }
 
 function normalizeToken_(value) {
@@ -2216,49 +2512,49 @@ function jsonOutput_(obj) {
 </div>
 </div>
 </section>
-</main>
-<section class="view hidden flex-1 overflow-y-auto p-4 md:p-6 bg-surface-300 relative" id="accessView">
-<div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-5">
+<section class="view hidden flex-1 overflow-y-auto p-4 md:p-6 bg-surface-300 relative luxe-access-view" id="accessView">
+<div class="access-page-shell">
+<div class="access-page-header">
 <div>
 <p class="text-[10px] uppercase tracking-[0.25em] text-gold-500 mb-1">Login &amp; Role Based Access Control</p>
 <h2 class="text-xl md:text-2xl font-serif font-bold text-white tracking-wide">Hak Akses Pengguna</h2>
-<p class="text-[10px] text-gray-500 mt-1 max-w-2xl">Owner dapat membuat akun, memilih role sebagai template awal, lalu menentukan sendiri fitur/aksi apa saja yang boleh dipakai setiap user. Role Karyawan tetap self-only sehingga hanya melihat data dirinya sendiri.</p>
+<p class="text-[10px] text-gray-500 mt-1 max-w-2xl">Owner dapat membuat akun, memilih role sebagai template awal, lalu menentukan sendiri fitur/aksi yang boleh dipakai setiap user. Role Karyawan tetap self-only sehingga hanya melihat data dirinya sendiri.</p>
 </div>
 <button class="bg-gold-500 text-surface-400 hover:bg-gold-400 font-bold uppercase tracking-widest py-2.5 px-4 text-[10px] rounded-lg transition-all shadow-gold-glow" onclick="resetAccountForm()" type="button"><i class="fa-solid fa-plus mr-1.5"></i> Akun Baru</button>
 </div>
-<div class="space-y-4">
+<div class="access-page-stack">
 <div class="premium-card rounded-xl p-4">
 <h3 class="font-serif font-bold text-white text-base mb-1">Form Akun</h3>
-<p class="text-[10px] text-gray-500 mb-4">Password tersimpan sebagai hash sederhana di pengaturan cloud. Untuk keamanan operasional, deploy aplikasi di akses internal/hosting yang dipercaya.</p>
-<form class="grid grid-cols-1 lg:grid-cols-4 gap-3" id="accountAccessForm">
+<p class="text-[10px] text-gray-500 mb-4">Password disimpan sebagai hash sederhana di pengaturan cloud. Untuk keamanan operasional, deploy aplikasi di akses internal/hosting yang dipercaya.</p>
+<form class="access-account-form" id="accountAccessForm">
 <input id="accountId" type="hidden"/>
-<div><label class="label-premium">Username Login</label><input autocomplete="off" class="field" id="accountUsername" placeholder="contoh: andi01" required="" type="text"/></div>
-<div><label class="label-premium">Nama Tampilan</label><input class="field" id="accountDisplayName" placeholder="Nama user" required="" type="text"/></div>
-<div class="grid grid-cols-2 gap-2">
+<div class="access-form-field"><label class="label-premium">Username Login</label><input autocomplete="off" autocapitalize="off" spellcheck="false" class="field" id="accountUsername" placeholder="contoh: andi01" required="" type="text"/></div>
+<div class="access-form-field"><label class="label-premium">Nama Tampilan</label><input class="field" id="accountDisplayName" placeholder="Nama user" required="" type="text"/></div>
+<div class="access-role-status">
 <div><label class="label-premium">Role</label><select class="field" id="accountRole"><option value="owner">Owner</option><option value="admin">Admin/HR</option><option value="supervisor">Supervisor</option><option value="employee">Karyawan</option></select></div>
 <div><label class="label-premium">Status</label><select class="field" id="accountActive"><option value="true">Aktif</option><option value="false">Nonaktif</option></select></div>
 </div>
-<div><label class="label-premium">Hubungkan ke Data Karyawan</label><select class="field" id="accountEmployeeId"></select><p class="dropdown-hint"><i class="fa-solid fa-circle-info"></i>Wajib untuk role Karyawan agar data yang tampil hanya data dirinya sendiri.</p></div>
-<div><label class="label-premium">Password Baru</label><input autocomplete="new-password" class="field" id="accountPassword" placeholder="Isi untuk akun baru / ganti password" type="password"/><p class="dropdown-hint"><i class="fa-solid fa-key"></i>Untuk edit akun, kosongkan jika password tidak ingin diganti.</p></div>
-<div>
+<div class="access-linked-employee"><label class="label-premium">Hubungkan ke Data Karyawan</label><select class="field" id="accountEmployeeId"></select><p class="dropdown-hint"><i class="fa-solid fa-circle-info"></i>Wajib untuk role Karyawan agar data yang tampil hanya data dirinya sendiri.</p></div>
+<div class="access-form-field"><label class="label-premium">Password Baru</label><input autocomplete="new-password" class="field" id="accountPassword" placeholder="Isi untuk akun baru / ganti password" type="password"/><p class="dropdown-hint"><i class="fa-solid fa-key"></i>Untuk edit akun, kosongkan jika password tidak ingin diganti.</p></div>
+<div class="access-form-full">
 <label class="label-premium">Akses Modul</label>
-<div class="grid grid-cols-2 gap-2 text-[10px]" id="accountPermissionGrid"></div>
+<div id="accountPermissionGrid"></div>
 </div>
-<div class="grid grid-cols-2 gap-2 pt-1">
+<div class="access-form-actions">
 <button class="border border-white/10 text-gray-300 hover:text-white hover:bg-white/5 py-3 text-[10px] uppercase tracking-widest rounded-lg transition-all" onclick="resetAccountForm()" type="button">Reset</button>
 <button class="bg-gold-500 text-surface-400 hover:bg-gold-400 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all shadow-gold-glow" type="submit">Simpan Akun</button>
 </div>
 </form>
 <div class="mt-4 p-3 rounded-lg bg-surface-100 border border-yellow-500/20 text-gray-400 text-[10px] leading-relaxed">
-<i class="fa-solid fa-triangle-exclamation text-yellow-300 mr-1"></i> Login awal setelah update: <span class="text-white font-mono">owner</span> / <span class="text-white font-mono">owner123</span>. Segera ubah password dari halaman ini.
-                    </div>
+<i class="fa-solid fa-triangle-exclamation text-yellow-300 mr-1"></i> Login awal/recovery: <span class="text-white font-mono">owner</span> / <span class="text-white font-mono">owner123</span>. Setelah berhasil masuk, segera ubah password dari halaman ini.
+</div>
 </div>
 <div class="premium-card rounded-xl overflow-hidden">
 <div class="p-4 border-b border-white/5 flex items-center justify-between gap-3">
 <div><h3 class="font-serif font-bold text-white text-base">Daftar Akun</h3><p class="text-[10px] text-gray-500 mt-0.5" id="accountAccessSummary">0 akun</p></div>
 <span class="px-3 py-1 rounded-full bg-gold-500/10 border border-gold-500/20 text-gold-500 text-[9px] uppercase tracking-widest"><i class="fa-solid fa-shield-halved mr-1"></i> RBAC Aktif</span>
 </div>
-<div class="overflow-x-auto">
+<div class="access-table-wrap">
 <table class="w-full text-left whitespace-nowrap">
 <thead class="bg-surface-100/50"><tr><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">User</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Role</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Karyawan</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Status</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium">Akses</th><th class="py-2.5 px-4 text-[9px] uppercase tracking-widest text-gold-500 font-medium text-right">Aksi</th></tr></thead>
 <tbody class="divide-y divide-white/5" id="accountAccessTable"></tbody>
@@ -2267,14 +2563,16 @@ function jsonOutput_(obj) {
 </div>
 <div class="premium-card rounded-xl p-4">
 <h3 class="font-serif font-bold text-white text-base mb-2">Aturan Akses Data</h3>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-[10px] text-gray-400 leading-relaxed">
+<div class="access-rule-grid text-[10px] text-gray-400 leading-relaxed">
 <div class="p-3 rounded-lg bg-surface-100 border border-white/5"><i class="fa-solid fa-crown text-gold-500 mr-1"></i><span class="text-white">Owner</span> memiliki akses penuh, termasuk membuat/menghapus akun dan mengubah password.</div>
 <div class="p-3 rounded-lg bg-surface-100 border border-white/5"><i class="fa-solid fa-user-tie text-blue-300 mr-1"></i><span class="text-white">Admin/HR/Supervisor</span> mengikuti checklist modul yang diberikan Owner.</div>
 <div class="p-3 rounded-lg bg-surface-100 border border-white/5"><i class="fa-solid fa-user text-green-300 mr-1"></i><span class="text-white">Karyawan</span> otomatis self-service: daftar karyawan, absensi, histori, cuti, dan payroll hanya menampilkan data akun tersebut.</div>
 </div>
 </div>
 </div>
+</div>
 </section>
+</main>
 <div class="modal-transition fixed inset-0 z-[70] flex items-center justify-center hidden" id="employeeModal">
 <div class="absolute inset-0 bg-black/85 backdrop-blur-md" id="employeeModalBackdrop"></div>
 <div class="bg-surface-200 border border-white/10 rounded-xl shadow-2xl w-full max-w-5xl mx-4 relative z-10 transform scale-95 opacity-0 transition-all duration-300 max-h-[92vh] overflow-hidden flex flex-col" id="employeeModalContent">
@@ -2454,7 +2752,7 @@ function jsonOutput_(obj) {
 <button class="w-full bg-gold-500 text-surface-400 hover:bg-gold-400 font-bold uppercase tracking-widest py-3 text-[10px] rounded-lg transition-all shadow-gold-glow" type="submit"><i class="fa-solid fa-right-to-bracket mr-1.5"></i> Login</button>
 </form>
 <div class="relative z-10 mt-4 p-3 rounded-lg bg-surface-100 border border-gold-500/20 text-gray-400 text-[10px] leading-relaxed" id="loginHint">
-                Login awal setelah update: <span class="text-white font-mono">owner</span> / <span class="text-white font-mono">owner123</span>. Sesi login sekarang tidak disimpan di localStorage dan akan diminta ulang setiap aplikasi dibuka/reload. Segera ganti password melalui menu Hak Akses.
+                Login awal/recovery: <span class="text-white font-mono">owner</span> / <span class="text-white font-mono">owner123</span>. Sesi login tidak disimpan di localStorage dan akan diminta ulang setiap aplikasi dibuka/reload. Segera ganti password melalui menu Hak Akses.
             </div>
 </div>
 </div>
@@ -2517,7 +2815,7 @@ function jsonOutput_(obj) {
             });
             const GOOGLE_APPS_SCRIPT_URL = String(LUXEHR_CENTRAL_SYNC_CONFIG.webAppUrl || '').trim();
 
-            const APP_VERSION = '6.8.0-hard-reset-access-layout';
+            const APP_VERSION = '7.1.0-access-layout-owner-login-repair';
             const PAYROLL_MONTH_DAYS = 30;
             const STANDARD_WORKDAY_HOURS = 12;
             const STANDARD_WORKDAY_MINUTES = STANDARD_WORKDAY_HOURS * 60;
@@ -2598,7 +2896,7 @@ function jsonOutput_(obj) {
             const CLOUD_FIRST_PURGE_DELAY_MS = 350;
             const DEFAULT_SPREADSHEET_TIME_ZONE = 'Asia/Jakarta';
             const CLOUD_SHEET_ALIASES = {
-                Data_Karyawan: ['Data_Karyawan', 'Data Karyawan', 'Karyawan', 'Karyawan Data', 'Data Employee', 'Data Employees', 'Employee', 'Employees', 'Master Karyawan', 'Master Data Karyawan', 'Master_Data_Karyawan', 'Employee Master Data'],
+                Data_Karyawan: ['Data_Karyawan', 'Data Karyawan', 'Karyawan', 'Karyawan Data', 'Karyawan_Data', 'Data Employee', 'Data Employees', 'Employee', 'Employees', 'Master Karyawan', 'Master Data Karyawan', 'Master_Data_Karyawan', 'Employee Master Data'],
                 Data_Absensi: ['Data_Absensi', 'Data Absensi', 'Absensi', 'Attendance', 'Data Attendance'],
                 Data_Cuti: ['Data_Cuti', 'Data Cuti', 'Cuti', 'Izin', 'Cuti Izin', 'Leave', 'Leaves'],
                 Data_Shift: ['Data_Shift', 'Data Shift', 'Shift', 'Master Shift'],
@@ -2630,7 +2928,8 @@ function jsonOutput_(obj) {
                 requireFreshLoginOnAppLoad: true,
                 sessionTtlMinutes: 180,
                 idleTimeoutMinutes: 30,
-                clearLegacyLocalAuthOnStartup: true
+                clearLegacyLocalAuthOnStartup: true,
+                defaultOwnerRecoveryLoginEnabled: true
             });
             let currentAuthSession = null;
             let authSessionTimer = null;
@@ -3307,7 +3606,7 @@ function jsonOutput_(obj) {
                     displayName: String(account.displayName || account.name || account.username || '').trim(),
                     role,
                     employeeId: account.employeeId === undefined || account.employeeId === null ? '' : String(account.employeeId),
-                    passwordHash: account.passwordHash || '',
+                    passwordHash: normalizePasswordHashValue(account.passwordHash) || '',
                     isActive: account.isActive !== false && String(account.status || '').toLowerCase() !== 'nonaktif',
                     permissions: uniqueTextList(permissions),
                     forceChangePassword: account.forceChangePassword === true,
@@ -3315,23 +3614,84 @@ function jsonOutput_(obj) {
                     updatedAt: account.updatedAt || new Date().toISOString()
                 };
             }
+            function buildDefaultOwnerAccount(overrides = {}) {
+                return normalizeAccount({
+                    id: overrides.id || 'owner_default',
+                    username: 'owner',
+                    displayName: overrides.displayName || 'Owner LuxeHR',
+                    role: 'owner',
+                    employeeId: '',
+                    passwordHash: overrides.passwordHash || passwordHash('owner123'),
+                    isActive: true,
+                    permissions: getDefaultAccessPermissions('owner'),
+                    forceChangePassword: overrides.forceChangePassword !== false,
+                    createdAt: overrides.createdAt || new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                });
+            }
+            function normalizePasswordHashValue(value) {
+                const text = String(value || '').trim();
+                if (!text) return '';
+                if (/^fnv1a:[0-9a-f]+$/i.test(text)) return text;
+                if (text === 'owner123' || !text.includes(':')) return passwordHash(text);
+                return text;
+            }
+            function repairDefaultOwnerAccount(options = {}) {
+                ensureAuthSettings.skipRepair = true;
+                try {
+                    const accounts = Array.isArray(settings.userAccounts) ? settings.userAccounts.map(normalizeAccount).filter(acc => acc.username) : [];
+                    const index = accounts.findIndex(acc => safeLower(acc.username) === 'owner');
+                    const existing = index >= 0 ? accounts[index] : null;
+                    const forcePassword = options.forcePassword === true;
+                    const repaired = buildDefaultOwnerAccount({
+                        ...(existing || {}),
+                        id: existing?.id || 'owner_default',
+                        displayName: existing?.displayName || 'Owner LuxeHR',
+                        passwordHash: forcePassword || !existing?.passwordHash ? passwordHash('owner123') : normalizePasswordHashValue(existing.passwordHash),
+                        forceChangePassword: existing?.forceChangePassword !== false
+                    });
+                    if (index >= 0) accounts[index] = repaired;
+                    else accounts.unshift(repaired);
+                    const seen = new Set();
+                    settings.userAccounts = accounts.filter(acc => {
+                        const key = safeLower(acc.username);
+                        if (!key || seen.has(key)) return false;
+                        seen.add(key);
+                        return true;
+                    });
+                    return repaired;
+                } finally {
+                    ensureAuthSettings.skipRepair = false;
+                }
+            }
+            function resolveOwnerRecoveryLogin(username, password) {
+                if (!AUTH_SECURITY_CONFIG.defaultOwnerRecoveryLoginEnabled) return null;
+                if (safeLower(username) !== 'owner' || passwordHash(password) !== passwordHash('owner123')) return null;
+                const owner = repairDefaultOwnerAccount({ forcePassword: true });
+                saveSettings({ queueSync: true, reason: 'Owner recovery login diperbaiki otomatis' });
+                return owner;
+            }
             function ensureAuthSettings() {
                 if (!settings || typeof settings !== 'object') settings = {};
                 settings.accessControlEnabled = settings.accessControlEnabled !== false;
-                const accounts = Array.isArray(settings.userAccounts) ? settings.userAccounts.map(normalizeAccount).filter(acc => acc.username) : [];
-                const hasOwner = accounts.some(acc => acc.role === 'owner');
-                if (!hasOwner) {
-                    accounts.unshift(normalizeAccount({
-                        id: 'owner_default',
-                        username: 'owner',
-                        displayName: 'Owner LuxeHR',
-                        role: 'owner',
-                        employeeId: '',
-                        passwordHash: passwordHash('owner123'),
-                        isActive: true,
-                        permissions: getDefaultAccessPermissions('owner'),
-                        forceChangePassword: true
-                    }));
+                const accounts = Array.isArray(settings.userAccounts) ? settings.userAccounts.map(account => normalizeAccount({ ...account, passwordHash: normalizePasswordHashValue(account.passwordHash) })).filter(acc => acc.username) : [];
+                const hasActiveOwner = accounts.some(acc => acc.role === 'owner' && acc.isActive);
+                const hasDefaultOwnerUsername = accounts.some(acc => safeLower(acc.username) === 'owner');
+                if (!hasActiveOwner || !hasDefaultOwnerUsername) {
+                    accounts.unshift(buildDefaultOwnerAccount());
+                } else if (!ensureAuthSettings.skipRepair) {
+                    const idx = accounts.findIndex(acc => safeLower(acc.username) === 'owner');
+                    if (idx >= 0) {
+                        accounts[idx] = normalizeAccount({
+                            ...accounts[idx],
+                            username: 'owner',
+                            role: 'owner',
+                            employeeId: '',
+                            isActive: true,
+                            permissions: getDefaultAccessPermissions('owner'),
+                            passwordHash: normalizePasswordHashValue(accounts[idx].passwordHash) || passwordHash('owner123')
+                        });
+                    }
                 }
                 const seen = new Set();
                 settings.userAccounts = accounts.filter(acc => {
@@ -3341,6 +3701,7 @@ function jsonOutput_(obj) {
                     return true;
                 });
             }
+            ensureAuthSettings.skipRepair = false;
             function getUserAccounts() { ensureAuthSettings(); return settings.userAccounts || []; }
             function clearLegacyAuthStorage() {
                 try { localStorage.removeItem(STORAGE_KEYS.authSession); } catch (error) {}
@@ -3496,12 +3857,15 @@ function jsonOutput_(obj) {
                 ensureAuthSettings();
                 const username = byId('loginUsername')?.value.trim() || '';
                 const password = byId('loginPassword')?.value || '';
-                const account = getUserAccounts().find(acc => safeLower(acc.username) === safeLower(username));
+                let account = getUserAccounts().find(acc => safeLower(acc.username) === safeLower(username));
                 if (!account || !account.isActive || account.passwordHash !== passwordHash(password)) {
-                    const passwordInput = byId('loginPassword');
-                    if (passwordInput) passwordInput.value = '';
-                    showToast('Username atau password salah / akun nonaktif', 'error');
-                    return;
+                    account = resolveOwnerRecoveryLogin(username, password);
+                    if (!account) {
+                        const passwordInput = byId('loginPassword');
+                        if (passwordInput) passwordInput.value = '';
+                        showToast('Username atau password salah / akun nonaktif', 'error');
+                        return;
+                    }
                 }
                 if (account.role === 'employee' && !account.employeeId) {
                     const passwordInput = byId('loginPassword');
@@ -3566,22 +3930,22 @@ function jsonOutput_(obj) {
                 const groups = [...new Set(catalog.map(item => item.group || 'Hak Akses'))];
                 grid.innerHTML = groups.map(group => {
                     const items = catalog.filter(item => (item.group || 'Hak Akses') === group);
-                    return `<div class="md:col-span-2 rounded-xl border border-white/5 bg-surface-100/50 p-3">
+                    return `<div class="access-permission-group rounded-xl border border-white/5 bg-surface-100/50 p-3">
                         <p class="text-[9px] uppercase tracking-[0.18em] text-gold-500 mb-2">${escapeHtml(group)}</p>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${items.map(item => {
+                        <div class="access-permission-group-inner">${items.map(item => {
                             const isOwnerLock = role === 'owner';
                             const isEmployeeSelfLock = role === 'employee' && item.key === 'selfOnly';
                             const checked = perms.includes(item.key) || isOwnerLock || isEmployeeSelfLock ? 'checked' : '';
                             const disabled = isOwnerLock || isEmployeeSelfLock ? 'disabled' : '';
-                            return `<label class="flex items-start gap-2 p-2 rounded-lg bg-surface-200 border border-white/5 ${disabled ? 'opacity-80' : 'hover:border-gold-500/30'} transition-all">
-                                <input type="checkbox" class="account-permission mt-0.5" value="${escapeHtml(item.key)}" ${checked} ${disabled}>
+                            return `<label class="access-permission-item ${disabled ? 'opacity-80' : ''}">
+                                <input type="checkbox" class="account-permission" value="${escapeHtml(item.key)}" ${checked} ${disabled}>
                                 <span><span class="block text-gray-200">${escapeHtml(item.label)}</span><small class="block text-gray-500 leading-relaxed mt-0.5">${escapeHtml(item.desc || '')}</small></span>
                             </label>`;
                         }).join('')}</div>
                     </div>`;
                 }).join('');
                 const hint = document.createElement('div');
-                hint.className = 'md:col-span-2 p-3 rounded-lg bg-gold-500/10 border border-gold-500/20 text-gold-500 text-[10px] leading-relaxed';
+                hint.className = 'access-permission-hint p-3 rounded-lg bg-gold-500/10 border border-gold-500/20 text-gold-500 text-[10px] leading-relaxed';
                 hint.innerHTML = '<i class="fa-solid fa-key mr-1"></i>Role hanya template awal. Owner tetap bisa centang fitur satu per satu. Khusus Owner selalu semua akses, khusus Karyawan selalu self-only.';
                 grid.appendChild(hint);
             }
@@ -4015,7 +4379,7 @@ function jsonOutput_(obj) {
                         permissions: JSON.stringify(account.permissions || []),
                         permissionText: (account.permissions || []).join('|'),
                         permissionCount: (account.permissions || []).length,
-                        passwordHash: account.passwordHash || '',
+                        passwordHash: normalizePasswordHashValue(account.passwordHash) || '',
                         forceChangePassword: account.forceChangePassword === true,
                         createdAt: account.createdAt || '',
                         updatedAt: account.updatedAt || new Date().toISOString()
@@ -4451,7 +4815,7 @@ function jsonOutput_(obj) {
                 return cleanCloudRows(rows, ['username', 'id'])
                     .map((row, index) => {
                         const username = readCloudField(row, ['username', 'Username', 'user', 'login'], '');
-                        const passwordHashValue = readCloudField(row, ['passwordHash', 'Password Hash', 'hashPassword', 'password_hash'], '');
+                        const passwordHashValue = normalizePasswordHashValue(readCloudField(row, ['passwordHash', 'Password Hash', 'hashPassword', 'password_hash', 'password', 'Password'], ''));
                         if (!username || !passwordHashValue) return null;
                         return normalizeAccount({
                             id: readCloudField(row, ['id', 'accountId', 'ID', 'Account ID'], `usr_cloud_${index + 1}`),
@@ -7509,7 +7873,7 @@ function jsonOutput_(obj) {
                 const requiredSyncSheets = ['Data_Karyawan', 'Data_Absensi', 'Data_Cuti', 'Data_Shift', 'Data_Shift_Assignment', 'Data_Resign', 'Data_Blacklist', 'Data_Pengaturan', 'Data_Akun_Login', 'Data_Hak_Akses', 'Data_Integrasi', 'Data_Maintenance_Log', 'Data_Delete_Log', 'Data_Sync_Manifest'];
                 const missingSyncSheets = requiredSyncSheets.filter(name => !syncSheetNames.includes(name));
                 console.assert(!missingSyncSheets.length, `Self-test failed: sheet sync wajib belum masuk payload ${missingSyncSheets.join(', ')}`);
-                console.assert(getCloudReadSheetRequestList().some(name => normalizeCloudSheetKey(name) === normalizeCloudSheetKey('Data Karyawan')), 'Self-test failed: alias sheet Data Karyawan belum masuk request cloud pull');
+                console.assert(getCloudReadSheetRequestList().some(name => normalizeCloudSheetKey(name) === normalizeCloudSheetKey('Karyawan Data')), 'Self-test failed: alias sheet Karyawan Data belum masuk request cloud pull');
                 console.info(`LuxeHR ${APP_VERSION} self-tests completed. Premium dropdowns: ${selects.length}. Tombol, handler, dan ${syncSheetNames.length} sheet sync utama terverifikasi. Alias sheet karyawan aktif. GoogleSheetDB: ${settings.localStorageServerEnabled === false}.`);
             }
             function bindEvents() {
@@ -7887,7 +8251,7 @@ function jsonOutput_(obj) {
                     return { ok: false, skipped: true, reason: 'network-or-config-missing' };
                 }
                 const startedAt = new Date().toISOString();
-                saveSyncMeta({ status: 'syncing', sheetName: 'Google Sheet Database', mode: 'database-audit', lastAttemptAt: startedAt, lastError: null, message: 'Audit database: merapikan kolom mulai A, memastikan header, sheet, dan data dapat dibaca dari Google Sheet...' });
+                saveSyncMeta({ status: 'syncing', sheetName: 'Google Sheet Database', mode: 'database-audit', lastAttemptAt: startedAt, lastError: null, message: 'Audit database: merapikan kolom mulai A, menggabungkan sheet alias/duplikat, memastikan header dan data dapat dibaca dari Google Sheet...' });
                 try {
                     const compactResponse = await postToAppsScript({ action: 'compact_sheets', sheetNames: getCloudReadSheetRequestList() });
                     const compactResult = compactResponse.result || compactResponse;
@@ -7899,7 +8263,7 @@ function jsonOutput_(obj) {
                     const requiredSheets = getCloudReadSheetRequestList().map(canonicalCloudSheetName).filter((value, index, arr) => value && arr.indexOf(value) === index);
                     const missingSheets = requiredSheets.filter(name => counts[name] === undefined && !(result.headers || {})[name]);
                     if (missingSheets.length) throw new Error(`Sheet belum terbaca: ${missingSheets.join(', ')}`);
-                    saveSyncMeta({ status: 'success', sheetName: 'Google Sheet Database', mode: 'database-audit-success', lastSuccessAt: new Date().toISOString(), lastAttemptAt: startedAt, lastCloudPullAt: getSyncMeta().lastCloudPullAt, lastCloudPullRows: getSyncMeta().lastCloudPullRows, lastCloudPullSheets: getSyncMeta().lastCloudPullSheets, lastError: null, message: `Audit database berhasil. ${Object.keys(counts).length || result.totalSheets || 0} sheet terbaca, ${totalRows} baris terdeteksi. Header aman berbasis nama kolom dan layout dimulai dari kolom A.` });
+                    saveSyncMeta({ status: 'success', sheetName: 'Google Sheet Database', mode: 'database-audit-success', lastSuccessAt: new Date().toISOString(), lastAttemptAt: startedAt, lastCloudPullAt: getSyncMeta().lastCloudPullAt, lastCloudPullRows: getSyncMeta().lastCloudPullRows, lastCloudPullSheets: getSyncMeta().lastCloudPullSheets, lastError: null, message: `Audit database berhasil. ${Object.keys(counts).length || result.totalSheets || 0} sheet terbaca, ${totalRows} baris terdeteksi. Header aman berbasis nama kolom, layout dimulai dari kolom A, dan sheet alias/duplikat disatukan ke nama canonical.` });
                     if (!silent) showToast(`Audit database berhasil: ${totalRows} baris terbaca`, 'success');
                     renderSyncStatus();
                     renderRealtimeStatus();
@@ -7916,7 +8280,7 @@ function jsonOutput_(obj) {
 
             function canonicalCloudSheetName(name) {
                 const aliases = {
-                    'Data Karyawan': 'Data_Karyawan', 'Karyawan': 'Data_Karyawan', 'Employees': 'Data_Karyawan',
+                    'Data Karyawan': 'Data_Karyawan', 'Karyawan Data': 'Data_Karyawan', 'Karyawan_Data': 'Data_Karyawan', 'Karyawan': 'Data_Karyawan', 'Employees': 'Data_Karyawan',
                     'Data Absensi': 'Data_Absensi', 'Absensi': 'Data_Absensi', 'Attendance': 'Data_Absensi',
                     'Data Cuti': 'Data_Cuti', 'Cuti': 'Data_Cuti', 'Izin': 'Data_Cuti',
                     'Data Shift': 'Data_Shift', 'Shift': 'Data_Shift',
